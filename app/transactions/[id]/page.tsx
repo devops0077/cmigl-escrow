@@ -1,133 +1,144 @@
-"use client"
+"use client";
 
-import { useState, useEffect } from "react"
-import { useParams, useRouter } from "next/navigation"
-import { useSession } from "next-auth/react"
-import { redirect } from "next/navigation"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { Separator } from "@/components/ui/separator"
-import { useToast } from "@/components/ui/use-toast"
-import { DashboardShell } from "@/components/dashboard/dashboard-shell"
-import { DashboardHeader } from "@/components/dashboard/dashboard-header"
-import { formatCurrency, formatDate } from "@/lib/utils"
-import { getTransactionById, updateTransactionStatus } from "@/lib/data-actions"
+import { useState, useEffect } from "react";
+import { useParams, useRouter } from "next/navigation";
+import { useSession } from "next-auth/react";
+import { redirect } from "next/navigation";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Separator } from "@/components/ui/separator";
+import { DashboardShell } from "@/components/dashboard/dashboard-shell";
+import { DashboardHeader } from "@/components/dashboard/dashboard-header";
+import { formatCurrency, formatDate } from "@/lib/utils";
+import {
+  getTransactionById,
+  updateTransactionStatus,
+} from "@/lib/data-actions";
+import { toast } from "sonner";
 
 interface Transaction {
-  id: string
-  buyerId: string
-  sellerId: string
-  amount: number
-  escrowFee: number
-  productDetails: string
-  productCategory: string
-  status: string
-  createdAt: string
-  updatedAt: string
+  id: string;
+  buyerId: string;
+  sellerId: string;
+  amount: number;
+  escrowFee: number;
+  productDetails: string;
+  productCategory: string;
+  status: string;
+  createdAt: string;
+  updatedAt: string;
   buyer: {
-    id: string
-    name: string | null
-    username: string | null
-    email: string | null
-  }
+    id: string;
+    name: string | null;
+    username: string | null;
+    email: string | null;
+  };
   seller: {
-    id: string
-    name: string | null
-    username: string | null
-    email: string | null
-  }
-  isBuyer: boolean
-  isSeller: boolean
+    id: string;
+    name: string | null;
+    username: string | null;
+    email: string | null;
+  };
+  isBuyer: boolean;
+  isSeller: boolean;
 }
 
 export default function TransactionDetailPage() {
-  const params = useParams()
-  const router = useRouter()
-  const { data: session, status } = useSession()
-  const { toast } = useToast()
-  const [transaction, setTransaction] = useState<Transaction | null>(null)
-  const [isLoading, setIsLoading] = useState(true)
-  const [isUpdating, setIsUpdating] = useState(false)
-  const transactionId = params.id as string
+  const params = useParams();
+  const router = useRouter();
+  const { data: session, status } = useSession();
+  const [transaction, setTransaction] = useState<Transaction | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isUpdating, setIsUpdating] = useState(false);
+  const transactionId = params.id as string;
 
   useEffect(() => {
     if (status === "authenticated") {
       const fetchTransaction = async () => {
         try {
-          const data = await getTransactionById(transactionId)
-          setTransaction(data)
+          const data = await getTransactionById(transactionId);
+          setTransaction(data);
         } catch (error) {
-          console.error("Error fetching transaction:", error)
-          toast({
-            variant: "destructive",
-            title: "Error",
+          console.error("Error fetching transaction:", error);
+          toast.error("Error", {
             description: "Could not load transaction details.",
-          })
+          });
         } finally {
-          setIsLoading(false)
+          setIsLoading(false);
         }
-      }
+      };
 
-      fetchTransaction()
+      fetchTransaction();
     }
-  }, [status, transactionId, toast])
+  }, [status, transactionId, toast]);
 
   const handleStatusUpdate = async (newStatus: string) => {
-    if (!transaction) return
+    if (!transaction) return;
 
-    setIsUpdating(true)
+    setIsUpdating(true);
     try {
       await updateTransactionStatus({
         transactionId: transaction.id,
         status: newStatus,
-      })
+      });
 
-      toast({
-        title: "Status updated",
+      toast.success("Status updated", {
         description: `Transaction status updated to ${newStatus.toLowerCase()}.`,
-      })
+      });
 
       // Refresh transaction data
-      const updatedTransaction = await getTransactionById(transactionId)
-      setTransaction(updatedTransaction)
+      const updatedTransaction = await getTransactionById(transactionId);
+      setTransaction(updatedTransaction);
     } catch (error) {
-      console.error("Error updating status:", error)
-      toast({
-        variant: "destructive",
-        title: "Update failed",
-        description: error instanceof Error ? error.message : "There was a problem updating the status.",
-      })
+      console.error("Error updating status:", error);
+      toast.error("Update failed", {
+        description:
+          error instanceof Error
+            ? error.message
+            : "There was a problem updating the status.",
+      });
     } finally {
-      setIsUpdating(false)
+      setIsUpdating(false);
     }
-  }
+  };
 
   const getStatusColor = (status: string) => {
     switch (status.toLowerCase()) {
       case "completed":
-        return "bg-green-500"
+        return "bg-green-500";
       case "pending":
-        return "bg-yellow-500"
+        return "bg-yellow-500";
       case "failed":
-        return "bg-red-500"
+        return "bg-red-500";
       case "processing":
-        return "bg-blue-500"
+        return "bg-blue-500";
       case "shipped":
-        return "bg-purple-500"
+        return "bg-purple-500";
       case "confirmed":
-        return "bg-teal-500"
+        return "bg-teal-500";
       default:
-        return "bg-gray-500"
+        return "bg-gray-500";
     }
-  }
+  };
 
   if (status === "loading" || isLoading) {
-    return <div className="flex h-screen items-center justify-center">Loading...</div>
+    return (
+      <div className="flex h-screen items-center justify-center">
+        Loading...
+      </div>
+    );
   }
 
   if (status === "unauthenticated") {
-    redirect(`/auth/login?callbackUrl=/transactions/${transactionId}`)
+    redirect(`/auth/login?callbackUrl=/transactions/${transactionId}`);
   }
 
   if (!transaction) {
@@ -137,16 +148,21 @@ export default function TransactionDetailPage() {
           heading="Transaction Not Found"
           text="The transaction you're looking for doesn't exist or you don't have permission to view it."
         />
-        <Button onClick={() => router.push("/transactions")}>Back to Transactions</Button>
+        <Button onClick={() => router.push("/transactions")}>
+          Back to Transactions
+        </Button>
       </DashboardShell>
-    )
+    );
   }
 
-  const isAdmin = session?.user?.role === "ADMIN"
-  const canMarkAsShipped = transaction.isSeller && transaction.status === "PENDING"
-  const canConfirmReceipt = transaction.isBuyer && transaction.status === "SHIPPED"
-  const canCompleteTransaction = isAdmin && transaction.status === "CONFIRMED"
-  const canMarkAsFailed = isAdmin && ["PENDING", "SHIPPED", "CONFIRMED"].includes(transaction.status)
+  const isAdmin = session?.user?.role === "ADMIN";
+  const canMarkAsShipped =
+    transaction.isSeller && transaction.status === "PENDING";
+  const canConfirmReceipt =
+    transaction.isBuyer && transaction.status === "SHIPPED";
+  const canCompleteTransaction = isAdmin && transaction.status === "CONFIRMED";
+  const canMarkAsFailed =
+    isAdmin && ["PENDING", "SHIPPED", "CONFIRMED"].includes(transaction.status);
 
   return (
     <DashboardShell>
@@ -154,7 +170,10 @@ export default function TransactionDetailPage() {
         heading={`Transaction #${transaction.id.slice(0, 8)}`}
         text={`Created on ${formatDate(transaction.createdAt)}`}
       >
-        <Badge variant="outline" className={`${getStatusColor(transaction.status)} text-white`}>
+        <Badge
+          variant="outline"
+          className={`${getStatusColor(transaction.status)} text-white`}
+        >
           {transaction.status}
         </Badge>
       </DashboardHeader>
@@ -162,7 +181,9 @@ export default function TransactionDetailPage() {
         <Card>
           <CardHeader>
             <CardTitle>Transaction Details</CardTitle>
-            <CardDescription>Details about this escrow transaction</CardDescription>
+            <CardDescription>
+              Details about this escrow transaction
+            </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
@@ -172,7 +193,9 @@ export default function TransactionDetailPage() {
               </div>
               <div>
                 <p className="text-sm font-medium">Escrow Fee</p>
-                <p className="text-lg">{formatCurrency(transaction.escrowFee)}</p>
+                <p className="text-lg">
+                  {formatCurrency(transaction.escrowFee)}
+                </p>
               </div>
             </div>
             <Separator />
@@ -182,7 +205,9 @@ export default function TransactionDetailPage() {
             </div>
             <div>
               <p className="text-sm font-medium">Product Details</p>
-              <p className="whitespace-pre-wrap">{transaction.productDetails}</p>
+              <p className="whitespace-pre-wrap">
+                {transaction.productDetails}
+              </p>
             </div>
             <Separator />
             <div>
@@ -200,29 +225,45 @@ export default function TransactionDetailPage() {
             <div>
               <p className="text-sm font-medium">Buyer</p>
               <p>{transaction.buyer.name || transaction.buyer.username}</p>
-              <p className="text-sm text-muted-foreground">{transaction.buyer.email}</p>
+              <p className="text-sm text-muted-foreground">
+                {transaction.buyer.email}
+              </p>
             </div>
             <Separator />
             <div>
               <p className="text-sm font-medium">Seller</p>
               <p>{transaction.seller.name || transaction.seller.username}</p>
-              <p className="text-sm text-muted-foreground">{transaction.seller.email}</p>
+              <p className="text-sm text-muted-foreground">
+                {transaction.seller.email}
+              </p>
             </div>
           </CardContent>
           <CardFooter className="flex flex-col space-y-2">
             <div className="w-full space-y-2">
               {canMarkAsShipped && (
-                <Button className="w-full" onClick={() => handleStatusUpdate("SHIPPED")} disabled={isUpdating}>
+                <Button
+                  className="w-full"
+                  onClick={() => handleStatusUpdate("SHIPPED")}
+                  disabled={isUpdating}
+                >
                   {isUpdating ? "Updating..." : "Mark as Shipped"}
                 </Button>
               )}
               {canConfirmReceipt && (
-                <Button className="w-full" onClick={() => handleStatusUpdate("CONFIRMED")} disabled={isUpdating}>
+                <Button
+                  className="w-full"
+                  onClick={() => handleStatusUpdate("CONFIRMED")}
+                  disabled={isUpdating}
+                >
                   {isUpdating ? "Updating..." : "Confirm Receipt"}
                 </Button>
               )}
               {canCompleteTransaction && (
-                <Button className="w-full" onClick={() => handleStatusUpdate("COMPLETED")} disabled={isUpdating}>
+                <Button
+                  className="w-full"
+                  onClick={() => handleStatusUpdate("COMPLETED")}
+                  disabled={isUpdating}
+                >
                   {isUpdating ? "Updating..." : "Release Funds to Seller"}
                 </Button>
               )}
@@ -241,5 +282,5 @@ export default function TransactionDetailPage() {
         </Card>
       </div>
     </DashboardShell>
-  )
+  );
 }

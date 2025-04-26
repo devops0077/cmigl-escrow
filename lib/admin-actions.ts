@@ -50,11 +50,20 @@ export async function getAdminDashboardData() {
     0
   );
 
+  // Calculate total registration fees
+  const registrationFees =
+    (await prisma.registrationFee.count({
+      where: {
+        paid: true,
+      },
+    })) * 500; // ₦500 per registration
+
   return {
     totalUsers,
     totalTransactions,
     pendingTransactions,
     totalEscrowFees,
+    totalRegistrationFees: registrationFees,
   };
 }
 
@@ -99,6 +108,9 @@ export async function getAllUsers() {
   await checkAdminPermission();
 
   const users = await prisma.user.findMany({
+    include: {
+      registrationFee: true,
+    },
     orderBy: {
       createdAt: "desc",
     },
@@ -110,6 +122,8 @@ export async function getAllUsers() {
     email: user.email,
     username: user.username,
     role: user.role,
+    isActive: user.isActive,
+    registrationFeePaid: user.registrationFee?.paid || false,
     createdAt: user.createdAt.toISOString(),
   }));
 }
@@ -123,53 +137,4 @@ export async function updateUserRole(userId: string, role: string) {
   });
 
   revalidatePath("/admin");
-}
-
-export async function getProductCategories() {
-  await checkAdminPermission();
-
-  const fees = await prisma.fee.findMany({
-    orderBy: {
-      productCategory: "asc",
-    },
-  });
-
-  return fees.map((fee) => ({
-    id: fee.id,
-    name: fee.productCategory,
-    percentage: fee.percentage,
-  }));
-}
-
-export async function updateFee(id: string, name: string, percentage: number) {
-  await checkAdminPermission();
-
-  await prisma.fee.update({
-    where: { id },
-    data: {
-      productCategory: name,
-      percentage,
-    },
-  });
-
-  revalidatePath("/admin");
-}
-
-export async function createFee(name: string, percentage: number) {
-  await checkAdminPermission();
-
-  const fee = await prisma.fee.create({
-    data: {
-      productCategory: name,
-      percentage,
-    },
-  });
-
-  revalidatePath("/admin");
-
-  return {
-    id: fee.id,
-    name: fee.productCategory,
-    percentage: fee.percentage,
-  };
 }

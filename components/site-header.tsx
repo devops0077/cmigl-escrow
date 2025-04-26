@@ -26,7 +26,20 @@ export function SiteHeader() {
         <MainNav className="mx-6 hidden md:flex" />
         <MobileNav className="md:hidden ml-auto" />
         <div className="ml-auto hidden md:flex items-center space-x-4">
-          {session ? <UserNav /> : null}
+          {session ? (
+            <UserNav />
+          ) : (
+            <div className="hidden md:flex items-center space-x-2">
+              <Link href="/auth/login">
+                <Button variant="outline" className="w-full">
+                  Log in
+                </Button>
+              </Link>
+              <Link href="/auth/register">
+                <Button className="w-full">Sign up</Button>
+              </Link>
+            </div>
+          )}
         </div>
       </div>
     </header>

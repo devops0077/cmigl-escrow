@@ -2,10 +2,11 @@
 
 import { revalidatePath } from "next/cache";
 import { prisma } from "./prisma";
-import { TransactionStatus } from "./generated/prisma";
+import type { TransactionStatus } from "./generated/prisma";
 import { auth } from "@/auth";
 import { compare } from "bcryptjs";
 import { createNotification } from "./notification-service";
+import { emailService } from "./email-service";
 
 export async function updateUserProfile({
   name,
@@ -291,20 +292,6 @@ export async function searchUsers(query: string) {
   return users;
 }
 
-export async function getProductCategories() {
-  const fees = await prisma.fee.findMany({
-    orderBy: {
-      productCategory: "asc",
-    },
-  });
-
-  return fees.map((fee) => ({
-    id: fee.id,
-    name: fee.productCategory,
-    percentage: fee.percentage,
-  }));
-}
-
 export async function createTransaction({
   sellerId,
   amount,
@@ -338,16 +325,8 @@ export async function createTransaction({
     throw new Error("Insufficient funds");
   }
 
-  // Get fee percentage for the product category
-  const fee = await prisma.fee.findUnique({
-    where: { productCategory },
-  });
-
-  if (!fee) {
-    throw new Error("Invalid product category");
-  }
-
-  const escrowFee = amount * fee.percentage;
+  // Calculate flat 1.5% fee
+  const escrowFee = amount * 0.015;
 
   // Create transaction
   const transaction = await prisma.transaction.create({
@@ -380,14 +359,18 @@ export async function createTransaction({
     },
   });
 
+  // Get seller details for notification
+  const seller = await prisma.user.findUnique({
+    where: { id: sellerId },
+    select: { email: true, name: true, username: true },
+  });
+
   // Create notification for buyer
   await createNotification({
     userId: buyer.id,
     type: "TRANSACTION_CREATED",
     title: "Transaction Created",
-    message: `You have created a new transaction for ${amount.toFixed(
-      2
-    )} ${productCategory}`,
+    message: `You have created a new transaction for ₦${amount.toFixed(2)} with a fee of ₦${escrowFee.toFixed(2)}`,
     data: { transactionId: transaction.id },
   });
 
@@ -396,13 +379,42 @@ export async function createTransaction({
     userId: sellerId,
     type: "TRANSACTION_CREATED",
     title: "New Transaction",
-    message: `${
-      buyer.name || buyer.username
-    } has created a new transaction with you for ${amount.toFixed(
-      2
-    )} ${productCategory}`,
+    message: `${buyer.name || buyer.username} has created a new transaction with you for ₦${amount.toFixed(2)}`,
     data: { transactionId: transaction.id },
   });
+
+  // Send email notifications
+  try {
+    // Email to buyer
+    await emailService.sendTransactionNotificationEmail(
+      buyer.email!,
+      transaction.id,
+      "created",
+      {
+        amount,
+        fee: escrowFee,
+        productDetails,
+      }
+    );
+
+    // Email to seller
+    if (seller?.email) {
+      await emailService.sendTransactionNotificationEmail(
+        seller.email,
+        transaction.id,
+        "created",
+        {
+          amount,
+          fee: escrowFee,
+          productDetails,
+          buyerName: buyer.name || buyer.username,
+        }
+      );
+    }
+  } catch (error) {
+    console.error("Failed to send transaction emails:", error);
+    // Continue even if emails fail
+  }
 
   revalidatePath("/dashboard");
   revalidatePath("/transactions");
@@ -480,16 +492,12 @@ export async function updateTransactionStatus({
   // Create notifications based on status change
   const statusMessages = {
     SHIPPED: {
-      buyer: `${
-        transaction.seller.name || transaction.seller.username
-      } has shipped your order.`,
+      buyer: `${transaction.seller.name || transaction.seller.username} has shipped your order.`,
       seller: `You have marked the transaction as shipped.`,
     },
     CONFIRMED: {
       buyer: `You have confirmed receipt of the order.`,
-      seller: `${
-        transaction.buyer.name || transaction.buyer.username
-      } has confirmed receipt of the order.`,
+      seller: `${transaction.buyer.name || transaction.buyer.username} has confirmed receipt of the order.`,
     },
     COMPLETED: {
       buyer: `Your transaction has been completed. Funds have been released to the seller.`,
@@ -561,9 +569,7 @@ export async function updateTransactionStatus({
       userId: transaction.sellerId,
       type: "WALLET_UPDATED",
       title: "Funds Received",
-      message: `${amountToSeller.toFixed(
-        2
-      )} has been added to your wallet from completed transaction.`,
+      message: `${amountToSeller.toFixed(2)} has been added to your wallet from completed transaction.`,
       data: { transactionId, amount: amountToSeller },
     });
   }
@@ -592,9 +598,7 @@ export async function updateTransactionStatus({
       userId: transaction.buyerId,
       type: "WALLET_UPDATED",
       title: "Refund Received",
-      message: `${transaction.amount.toFixed(
-        2
-      )} has been refunded to your wallet from failed transaction.`,
+      message: `${transaction.amount.toFixed(2)} has been refunded to your wallet from failed transaction.`,
       data: { transactionId, amount: transaction.amount },
     });
   }

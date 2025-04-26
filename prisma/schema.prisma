@@ -39,31 +39,46 @@ model Session {
 }
 
 model User {
-  id                 String         @id @default(cuid())
+  id                 String              @id @default(cuid())
   name               String?
-  email              String?        @unique
-  username           String?        @unique
+  email              String?             @unique
+  username           String?             @unique
   emailVerified      DateTime?
   image              String?
   password           String?
-  role               UserRole       @default(USER)
+  role               UserRole            @default(USER)
+  isActive           Boolean             @default(false)
+  registrationFee    RegistrationFee?
   bankDetails        BankDetails?
   wallet             Wallet?
-  buyerTransactions  Transaction[]  @relation("BuyerTransactions")
-  sellerTransactions Transaction[]  @relation("SellerTransactions")
+  buyerTransactions  Transaction[]       @relation("BuyerTransactions")
+  sellerTransactions Transaction[]       @relation("SellerTransactions")
   accounts           Account[]
   sessions           Session[]
   notifications      Notification[]
-  createdAt          DateTime       @default(now())
-  updatedAt          DateTime       @updatedAt
+  verificationTokens VerificationToken[]
+  createdAt          DateTime            @default(now())
+  updatedAt          DateTime            @updatedAt
 }
 
 model VerificationToken {
-  identifier String
-  token      String   @unique
-  expires    DateTime
+  id        String   @id @default(cuid())
+  userId    String
+  token     String   @unique
+  expires   DateTime
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+}
 
-  @@unique([identifier, token])
+model RegistrationFee {
+  id        String   @id @default(cuid())
+  userId    String   @unique
+  amount    Float    @default(500)
+  paid      Boolean  @default(false)
+  reference String?
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model Wallet {
@@ -117,14 +132,6 @@ model Transaction {
   updatedAt        DateTime          @updatedAt
 }
 
-model Fee {
-  id              String   @id @default(cuid())
-  productCategory String   @unique
-  percentage      Float
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
-}
-
 model Notification {
   id        String           @id @default(cuid())
   userId    String
@@ -149,6 +156,7 @@ enum TransactionType {
   ESCROW_PAYMENT
   ESCROW_REFUND
   ESCROW_RELEASE
+  REGISTRATION_FEE
 }
 
 enum TransactionStatus {
@@ -167,4 +175,5 @@ enum NotificationType {
   WALLET_UPDATED
   SYSTEM_NOTIFICATION
   ADMIN_NOTIFICATION
+  REGISTRATION
 }

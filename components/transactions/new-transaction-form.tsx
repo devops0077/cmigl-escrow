@@ -33,7 +33,7 @@ import {
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { UserSearch } from "@/components/transactions/user-search";
-import { createTransaction, getProductCategories } from "@/lib/data-actions";
+import { createTransaction } from "@/lib/data-actions";
 import { toast } from "sonner";
 import { FadeIn } from "@/components/animations/fade-in";
 
@@ -52,13 +52,23 @@ const formSchema = z.object({
   }),
 });
 
+// Define product categories
+const productCategories = [
+  { id: "1", name: "Electronics" },
+  { id: "2", name: "Fashion" },
+  { id: "3", name: "Home & Garden" },
+  { id: "4", name: "Health & Beauty" },
+  { id: "5", name: "Sports & Outdoors" },
+  { id: "6", name: "Toys & Games" },
+  { id: "7", name: "Automotive" },
+  { id: "8", name: "Digital Services" },
+  { id: "9", name: "Other" },
+];
+
 export function NewTransactionForm() {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
-  const [categories, setCategories] = useState<
-    { id: string; name: string; percentage: number }[]
-  >([]);
-  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+  const [calculatedFee, setCalculatedFee] = useState(0);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -70,18 +80,15 @@ export function NewTransactionForm() {
     },
   });
 
+  // Calculate fee whenever amount changes
+  const amount = form.watch("amount");
   useEffect(() => {
-    const fetchCategories = async () => {
-      try {
-        const data = await getProductCategories();
-        setCategories(data);
-      } catch (error) {
-        console.error("Error fetching categories:", error);
-      }
-    };
-
-    fetchCategories();
-  }, []);
+    if (amount > 0) {
+      setCalculatedFee(amount * 0.015); // 1.5% fee
+    } else {
+      setCalculatedFee(0);
+    }
+  }, [amount]);
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
     setIsLoading(true);
@@ -162,7 +169,8 @@ export function NewTransactionForm() {
                         />
                       </FormControl>
                       <FormDescription>
-                        Enter the amount to be held in escrow.
+                        Enter the amount to be held in escrow. A 1.5% fee (₦
+                        {calculatedFee.toFixed(2)}) will be applied.
                       </FormDescription>
                       <FormMessage />
                     </FormItem>
@@ -175,10 +183,7 @@ export function NewTransactionForm() {
                     <FormItem>
                       <FormLabel>Product Category</FormLabel>
                       <Select
-                        onValueChange={(value) => {
-                          field.onChange(value);
-                          setSelectedCategory(value);
-                        }}
+                        onValueChange={field.onChange}
                         defaultValue={field.value}
                       >
                         <FormControl>
@@ -187,9 +192,9 @@ export function NewTransactionForm() {
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                          {categories.map((category) => (
+                          {productCategories.map((category) => (
                             <SelectItem key={category.id} value={category.name}>
-                              {category.name} ({category.percentage * 100}% fee)
+                              {category.name}
                             </SelectItem>
                           ))}
                         </SelectContent>
@@ -273,8 +278,7 @@ export function NewTransactionForm() {
             </CardContent>
             <CardFooter>
               <p className="text-sm text-muted-foreground">
-                A small fee will be deducted from the transaction amount based
-                on the product category.
+                A flat 1.5% fee will be deducted from the transaction amount.
               </p>
             </CardFooter>
           </Card>

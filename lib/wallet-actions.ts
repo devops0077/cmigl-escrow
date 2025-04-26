@@ -98,7 +98,7 @@ export async function depositToWallet(amount: number) {
         create: {
           amount: amount,
           type: "DEPOSIT",
-          status: TransactionStatus.PENDING,
+          status: TransactionStatus.COMPLETED,
           reference,
           description: `Deposit of ${amount} NGN`,
         },

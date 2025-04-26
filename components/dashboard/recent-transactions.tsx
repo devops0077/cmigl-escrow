@@ -102,8 +102,8 @@ export function RecentTransactions({
   }
 
   return (
-    <div className="space-y-4">
-      <div className="rounded-md border">
+    <div className="space-y-4 w-full">
+      <div className="rounded-md border w-full">
         <div className="grid grid-cols-5 gap-4 p-4 text-sm font-medium">
           <div>Type</div>
           <div>Amount</div>
@@ -111,7 +111,7 @@ export function RecentTransactions({
           <div>Status</div>
           <div className="text-right">Actions</div>
         </div>
-        <div className="divide-y">
+        <div className="divide-y w-full">
           {data?.data.map((transaction) => (
             <div
               key={transaction.id}

@@ -27,15 +27,15 @@ export function ThemeToggle({
         {theme === "dark" ? (
           <Sun
             className={cn(
-              "text-muted-foreground group-hover:text-primary",
-              isMobile && "text-foreground "
+              "text-muted-foreground h-5 w-5 group-hover:text-primary",
+              isMobile ? "text-foreground ml-0.5" : "-ml-0.5"
             )}
           />
         ) : (
           <Moon
             className={cn(
-              "text-muted-foreground group-hover:text-primary",
-              isMobile && "text-foreground "
+              "text-muted-foreground h-5 w-5 -ml-0.5 group-hover:text-primary",
+              isMobile ? "text-foreground ml-0.5 " : "-ml-0.5"
             )}
           />
         )}

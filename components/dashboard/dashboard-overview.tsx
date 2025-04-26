@@ -53,7 +53,7 @@ export function DashboardOverview() {
           <TabsTrigger value="overview">Overview</TabsTrigger>
           <TabsTrigger value="transactions">Transactions</TabsTrigger>
         </TabsList>
-        <TabsContent value="overview" className="space-y-4">
+        <TabsContent value="overview" className="space-y-4 w-full">
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -120,8 +120,8 @@ export function DashboardOverview() {
               </CardContent>
             </Card>
           </div>
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
-            <Card className="col-span-4">
+          <div className="w-full grid gap-4 md:grid-cols-2 lg:grid-cols-7">
+            <Card className="col-span-4 w-full">
               <CardHeader>
                 <CardTitle>Transaction Overview</CardTitle>
               </CardHeader>
@@ -129,14 +129,14 @@ export function DashboardOverview() {
                 <Overview />
               </CardContent>
             </Card>
-            <Card className="col-span-3">
+            <Card className="col-span-3 w-full">
               <CardHeader>
                 <CardTitle>Recent Transactions</CardTitle>
                 <CardDescription>
                   Your most recent escrow activities
                 </CardDescription>
               </CardHeader>
-              <CardContent>
+              <CardContent className="w-full">
                 <RecentTransactions />
               </CardContent>
             </Card>

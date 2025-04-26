@@ -1,33 +1,46 @@
-"use client"
+"use client";
 
-import { useState } from "react"
-import Link from "next/link"
-import { useSession } from "next-auth/react"
-import { redirect } from "next/navigation"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { DashboardShell } from "@/components/dashboard/dashboard-shell"
-import { DashboardHeader } from "@/components/dashboard/dashboard-header"
-import { RecentTransactions } from "@/components/dashboard/recent-transactions"
-import { Plus, Search } from "lucide-react"
+import { useState } from "react";
+import Link from "next/link";
+import { useSession } from "next-auth/react";
+import { redirect } from "next/navigation";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { DashboardShell } from "@/components/dashboard/dashboard-shell";
+import { DashboardHeader } from "@/components/dashboard/dashboard-header";
+import { RecentTransactions } from "@/components/dashboard/recent-transactions";
+import { Plus, Search } from "lucide-react";
 
 export default function TransactionsPage() {
-  const { data: session, status } = useSession()
-  const [searchQuery, setSearchQuery] = useState("")
-  const [statusFilter, setStatusFilter] = useState("all")
+  const { data: session, status } = useSession();
+  const [searchQuery, setSearchQuery] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all");
 
   if (status === "loading") {
-    return <div className="flex h-screen items-center justify-center">Loading...</div>
+    return (
+      <div className="flex h-screen items-center justify-center">
+        Loading...
+      </div>
+    );
   }
 
   if (status === "unauthenticated") {
-    redirect("/auth/login?callbackUrl=/transactions")
+    redirect("/auth/login?callbackUrl=/transactions");
   }
 
   return (
-    <DashboardShell>
-      <DashboardHeader heading="Transactions" text="Manage and track all your escrow transactions.">
+    <>
+      <DashboardHeader
+        heading="Transactions"
+        text="Manage and track all your escrow transactions."
+      >
         <Link href="/transactions/new">
           <Button>
             <Plus className="mr-2 h-4 w-4" />
@@ -64,6 +77,6 @@ export default function TransactionsPage() {
         </div>
         <RecentTransactions showAll />
       </div>
-    </DashboardShell>
-  )
+    </>
+  );
 }

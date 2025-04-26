@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { prisma } from "./prisma";
 import { auth } from "@/auth";
+import { TransactionStatus } from "./generated/prisma";
 
 export async function getUserWallet() {
   const session = await auth();
@@ -97,7 +98,7 @@ export async function depositToWallet(amount: number) {
         create: {
           amount: amount,
           type: "DEPOSIT",
-          status: "COMPLETED",
+          status: TransactionStatus.PENDING,
           reference,
           description: `Deposit of ${amount} NGN`,
         },

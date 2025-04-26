@@ -1,76 +1,104 @@
-"use client"
+"use client";
 
-import { useState, useEffect } from "react"
-import Link from "next/link"
-import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
-import { formatCurrency, formatDate } from "@/lib/utils"
-import { getUserTransactions } from "@/lib/data-actions"
-
-interface Transaction {
-  id: string
-  amount: number
-  status: string
-  createdAt: string
-  type: string
-  counterpartyName: string
-}
+import { useState } from "react";
+import Link from "next/link";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { formatCurrency, formatDate } from "@/lib/utils";
+import { useTransactions } from "@/hooks/use-transactions";
+import { Pagination } from "@/components/ui/pagination";
+import { Skeleton } from "@/components/ui/skeleton";
 
 interface RecentTransactionsProps {
-  showAll?: boolean
+  showAll?: boolean;
+  limit?: number;
 }
 
-export function RecentTransactions({ showAll = false }: RecentTransactionsProps) {
-  const [transactions, setTransactions] = useState<Transaction[]>([])
-  const [isLoading, setIsLoading] = useState(true)
+export function RecentTransactions({
+  showAll = false,
+  limit = 5,
+}: RecentTransactionsProps) {
+  const [page, setPage] = useState(1);
+  const pageSize = showAll ? 10 : limit;
 
-  useEffect(() => {
-    const fetchTransactions = async () => {
-      try {
-        const data = await getUserTransactions(showAll ? 100 : 5)
-        setTransactions(data)
-      } catch (error) {
-        console.error("Error fetching transactions:", error)
-      } finally {
-        setIsLoading(false)
-      }
-    }
-
-    fetchTransactions()
-  }, [showAll])
+  const { data, isLoading, isError } = useTransactions({
+    page,
+    limit: pageSize,
+  });
 
   const getStatusColor = (status: string) => {
     switch (status.toLowerCase()) {
       case "completed":
-        return "bg-green-500"
+        return "bg-green-500";
       case "pending":
-        return "bg-yellow-500"
+        return "bg-yellow-500";
       case "failed":
-        return "bg-red-500"
+        return "bg-red-500";
       case "processing":
-        return "bg-blue-500"
+        return "bg-blue-500";
       case "shipped":
-        return "bg-purple-500"
+        return "bg-purple-500";
       case "confirmed":
-        return "bg-teal-500"
+        return "bg-teal-500";
       default:
-        return "bg-gray-500"
+        return "bg-gray-500";
     }
+  };
+
+  if (isError) {
+    return (
+      <div className="flex flex-col items-center justify-center p-4 text-center">
+        <p className="text-muted-foreground">Failed to load transactions</p>
+        <Link href="/dashboard/transactions/new">
+          <Button size="sm" className="mt-2">
+            Start a new transaction
+          </Button>
+        </Link>
+      </div>
+    );
   }
 
   if (isLoading) {
-    return <div className="flex justify-center p-4">Loading transactions...</div>
+    return (
+      <div className="space-y-4">
+        <div className="rounded-md border">
+          <div className="grid grid-cols-5 gap-4 p-4 text-sm font-medium">
+            <div>Type</div>
+            <div>Amount</div>
+            <div className="hidden md:block">Date</div>
+            <div>Status</div>
+            <div className="text-right">Actions</div>
+          </div>
+          <div className="divide-y">
+            {Array.from({ length: pageSize }).map((_, i) => (
+              <div key={i} className="grid grid-cols-5 gap-4 p-4 text-sm">
+                <div className="space-y-1">
+                  <Skeleton className="h-5 w-20" />
+                  <Skeleton className="h-4 w-24" />
+                </div>
+                <Skeleton className="h-5 w-20" />
+                <Skeleton className="h-5 w-32 hidden md:block" />
+                <Skeleton className="h-5 w-20" />
+                <div className="text-right">
+                  <Skeleton className="h-8 w-16 ml-auto" />
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    );
   }
 
-  if (transactions.length === 0) {
+  if (data?.data.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center p-4 text-center">
         <p className="mb-2 text-muted-foreground">No transactions found</p>
-        <Link href="/transactions/new">
+        <Link href="/dashboard/transactions/new">
           <Button size="sm">Start a new transaction</Button>
         </Link>
       </div>
-    )
+    );
   }
 
   return (
@@ -84,21 +112,31 @@ export function RecentTransactions({ showAll = false }: RecentTransactionsProps)
           <div className="text-right">Actions</div>
         </div>
         <div className="divide-y">
-          {transactions.map((transaction) => (
-            <div key={transaction.id} className="grid grid-cols-5 gap-4 p-4 text-sm">
+          {data?.data.map((transaction) => (
+            <div
+              key={transaction.id}
+              className="grid grid-cols-5 gap-4 p-4 text-sm"
+            >
               <div className="truncate">
                 <span className="font-medium">{transaction.type}</span>
-                <span className="block text-xs text-muted-foreground">with {transaction.counterpartyName}</span>
+                <span className="block text-xs text-muted-foreground">
+                  with {transaction.counterpartyName}
+                </span>
               </div>
               <div>{formatCurrency(transaction.amount)}</div>
-              <div className="hidden md:block">{formatDate(transaction.createdAt)}</div>
+              <div className="hidden md:block">
+                {formatDate(transaction.createdAt)}
+              </div>
               <div>
-                <Badge variant="outline" className={`${getStatusColor(transaction.status)} text-white`}>
+                <Badge
+                  variant="outline"
+                  className={`${getStatusColor(transaction.status)} text-white`}
+                >
                   {transaction.status}
                 </Badge>
               </div>
               <div className="text-right">
-                <Link href={`/transactions/${transaction.id}`}>
+                <Link href={`/dashboard/transactions/${transaction.id}`}>
                   <Button variant="ghost" size="sm">
                     View
                   </Button>
@@ -108,9 +146,18 @@ export function RecentTransactions({ showAll = false }: RecentTransactionsProps)
           ))}
         </div>
       </div>
-      {!showAll && transactions.length > 0 && (
+
+      {showAll && data && data.meta.totalPages > 1 && (
+        <Pagination
+          currentPage={page}
+          totalPages={data.meta.totalPages}
+          onPageChange={setPage}
+        />
+      )}
+
+      {!showAll && data && data.data.length > 0 && (
         <div className="text-center">
-          <Link href="/transactions">
+          <Link href="/dashboard/transactions">
             <Button variant="outline" size="sm">
               View all transactions
             </Button>
@@ -118,5 +165,5 @@ export function RecentTransactions({ showAll = false }: RecentTransactionsProps)
         </div>
       )}
     </div>
-  )
+  );
 }

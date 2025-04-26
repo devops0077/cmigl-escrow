@@ -1,17 +1,17 @@
-"use client"
+"use client";
 
-import Link from "next/link"
-import { usePathname } from "next/navigation"
-import { cn } from "@/lib/utils"
-import { useSession } from "next-auth/react"
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+import { cn } from "@/lib/utils";
+import { useSession } from "next-auth/react";
 
 interface MainNavProps {
-  className?: string
+  className?: string;
 }
 
 export function MainNav({ className }: MainNavProps) {
-  const pathname = usePathname()
-  const { data: session } = useSession()
+  const pathname = usePathname();
+  const { data: session } = useSession();
 
   const routes = [
     {
@@ -33,23 +33,23 @@ export function MainNav({ className }: MainNavProps) {
       public: false,
     },
     {
-      href: "/transactions",
+      href: "/dashboard/transactions",
       label: "Transactions",
       active: pathname.startsWith("/transactions"),
       public: false,
     },
     {
-      href: "/wallet",
+      href: "/dashboard/wallet",
       label: "Wallet",
       active: pathname.startsWith("/wallet"),
       public: false,
     },
-  ]
+  ];
 
   return (
     <nav className={cn("flex items-center space-x-4 lg:space-x-6", className)}>
       {routes.map((route) => {
-        if (!route.public && !session) return null
+        if (!route.public && !session) return null;
 
         return (
           <Link
@@ -57,13 +57,13 @@ export function MainNav({ className }: MainNavProps) {
             href={route.href}
             className={cn(
               "text-sm font-medium transition-colors hover:text-primary",
-              route.active ? "text-primary" : "text-muted-foreground",
+              route.active ? "text-primary" : "text-muted-foreground"
             )}
           >
             {route.label}
           </Link>
-        )
+        );
       })}
     </nav>
-  )
+  );
 }

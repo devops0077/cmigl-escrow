@@ -165,7 +165,7 @@ export default function TransactionDetailPage() {
     isAdmin && ["PENDING", "SHIPPED", "CONFIRMED"].includes(transaction.status);
 
   return (
-    <DashboardShell>
+    <>
       <DashboardHeader
         heading={`Transaction #${transaction.id.slice(0, 8)}`}
         text={`Created on ${formatDate(transaction.createdAt)}`}
@@ -281,6 +281,6 @@ export default function TransactionDetailPage() {
           </CardFooter>
         </Card>
       </div>
-    </DashboardShell>
+    </>
   );
 }

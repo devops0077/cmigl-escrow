@@ -1,142 +1,35 @@
-"use client"
+"use client";
 
-import { useEffect, useState } from "react"
-import { useSession } from "next-auth/react"
-import { redirect } from "next/navigation"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { DashboardShell } from "@/components/dashboard/dashboard-shell"
-import { DashboardHeader } from "@/components/dashboard/dashboard-header"
-import { Overview } from "@/components/dashboard/overview"
-import { RecentTransactions } from "@/components/dashboard/recent-transactions"
-import { formatCurrency } from "@/lib/utils"
-import { getUserDashboardData } from "@/lib/data-actions"
-
-interface DashboardData {
-  walletBalance: number
-  pendingTransactions: number
-  completedTransactions: number
-  totalTransactions: number
-}
+import { Suspense } from "react";
+import { useSession } from "next-auth/react";
+import { redirect } from "next/navigation";
+import { DashboardSkeleton } from "@/components/skeletons/dashboard-skeleton";
+import { PageTransition } from "@/components/animations/page-transition";
+import { DashboardHeader } from "@/components/dashboard/dashboard-header";
+import { DashboardOverview } from "@/components/dashboard/dashboard-overview";
 
 export default function DashboardPage() {
-  const { data: session, status } = useSession()
-  const [dashboardData, setDashboardData] = useState<DashboardData>({
-    walletBalance: 0,
-    pendingTransactions: 0,
-    completedTransactions: 0,
-    totalTransactions: 0,
-  })
-  const [isLoading, setIsLoading] = useState(true)
-
-  useEffect(() => {
-    if (status === "authenticated") {
-      const fetchData = async () => {
-        try {
-          const data = await getUserDashboardData()
-          setDashboardData(data)
-        } catch (error) {
-          console.error("Error fetching dashboard data:", error)
-        } finally {
-          setIsLoading(false)
-        }
-      }
-
-      fetchData()
-    }
-  }, [status])
+  const { data: session, status } = useSession();
 
   if (status === "loading") {
-    return <div className="flex h-screen items-center justify-center">Loading...</div>
+    return (
+      <div className="flex h-screen items-center justify-center">
+        Loading...
+      </div>
+    );
   }
 
   if (status === "unauthenticated") {
-    redirect("/auth/login?callbackUrl=/dashboard")
+    redirect("/auth/login?callbackUrl=/dashboard");
   }
 
   return (
-    <DashboardShell>
-      <DashboardHeader heading="Dashboard" text="Welcome back! Here's an overview of your escrow activities." />
-      <Tabs defaultValue="overview" className="space-y-4">
-        <TabsList>
-          <TabsTrigger value="overview">Overview</TabsTrigger>
-          <TabsTrigger value="transactions">Transactions</TabsTrigger>
-        </TabsList>
-        <TabsContent value="overview" className="space-y-4">
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Wallet Balance</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">
-                  {isLoading ? "Loading..." : formatCurrency(dashboardData.walletBalance)}
-                </div>
-                <p className="text-xs text-muted-foreground">Available for transactions</p>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Pending Transactions</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">{isLoading ? "Loading..." : dashboardData.pendingTransactions}</div>
-                <p className="text-xs text-muted-foreground">Awaiting completion</p>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Completed Transactions</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">
-                  {isLoading ? "Loading..." : dashboardData.completedTransactions}
-                </div>
-                <p className="text-xs text-muted-foreground">Successfully completed</p>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Total Transactions</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">{isLoading ? "Loading..." : dashboardData.totalTransactions}</div>
-                <p className="text-xs text-muted-foreground">All-time transactions</p>
-              </CardContent>
-            </Card>
-          </div>
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
-            <Card className="col-span-4">
-              <CardHeader>
-                <CardTitle>Transaction Overview</CardTitle>
-              </CardHeader>
-              <CardContent className="pl-2">
-                <Overview />
-              </CardContent>
-            </Card>
-            <Card className="col-span-3">
-              <CardHeader>
-                <CardTitle>Recent Transactions</CardTitle>
-                <CardDescription>Your most recent escrow activities</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <RecentTransactions />
-              </CardContent>
-            </Card>
-          </div>
-        </TabsContent>
-        <TabsContent value="transactions" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>All Transactions</CardTitle>
-              <CardDescription>A complete history of your escrow transactions</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <RecentTransactions showAll />
-            </CardContent>
-          </Card>
-        </TabsContent>
-      </Tabs>
-    </DashboardShell>
-  )
+    <PageTransition>
+      <DashboardHeader
+        heading="Dashboard"
+        text="Welcome back! Here's an overview of your escrow activities."
+      />
+      <DashboardOverview />
+    </PageTransition>
+  );
 }

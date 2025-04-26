@@ -4,6 +4,87 @@ import { revalidatePath } from "next/cache";
 import { prisma } from "./prisma";
 import { TransactionStatus } from "./generated/prisma";
 import { auth } from "@/auth";
+import { compare } from "bcryptjs";
+import { createNotification } from "./notification-service";
+
+export async function updateUserProfile({
+  name,
+  username,
+  email,
+}: Partial<{
+  name: string;
+  username: string;
+  email: string;
+}>) {
+  const session = await auth();
+
+  if (!session?.user?.email) {
+    throw new Error("Unauthorized");
+  }
+
+  const user = await prisma.user.findUnique({
+    where: { email: session.user.email },
+  });
+
+  if (!user) {
+    throw new Error("User not found");
+  }
+
+  const updatedUser = await prisma.user.update({
+    where: { id: user.id },
+    data: {
+      name,
+      username,
+      email,
+    },
+  });
+
+  revalidatePath("/dashboard");
+  revalidatePath("/profile");
+
+  return updatedUser;
+}
+export async function updateUserPassword({
+  currentPassword,
+  newPassword,
+}: {
+  currentPassword: string;
+  newPassword: string;
+}) {
+  const session = await auth();
+
+  if (!session?.user?.email) {
+    throw new Error("Unauthorized");
+  }
+
+  const user = await prisma.user.findUnique({
+    where: { email: session.user.email },
+  });
+
+  if (!user) {
+    throw new Error("User not found");
+  }
+
+  // Check if the current password is correct
+  // @ts-ignore
+  const isPasswordValid = await compare(currentPassword, user.password);
+  if (!isPasswordValid) {
+    throw new Error("Current password is incorrect");
+  }
+
+  // Update the password
+  const updatedUser = await prisma.user.update({
+    where: { id: user.id },
+    data: {
+      password: newPassword,
+    },
+  });
+
+  revalidatePath("/dashboard");
+  revalidatePath("/profile");
+
+  return updatedUser;
+}
 
 export async function getUserDashboardData() {
   const session = await auth();
@@ -299,6 +380,30 @@ export async function createTransaction({
     },
   });
 
+  // Create notification for buyer
+  await createNotification({
+    userId: buyer.id,
+    type: "TRANSACTION_CREATED",
+    title: "Transaction Created",
+    message: `You have created a new transaction for ${amount.toFixed(
+      2
+    )} ${productCategory}`,
+    data: { transactionId: transaction.id },
+  });
+
+  // Create notification for seller
+  await createNotification({
+    userId: sellerId,
+    type: "TRANSACTION_CREATED",
+    title: "New Transaction",
+    message: `${
+      buyer.name || buyer.username
+    } has created a new transaction with you for ${amount.toFixed(
+      2
+    )} ${productCategory}`,
+    data: { transactionId: transaction.id },
+  });
+
   revalidatePath("/dashboard");
   revalidatePath("/transactions");
   revalidatePath("/wallet");
@@ -329,6 +434,20 @@ export async function updateTransactionStatus({
 
   const transaction = await prisma.transaction.findUnique({
     where: { id: transactionId },
+    include: {
+      buyer: {
+        select: {
+          name: true,
+          username: true,
+        },
+      },
+      seller: {
+        select: {
+          name: true,
+          username: true,
+        },
+      },
+    },
   });
 
   if (!transaction) {
@@ -358,6 +477,64 @@ export async function updateTransactionStatus({
     data: { status },
   });
 
+  // Create notifications based on status change
+  const statusMessages = {
+    SHIPPED: {
+      buyer: `${
+        transaction.seller.name || transaction.seller.username
+      } has shipped your order.`,
+      seller: `You have marked the transaction as shipped.`,
+    },
+    CONFIRMED: {
+      buyer: `You have confirmed receipt of the order.`,
+      seller: `${
+        transaction.buyer.name || transaction.buyer.username
+      } has confirmed receipt of the order.`,
+    },
+    COMPLETED: {
+      buyer: `Your transaction has been completed. Funds have been released to the seller.`,
+      seller: `Your transaction has been completed. Funds have been released to your wallet.`,
+    },
+    FAILED: {
+      buyer: `Your transaction has been marked as failed. Funds have been refunded to your wallet.`,
+      seller: `Your transaction has been marked as failed.`,
+    },
+    CANCELLED: {
+      buyer: `Your transaction has been cancelled.`,
+      seller: `Your transaction has been cancelled.`,
+    },
+    PENDING: {
+      buyer: `Your transaction status has been updated to pending.`,
+      seller: `Your transaction status has been updated to pending.`,
+    },
+    PROCESSING: {
+      buyer: `Your transaction is now being processed.`,
+      seller: `Your transaction is now being processed.`,
+    },
+  };
+
+  // Create notification for buyer
+  await createNotification({
+    userId: transaction.buyerId,
+    type: "TRANSACTION_STATUS_CHANGED",
+    title: `Transaction ${status}`,
+    message:
+      statusMessages[status]?.buyer ||
+      `Your transaction status has been updated to ${status}.`,
+    data: { transactionId, status },
+  });
+
+  // Create notification for seller
+  await createNotification({
+    userId: transaction.sellerId,
+    type: "TRANSACTION_STATUS_CHANGED",
+    title: `Transaction ${status}`,
+    message:
+      statusMessages[status]?.seller ||
+      `Your transaction status has been updated to ${status}.`,
+    data: { transactionId, status },
+  });
+
   // If transaction is completed, release funds to seller
   if (status === "COMPLETED") {
     const amountToSeller = transaction.amount - transaction.escrowFee;
@@ -378,6 +555,17 @@ export async function updateTransactionStatus({
         },
       },
     });
+
+    // Create wallet notification for seller
+    await createNotification({
+      userId: transaction.sellerId,
+      type: "WALLET_UPDATED",
+      title: "Funds Received",
+      message: `${amountToSeller.toFixed(
+        2
+      )} has been added to your wallet from completed transaction.`,
+      data: { transactionId, amount: amountToSeller },
+    });
   }
 
   // If transaction failed, refund buyer
@@ -397,6 +585,17 @@ export async function updateTransactionStatus({
           },
         },
       },
+    });
+
+    // Create wallet notification for buyer
+    await createNotification({
+      userId: transaction.buyerId,
+      type: "WALLET_UPDATED",
+      title: "Refund Received",
+      message: `${transaction.amount.toFixed(
+        2
+      )} has been refunded to your wallet from failed transaction.`,
+      data: { transactionId, amount: transaction.amount },
     });
   }
 

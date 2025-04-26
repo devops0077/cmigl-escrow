@@ -1,22 +1,22 @@
-"use client"
+"use client";
 
-import * as React from "react"
-import Link from "next/link"
-import { usePathname } from "next/navigation"
-import { cn } from "@/lib/utils"
-import { Button } from "@/components/ui/button"
-import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
-import { Menu } from "lucide-react"
-import { useSession } from "next-auth/react"
+import * as React from "react";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
+import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import { Menu } from "lucide-react";
+import { useSession } from "next-auth/react";
 
 interface MobileNavProps {
-  className?: string
+  className?: string;
 }
 
 export function MobileNav({ className }: MobileNavProps) {
-  const pathname = usePathname()
-  const [open, setOpen] = React.useState(false)
-  const { data: session } = useSession()
+  const pathname = usePathname();
+  const [open, setOpen] = React.useState(false);
+  const { data: session } = useSession();
 
   const routes = [
     {
@@ -32,24 +32,24 @@ export function MobileNav({ className }: MobileNavProps) {
       public: true,
     },
     {
-      href: "/dashboard",
+      href: "/dashboard/dashboard",
       label: "Dashboard",
       active: pathname.startsWith("/dashboard"),
       public: false,
     },
     {
-      href: "/transactions",
+      href: "/dashboard/transactions",
       label: "Transactions",
       active: pathname.startsWith("/transactions"),
       public: false,
     },
     {
-      href: "/wallet",
+      href: "/dashboard/wallet",
       label: "Wallet",
       active: pathname.startsWith("/wallet"),
       public: false,
     },
-  ]
+  ];
 
   return (
     <div className={className}>
@@ -64,15 +64,19 @@ export function MobileNav({ className }: MobileNavProps) {
             <span className="sr-only">Toggle Menu</span>
           </Button>
         </SheetTrigger>
-        <SheetContent side="left" className="pr-0">
+        <SheetContent side="left" className="pr-0 py-4">
           <div className="px-7">
-            <Link href="/" className="flex items-center" onClick={() => setOpen(false)}>
+            <Link
+              href="/"
+              className="flex items-center"
+              onClick={() => setOpen(false)}
+            >
               <span className="font-bold text-primary">Vokun Escrow</span>
             </Link>
           </div>
           <div className="flex flex-col space-y-3 px-7 pt-10">
             {routes.map((route) => {
-              if (!route.public && !session) return null
+              if (!route.public && !session) return null;
 
               return (
                 <Link
@@ -81,12 +85,12 @@ export function MobileNav({ className }: MobileNavProps) {
                   onClick={() => setOpen(false)}
                   className={cn(
                     "text-sm font-medium transition-colors hover:text-primary",
-                    route.active ? "text-primary" : "text-muted-foreground",
+                    route.active ? "text-primary" : "text-muted-foreground"
                   )}
                 >
                   {route.label}
                 </Link>
-              )
+              );
             })}
             {!session && (
               <div className="flex flex-col space-y-3 pt-4">
@@ -104,5 +108,5 @@ export function MobileNav({ className }: MobileNavProps) {
         </SheetContent>
       </Sheet>
     </div>
-  )
+  );
 }

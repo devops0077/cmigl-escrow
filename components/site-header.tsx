@@ -24,22 +24,9 @@ export function SiteHeader() {
           <span className="text-xl font-bold text-primary">Vokun Escrow</span>
         </Link>
         <MainNav className="mx-6 hidden md:flex" />
-        <MobileNav className="md:hidden" />
-        <div className="ml-auto flex items-center space-x-4">
-          {session ? (
-            <UserNav />
-          ) : (
-            <div className="flex items-center gap-2">
-              <Link href="/auth/login">
-                <Button variant="ghost" size="sm">
-                  Log in
-                </Button>
-              </Link>
-              <Link href="/auth/register">
-                <Button size="sm">Sign up</Button>
-              </Link>
-            </div>
-          )}
+        <MobileNav className="md:hidden ml-auto" />
+        <div className="ml-auto hidden md:flex items-center space-x-4">
+          {session ? <UserNav /> : null}
         </div>
       </div>
     </header>

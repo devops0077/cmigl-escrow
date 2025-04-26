@@ -36,6 +36,7 @@ import {
   withdrawFromWallet,
 } from "@/lib/wallet-actions";
 import { toast } from "sonner";
+import { queryClient } from "@/lib/react-query-provider";
 
 const depositFormSchema = z.object({
   amount: z.coerce.number().positive({
@@ -119,6 +120,8 @@ export default function WalletPage() {
         window.location.href = result.redirectUrl;
         return;
       }
+
+      queryClient.refetchQueries({ queryKey: ["wallet-transactions"] });
 
       setWalletBalance(result.newBalance);
       toast.success("Deposit successful", {

@@ -39,22 +39,23 @@ model Session {
 }
 
 model User {
-  id                 String        @id @default(cuid())
+  id                 String         @id @default(cuid())
   name               String?
-  email              String?       @unique
-  username           String?       @unique
+  email              String?        @unique
+  username           String?        @unique
   emailVerified      DateTime?
   image              String?
   password           String?
-  role               UserRole      @default(USER)
+  role               UserRole       @default(USER)
   bankDetails        BankDetails?
   wallet             Wallet?
-  buyerTransactions  Transaction[] @relation("BuyerTransactions")
-  sellerTransactions Transaction[] @relation("SellerTransactions")
+  buyerTransactions  Transaction[]  @relation("BuyerTransactions")
+  sellerTransactions Transaction[]  @relation("SellerTransactions")
   accounts           Account[]
   sessions           Session[]
-  createdAt          DateTime      @default(now())
-  updatedAt          DateTime      @updatedAt
+  notifications      Notification[]
+  createdAt          DateTime       @default(now())
+  updatedAt          DateTime       @updatedAt
 }
 
 model VerificationToken {
@@ -66,13 +67,14 @@ model VerificationToken {
 }
 
 model Wallet {
-  id           String              @id @default(cuid())
-  userId       String              @unique
-  balance      Float               @default(0)
-  user         User                @relation(fields: [userId], references: [id], onDelete: Cascade)
-  transactions WalletTransaction[]
-  createdAt    DateTime            @default(now())
-  updatedAt    DateTime            @updatedAt
+  id               String              @id @default(cuid())
+  userId           String              @unique
+  balance          Float               @default(0)
+  ballanceInEscrow Float               @default(0)
+  user             User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  transactions     WalletTransaction[]
+  createdAt        DateTime            @default(now())
+  updatedAt        DateTime            @updatedAt
 }
 
 model WalletTransaction {
@@ -123,6 +125,19 @@ model Fee {
   updatedAt       DateTime @updatedAt
 }
 
+model Notification {
+  id        String           @id @default(cuid())
+  userId    String
+  type      NotificationType
+  title     String
+  message   String
+  read      Boolean          @default(false)
+  data      Json? // For storing additional data related to the notification
+  user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime         @default(now())
+  updatedAt DateTime         @updatedAt
+}
+
 enum UserRole {
   USER
   ADMIN
@@ -144,4 +159,12 @@ enum TransactionStatus {
   CANCELLED
   SHIPPED
   CONFIRMED
+}
+
+enum NotificationType {
+  TRANSACTION_CREATED
+  TRANSACTION_STATUS_CHANGED
+  WALLET_UPDATED
+  SYSTEM_NOTIFICATION
+  ADMIN_NOTIFICATION
 }

@@ -112,6 +112,32 @@ export class EmailService {
       html,
     });
   }
+  async sendPasswordResetEmail(email: string, token: string) {
+    const resetUrl = `${process.env.NEXTAUTH_URL}/auth/reset-password?token=${token}`;
+
+    const subject = "Reset Your Vokun Escrow Password";
+    const text = `
+      Hello,
+      
+      You requested to reset your password for your Vokun Escrow account.
+      
+      Please click the link below to reset your password:
+      ${resetUrl}
+      
+      This link will expire in 1 hour.
+      
+      If you did not request a password reset, please ignore this email.
+      
+      Regards,
+      Vokun Escrow Team
+    `;
+
+    await this.sendEmail({
+      to: email,
+      subject,
+      html: text,
+    });
+  }
 }
 
 export const emailService = new EmailService();

@@ -43,11 +43,13 @@ model User {
   name               String?
   email              String?             @unique
   username           String?             @unique
+  phone              String?
   emailVerified      DateTime?
   image              String?
   password           String?
   role               UserRole            @default(USER)
   isActive           Boolean             @default(false)
+  termsAccepted      Boolean             @default(false)
   registrationFee    RegistrationFee?
   bankDetails        BankDetails?
   wallet             Wallet?
@@ -57,6 +59,8 @@ model User {
   sessions           Session[]
   notifications      Notification[]
   verificationTokens VerificationToken[]
+  feedbacksGiven     Feedback[]          @relation("FeedbackGiver")
+  feedbacksReceived  Feedback[]          @relation("FeedbackReceiver")
   createdAt          DateTime            @default(now())
   updatedAt          DateTime            @updatedAt
 }
@@ -128,6 +132,7 @@ model Transaction {
   paymentReference String?
   buyer            User              @relation("BuyerTransactions", fields: [buyerId], references: [id])
   seller           User              @relation("SellerTransactions", fields: [sellerId], references: [id])
+  feedback         Feedback[]
   createdAt        DateTime          @default(now())
   updatedAt        DateTime          @updatedAt
 }
@@ -176,4 +181,19 @@ enum NotificationType {
   SYSTEM_NOTIFICATION
   ADMIN_NOTIFICATION
   REGISTRATION
+}
+
+model Feedback {
+  id            String      @id @default(cuid())
+  transactionId String
+  giverId       String
+  receiverId    String
+  rating        Int // 1-5 star rating
+  comment       String?
+  isPublic      Boolean     @default(false) // Whether this can be shown as testimonial
+  transaction   Transaction @relation(fields: [transactionId], references: [id], onDelete: Cascade)
+  giver         User        @relation("FeedbackGiver", fields: [giverId], references: [id], onDelete: Cascade)
+  receiver      User        @relation("FeedbackReceiver", fields: [receiverId], references: [id], onDelete: Cascade)
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
 }

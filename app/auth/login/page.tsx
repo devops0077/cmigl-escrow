@@ -29,6 +29,8 @@ import { toast } from "sonner";
 import { FadeIn } from "@/components/animations/fade-in";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { CheckCircle2, Info } from "lucide-react";
+import { InActiveAccountError } from "@/lib/error-class";
+import { AuthError } from "next-auth";
 
 const formSchema = z.object({
   email: z.string().email({
@@ -68,8 +70,9 @@ export default function LoginPage() {
       });
 
       if (result?.error) {
-        if (result.error.includes("Account not active")) {
-          // Find the user ID to redirect to payment page
+        console.log(result);
+        if (result?.code?.includes("inactive_account")) {
+          setError("Your account is not active. Please contact support.");
           const response = await fetch(
             `/api/auth/user-by-email?email=${encodeURIComponent(values.email)}`
           );
@@ -79,17 +82,11 @@ export default function LoginPage() {
             router.push(`/auth/payment?userId=${data.userId}`);
             return;
           }
+        } else if (result.error.includes("CredentialsSignin")) {
+          setError("Invalid email or password.");
         }
-
-        setError(result.error);
         return;
       }
-
-      if (result.code?.includes("CredentialsSignin")) {
-        setError("Invalid email or password");
-        return;
-      }
-
       toast.success("Login successful", {
         description: "You have been logged in successfully.",
       });

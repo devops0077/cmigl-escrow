@@ -5,17 +5,26 @@ import { revalidatePath } from "next/cache";
 import { prisma } from "./prisma";
 import { emailService } from "./email-service";
 import { nanoid } from "nanoid";
+import {
+  CustomError,
+  InActiveAccountError,
+  UserNotFoundError,
+} from "./error-class";
 
 export async function registerUser({
   name,
   email,
   username,
   password,
+  phone,
+  termsAccepted,
 }: {
   name: string;
   email: string;
   username: string;
   password: string;
+  phone?: string;
+  termsAccepted?: boolean;
 }) {
   // Check if user already exists
   const existingUser = await prisma.user.findFirst({
@@ -33,6 +42,11 @@ export async function registerUser({
     }
   }
 
+  // Validate terms acceptance
+  if (!termsAccepted) {
+    throw new Error("You must accept the terms and conditions");
+  }
+
   // Hash password
   const hashedPassword = await hash(password, 10);
 
@@ -42,8 +56,10 @@ export async function registerUser({
       name: name.trim(),
       email: email.trim().toLowerCase(),
       username: username.trim().toLowerCase(),
+      phone: phone?.trim(),
       password: hashedPassword,
       isActive: false,
+      termsAccepted: termsAccepted || false,
       wallet: {
         create: {
           balance: 0,
@@ -94,11 +110,11 @@ export async function verifyEmail(token: string) {
   });
 
   if (!verificationToken) {
-    throw new Error("Invalid verification token");
+    throw new CustomError("Invalid verification token");
   }
 
   if (verificationToken.expires < new Date()) {
-    throw new Error("Verification token has expired");
+    throw new CustomError("Verification token has expired");
   }
 
   // Mark email as verified but user remains inactive until registration fee is paid
@@ -129,15 +145,15 @@ export async function payRegistrationFee(
   });
 
   if (!user) {
-    throw new Error("User not found");
+    throw new UserNotFoundError("User not found");
   }
 
   if (!user.registrationFee) {
-    throw new Error("Registration fee record not found");
+    throw new CustomError("Registration fee record not found");
   }
 
   if (user.registrationFee.paid) {
-    throw new Error("Registration fee already paid");
+    throw new CustomError("Registration fee already paid");
   }
 
   // Update registration fee status
@@ -199,8 +215,9 @@ export async function verifyCredentials(email: string, password: string) {
 
   // Check if user is active (has paid registration fee)
   if (!user.isActive) {
-    throw new Error(
-      "Account not active. Please complete registration by paying the one-time fee."
+    throw new InActiveAccountError(
+      "inactive_account"
+      // "Account not active. Please complete registration by paying the one-time fee."
     );
   }
 
@@ -246,6 +263,77 @@ export async function resendVerificationEmail(email: string) {
 
   // Send verification email
   await emailService.sendVerificationEmail(email, token);
+
+  return { success: true };
+}
+
+// Add password reset functionality
+export async function requestPasswordReset(email: string) {
+  const user = await prisma.user.findUnique({
+    where: { email },
+  });
+
+  if (!user) {
+    // Don't reveal if user exists for security
+    return { success: true };
+  }
+
+  // Delete any existing tokens
+  await prisma.verificationToken.deleteMany({
+    where: { userId: user.id, token: { contains: "reset_" } },
+  });
+
+  // Create reset token
+  const token = `reset_${nanoid(32)}`;
+  const expires = new Date();
+  expires.setHours(expires.getHours() + 1); // 1 hour expiry
+
+  await prisma.verificationToken.create({
+    data: {
+      userId: user.id,
+      token,
+      expires,
+    },
+  });
+
+  // Send password reset email
+  try {
+    await emailService.sendPasswordResetEmail(email, token);
+  } catch (error) {
+    console.error("Failed to send password reset email:", error);
+    throw new Error("Failed to send password reset email");
+  }
+
+  return { success: true };
+}
+
+export async function resetPassword(token: string, newPassword: string) {
+  const verificationToken = await prisma.verificationToken.findUnique({
+    where: { token },
+    include: { user: true },
+  });
+
+  if (!verificationToken || !token.startsWith("reset_")) {
+    throw new Error("Invalid reset token");
+  }
+
+  if (verificationToken.expires < new Date()) {
+    throw new Error("Reset token has expired");
+  }
+
+  // Hash new password
+  const hashedPassword = await hash(newPassword, 10);
+
+  // Update user password
+  await prisma.user.update({
+    where: { id: verificationToken.userId },
+    data: { password: hashedPassword },
+  });
+
+  // Delete the used token
+  await prisma.verificationToken.delete({
+    where: { id: verificationToken.id },
+  });
 
   return { success: true };
 }

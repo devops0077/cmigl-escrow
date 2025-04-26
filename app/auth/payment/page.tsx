@@ -69,8 +69,8 @@ export default function RegistrationPaymentPage() {
   };
 
   return (
-    <FadeIn>
-      <div className="container flex h-screen w-screen flex-col items-center justify-center">
+    <>
+      <div className=" flex  flex-col items-center justify-center">
         <Card className="w-full max-w-md">
           <CardHeader className="space-y-1">
             <CardTitle className="text-2xl font-bold">
@@ -122,6 +122,6 @@ export default function RegistrationPaymentPage() {
           </CardFooter>
         </Card>
       </div>
-    </FadeIn>
+    </>
   );
 }

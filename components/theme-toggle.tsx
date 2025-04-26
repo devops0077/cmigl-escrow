@@ -3,19 +3,45 @@
 import { useTheme } from "next-themes";
 import { Button } from "@/components/ui/button";
 import { Moon, Sun } from "lucide-react";
+import { cn } from "@/lib/utils";
 
-export function ThemeToggle() {
+export function ThemeToggle({
+  children,
+  isCollapsed,
+  isMobile = false,
+}: {
+  children?: React.ReactNode;
+  isCollapsed?: boolean;
+  isMobile?: boolean;
+}) {
   const { setTheme, theme } = useTheme();
 
   return (
-    <Button
-      variant="ghost"
-      size="icon"
-      onClick={() => setTheme(theme === "light" ? "dark" : "light")}
-      aria-label="Toggle theme"
-    >
-      <Sun className="h-[1.2rem] w-[1.2rem] rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
-      <Moon className="absolute h-[1.2rem] w-[1.2rem] rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
-    </Button>
+    <>
+      <Button
+        variant="ghost"
+        onClick={() => setTheme(theme === "light" ? "dark" : "light")}
+        aria-label="Toggle theme"
+        className={`relative w-full justify-baseline  rounded-md text-sm font-medium transition-colors focus:outline-none focus:ring-0  disabled:pointer-events-none disabled:opacity-50 dark:focus:ring-offset-slate-900 `}
+      >
+        {theme === "dark" ? (
+          <Sun
+            className={cn(
+              "text-muted-foreground group-hover:text-primary",
+              isMobile && "text-foreground "
+            )}
+          />
+        ) : (
+          <Moon
+            className={cn(
+              "text-muted-foreground group-hover:text-primary",
+              isMobile && "text-foreground "
+            )}
+          />
+        )}
+
+        {!isCollapsed && <span className="ml-2">Toggle Theme</span>}
+      </Button>
+    </>
   );
 }

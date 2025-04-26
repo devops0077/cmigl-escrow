@@ -23,6 +23,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useSession, signOut } from "next-auth/react";
 import { formatCurrency } from "@/lib/utils";
 import { useWalletBalance } from "@/hooks/use-wallet-balance";
+import { ThemeToggle } from "../theme-toggle";
 
 export function DashboardMobileNav() {
   const pathname = usePathname();
@@ -48,7 +49,7 @@ export function DashboardMobileNav() {
 
   const adminNavItems = [
     { name: "Admin Panel", href: "/admin", icon: Shield },
-    { name: "Users", href: "/admin/users", icon: Users },
+    // { name: "Users", href: "/admin/users", icon: Users },
   ];
 
   const handleLogout = async () => {
@@ -272,6 +273,7 @@ export function DashboardMobileNav() {
                             {item.name}
                           </Link>
                         ))}
+                        <ThemeToggle isMobile={true} />
                       </nav>
                     </div>
                   </div>

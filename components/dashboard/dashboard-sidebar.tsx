@@ -41,6 +41,7 @@ import { UserAvatar } from "@/components/user-avatar";
 import { formatCurrency } from "@/lib/utils";
 import { useWalletBalance } from "@/hooks/use-wallet-balance";
 import { ScrollArea } from "../ui/scroll-area";
+import { ThemeToggle } from "../theme-toggle";
 
 export function DashboardSidebar() {
   const pathname = usePathname();
@@ -286,6 +287,28 @@ export function DashboardSidebar() {
                     </TooltipProvider>
                   </SidebarMenuItem>
                 ))}
+                <SidebarMenuItem>
+                  <TooltipProvider delayDuration={0}>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <SidebarMenuButton
+                          asChild
+                          className={cn("transition-all duration-200")}
+                        >
+                          <ThemeToggle
+                            isMobile={false}
+                            isCollapsed={isCollapsed}
+                          />
+                        </SidebarMenuButton>
+                      </TooltipTrigger>
+                      {isCollapsed && (
+                        <TooltipContent side="right">
+                          Toggle Theme
+                        </TooltipContent>
+                      )}
+                    </Tooltip>
+                  </TooltipProvider>
+                </SidebarMenuItem>
               </SidebarMenu>
             </SidebarGroupContent>
           </SidebarGroup>

@@ -26,12 +26,13 @@ export default function RootLayout({
           <AuthProvider>
             <ThemeProvider
               attribute="class"
-              defaultTheme="light"
+              defaultTheme="system"
               enableSystem
               disableTransitionOnChange
             >
               {children}
               <Toaster
+                className="group toaster"
                 toastOptions={{
                   classNames: {
                     toast:

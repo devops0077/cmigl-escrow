@@ -120,8 +120,8 @@ export function DashboardOverview() {
               </CardContent>
             </Card>
           </div>
-          <div className="w-full grid gap-4 md:grid-cols-2 lg:grid-cols-7">
-            <Card className="col-span-4 w-full">
+          <div className="w-full flex flex-col gap-4 md:flex-row ">
+            <Card className=" w-full">
               <CardHeader>
                 <CardTitle>Transaction Overview</CardTitle>
               </CardHeader>
@@ -129,14 +129,14 @@ export function DashboardOverview() {
                 <Overview />
               </CardContent>
             </Card>
-            <Card className="col-span-3 w-full">
+            <Card className=" w-full">
               <CardHeader>
                 <CardTitle>Recent Transactions</CardTitle>
                 <CardDescription>
                   Your most recent escrow activities
                 </CardDescription>
               </CardHeader>
-              <CardContent className="w-full">
+              <CardContent className="w-full p-2 md:p-4">
                 <RecentTransactions />
               </CardContent>
             </Card>

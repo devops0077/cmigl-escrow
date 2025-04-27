@@ -10,8 +10,10 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { RecentTransactions } from "@/components/dashboard/recent-transactions";
-import { Search } from "lucide-react";
+import { Plus, Search } from "lucide-react";
 import { FadeIn } from "@/components/animations/fade-in";
+import { Button } from "../ui/button";
+import Link from "next/link";
 
 export function TransactionsOverview() {
   const [searchQuery, setSearchQuery] = useState("");
@@ -31,20 +33,28 @@ export function TransactionsOverview() {
               onChange={(e) => setSearchQuery(e.target.value)}
             />
           </div>
-          <Select value={statusFilter} onValueChange={setStatusFilter}>
-            <SelectTrigger className="w-full md:w-[180px]">
-              <SelectValue placeholder="Filter by status" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Statuses</SelectItem>
-              <SelectItem value="pending">Pending</SelectItem>
-              <SelectItem value="processing">Processing</SelectItem>
-              <SelectItem value="shipped">Shipped</SelectItem>
-              <SelectItem value="confirmed">Confirmed</SelectItem>
-              <SelectItem value="completed">Completed</SelectItem>
-              <SelectItem value="failed">Failed</SelectItem>
-            </SelectContent>
-          </Select>
+          <div className=" w-full md:w-fit flex flex-row items-center justify-between space-x-2 md:space-x-0 md:justify-end">
+            <Select value={statusFilter} onValueChange={setStatusFilter}>
+              <SelectTrigger className="w-full md:w-[180px]">
+                <SelectValue placeholder="Filter by status" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Statuses</SelectItem>
+                <SelectItem value="pending">Pending</SelectItem>
+                <SelectItem value="processing">Processing</SelectItem>
+                <SelectItem value="shipped">Shipped</SelectItem>
+                <SelectItem value="confirmed">Confirmed</SelectItem>
+                <SelectItem value="completed">Completed</SelectItem>
+                <SelectItem value="failed">Failed</SelectItem>
+              </SelectContent>
+            </Select>
+            <Button asChild variant="outline" className="inline-flex md:hidden">
+              <Link href="/dashboard/transactions/new">
+                <Plus className="mr-2 h-4 w-4" />
+                New Transaction
+              </Link>
+            </Button>
+          </div>
         </div>
         <RecentTransactions showAll />
       </div>

@@ -23,7 +23,7 @@ export async function registerUser({
   email: string;
   username: string;
   password: string;
-  phone?: string;
+  phone: string;
   termsAccepted?: boolean;
 }) {
   // Check if user already exists

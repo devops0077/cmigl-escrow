@@ -8,6 +8,8 @@ export const publicRoutes = [
   "/new-verification",
   "/api/referral/validate",
   "/api/auth/compare",
+  "/api/send-email",
+  "/api/users/search",
 ];
 
 /**

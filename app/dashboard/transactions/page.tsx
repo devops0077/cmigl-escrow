@@ -14,12 +14,12 @@ export default function TransactionsPage() {
         heading="Transactions"
         text="Manage and track all your escrow transactions."
       >
-        <Link href="/dashboard/transactions/new">
-          <Button>
+        <Button asChild variant="default" className="hidden md:inline-flex">
+          <Link href="/dashboard/transactions/new">
             <Plus className="mr-2 h-4 w-4" />
             New Transaction
-          </Button>
-        </Link>
+          </Link>
+        </Button>
       </DashboardHeader>
       <Suspense fallback={<TransactionsSkeleton />}>
         <TransactionsOverview />

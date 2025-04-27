@@ -72,7 +72,7 @@ export default function LoginPage() {
       if (result?.error) {
         console.log(result);
         if (result?.code?.includes("inactive_account")) {
-          setError("Your account is not active. Please contact support.");
+          setError("Your account is not active. Redirecting...");
           const response = await fetch(
             `/api/auth/user-by-email?email=${encodeURIComponent(values.email)}`
           );

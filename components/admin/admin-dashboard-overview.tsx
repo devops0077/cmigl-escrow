@@ -23,7 +23,7 @@ export function AdminDashboardOverview() {
   const { data, isLoading } = useAdminDashboardOverview();
 
   return (
-    <div className="grid gap-4 md:gap-8">
+    <div className="grid gap-4 md:gap-8 px-4 md:px-8 ">
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -112,7 +112,7 @@ export function AdminDashboardOverview() {
               </CardDescription>
             </CardHeader>
             <CardContent className="pl-2">
-              <AdminOverviewChart />
+              <AdminOverviewChart data={data?.chartData || []} />
             </CardContent>
           </Card>
         </TabsContent>

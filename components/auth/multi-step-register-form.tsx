@@ -301,8 +301,8 @@ export function MultiStepRegisterForm() {
           </form>
         </Form>
       )}
-      
-      {step === 3 && (
+
+      {step === 3 && !success && (
         <Form {...form}>
           <form onSubmit={(e) => e.preventDefault()} className="space-y-4">
             <FormField
@@ -314,7 +314,7 @@ export function MultiStepRegisterForm() {
                     <Checkbox
                       checked={field.value}
                       onCheckedChange={(checked) => {
-                        field.onChange(checked);
+                        // field.onChange(checked);
                         if (checked && !termsDrawerOpen) {
                           setTermsDrawerOpen(true);
                         }
@@ -363,7 +363,7 @@ export function MultiStepRegisterForm() {
         </Form>
       )}
       <Sheet open={termsDrawerOpen} onOpenChange={setTermsDrawerOpen}>
-        <SheetContent className=" ">
+        <SheetContent className="w-full sm:max-w-lg p-0 ">
           <SheetHeader>
             <SheetHeader>Terms and Conditions</SheetHeader>
             <SheetDescription className="text-sm text-muted-foreground">

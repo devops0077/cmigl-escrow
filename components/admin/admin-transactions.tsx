@@ -21,7 +21,14 @@ import apiClient from "@/lib/api-client";
 import { Pagination } from "@/components/ui/pagination";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Card, CardContent } from "@/components/ui/card";
-import { ScrollArea } from "../ui/scroll-area";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 
 interface Transaction {
   id: string;
@@ -126,7 +133,7 @@ export function AdminTransactions({
   const renderMobileView = () => {
     if (!data?.data || data.data.length === 0) {
       return (
-        <div className="p-4 text-center">
+        <div className="p-4 text-center md:hidden">
           <p className="text-muted-foreground">No transactions found</p>
         </div>
       );
@@ -202,58 +209,127 @@ export function AdminTransactions({
     );
   };
 
-  // Desktop table view
+  // Desktop table view with shadcn Table
   const renderDesktopView = () => {
     return (
-      <div className="rounded-md border hidden md:block">
-        <ScrollArea className="h-[400px] w-full overflow-auto">
-          <div className="grid grid-cols-7 gap-4 p-4 text-sm font-medium">
-            <div>ID</div>
-            <div>Buyer</div>
-            <div>Seller</div>
-            <div>Amount</div>
-            <div>Fee</div>
-            <div>Status</div>
-            <div className="text-right">Actions</div>
-          </div>
-          <div className="divide-y">
-            {data?.data.length === 0 ? (
-              <div className="p-4 text-center">
-                <p className="text-muted-foreground">No transactions found</p>
-              </div>
-            ) : (
-              data?.data.map((transaction: Transaction) => (
-                <div
-                  key={transaction.id}
-                  className="grid grid-cols-7 gap-4 p-4 text-sm"
-                >
-                  <div className="truncate">{transaction.id.slice(0, 8)}</div>
-                  <div className="truncate">{transaction.buyerName}</div>
-                  <div className="truncate">{transaction.sellerName}</div>
-                  <div>{formatCurrency(transaction.amount)}</div>
-                  <div>{formatCurrency(transaction.escrowFee)}</div>
-                  <div>
-                    <Badge
-                      variant="outline"
-                      className={`${getStatusColor(
-                        transaction.status
-                      )} text-white`}
-                    >
-                      {transaction.status}
-                    </Badge>
-                  </div>
-                  <div className="text-right">
-                    <Link href={`/dashboard/transactions/${transaction.id}`}>
-                      <Button variant="ghost" size="sm">
-                        View
-                      </Button>
-                    </Link>
-                  </div>
-                </div>
-              ))
-            )}
-          </div>
-        </ScrollArea>
+      <div className="rounded-md border hidden md:block overflow-hidden">
+        <div className="max-h-[400px] overflow-auto">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>ID</TableHead>
+                <TableHead>Buyer</TableHead>
+                <TableHead>Seller</TableHead>
+                <TableHead>Amount</TableHead>
+                <TableHead>Fee</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead className="text-right">Actions</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {data?.data.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={7} className="h-24 text-center">
+                    <p className="text-muted-foreground">
+                      No transactions found
+                    </p>
+                  </TableCell>
+                </TableRow>
+              ) : (
+                data?.data.map((transaction: Transaction) => (
+                  <TableRow key={transaction.id}>
+                    <TableCell className="font-medium">
+                      {transaction.id.slice(0, 8)}
+                    </TableCell>
+                    <TableCell className="truncate max-w-[150px]">
+                      {transaction.buyerName}
+                    </TableCell>
+                    <TableCell className="truncate max-w-[150px]">
+                      {transaction.sellerName}
+                    </TableCell>
+                    <TableCell>{formatCurrency(transaction.amount)}</TableCell>
+                    <TableCell>
+                      {formatCurrency(transaction.escrowFee)}
+                    </TableCell>
+                    <TableCell>
+                      <Badge
+                        variant="outline"
+                        className={`${getStatusColor(transaction.status)} text-white`}
+                      >
+                        {transaction.status}
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <Link href={`/dashboard/transactions/${transaction.id}`}>
+                        <Button variant="ghost" size="sm">
+                          View
+                        </Button>
+                      </Link>
+                    </TableCell>
+                  </TableRow>
+                ))
+              )}
+            </TableBody>
+          </Table>
+        </div>
+      </div>
+    );
+  };
+
+  // Loading state with shadcn Table
+  const renderLoadingState = () => {
+    return (
+      <div className="space-y-4">
+        {/* Mobile loading state */}
+        <div className="md:hidden space-y-4">
+          {Array.from({ length: pageSize }).map((_, i) => (
+            <Skeleton key={i} className="h-40 w-full rounded-md" />
+          ))}
+        </div>
+
+        {/* Desktop loading state with shadcn Table */}
+        <div className="hidden md:block rounded-md border overflow-hidden">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>ID</TableHead>
+                <TableHead>Buyer</TableHead>
+                <TableHead>Seller</TableHead>
+                <TableHead>Amount</TableHead>
+                <TableHead>Fee</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead className="text-right">Actions</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {Array.from({ length: pageSize }).map((_, i) => (
+                <TableRow key={i}>
+                  <TableCell>
+                    <Skeleton className="h-5 w-16" />
+                  </TableCell>
+                  <TableCell>
+                    <Skeleton className="h-5 w-24" />
+                  </TableCell>
+                  <TableCell>
+                    <Skeleton className="h-5 w-24" />
+                  </TableCell>
+                  <TableCell>
+                    <Skeleton className="h-5 w-20" />
+                  </TableCell>
+                  <TableCell>
+                    <Skeleton className="h-5 w-16" />
+                  </TableCell>
+                  <TableCell>
+                    <Skeleton className="h-5 w-20" />
+                  </TableCell>
+                  <TableCell className="text-right">
+                    <Skeleton className="h-8 w-16 ml-auto" />
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </div>
       </div>
     );
   };
@@ -295,42 +371,8 @@ export function AdminTransactions({
         </div>
       )}
 
-      {isLoading ? (
-        <div className="space-y-4">
-          {Array.from({ length: pageSize }).map((_, i) => (
-            <div key={i} className="md:hidden">
-              <Skeleton className="h-32 w-full rounded-md" />
-            </div>
-          ))}
-          <div className="hidden md:block">
-            <div className="rounded-md border">
-              <div className="grid grid-cols-7 gap-4 p-4 text-sm font-medium">
-                <div>ID</div>
-                <div>Buyer</div>
-                <div>Seller</div>
-                <div>Amount</div>
-                <div>Fee</div>
-                <div>Status</div>
-                <div className="text-right">Actions</div>
-              </div>
-              <div className="divide-y">
-                {Array.from({ length: pageSize }).map((_, i) => (
-                  <div key={i} className="grid grid-cols-7 gap-4 p-4 text-sm">
-                    <Skeleton className="h-5 w-16" />
-                    <Skeleton className="h-5 w-24" />
-                    <Skeleton className="h-5 w-24" />
-                    <Skeleton className="h-5 w-20" />
-                    <Skeleton className="h-5 w-16" />
-                    <Skeleton className="h-5 w-20" />
-                    <div className="text-right">
-                      <Skeleton className="h-8 w-16 ml-auto" />
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-        </div>
+      {isLoading && showAll ? (
+        renderLoadingState()
       ) : (
         <>
           {renderMobileView()}

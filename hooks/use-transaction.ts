@@ -36,5 +36,7 @@ export function useTransaction(id: string) {
       return response.data;
     },
     enabled: !!id,
+    refetchInterval: 60000, // Refetch every minute
+    refetchOnWindowFocus: true,
   });
 }

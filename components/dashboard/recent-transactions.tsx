@@ -8,6 +8,14 @@ import { formatCurrency, formatDate } from "@/lib/utils";
 import { useTransactions } from "@/hooks/use-transactions";
 import { Pagination } from "@/components/ui/pagination";
 import { Skeleton } from "@/components/ui/skeleton";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 
 interface RecentTransactionsProps {
   showAll?: boolean;
@@ -62,29 +70,41 @@ export function RecentTransactions({
     return (
       <div className="space-y-4">
         <div className="rounded-md border">
-          <div className="grid grid-cols-5 gap-4 p-4 text-sm font-medium">
-            <div>Type</div>
-            <div>Amount</div>
-            <div className="hidden md:block">Date</div>
-            <div>Status</div>
-            <div className="text-right">Actions</div>
-          </div>
-          <div className="divide-y">
-            {Array.from({ length: pageSize }).map((_, i) => (
-              <div key={i} className="grid grid-cols-5 gap-4 p-4 text-sm">
-                <div className="space-y-1">
-                  <Skeleton className="h-5 w-20" />
-                  <Skeleton className="h-4 w-24" />
-                </div>
-                <Skeleton className="h-5 w-20" />
-                <Skeleton className="h-5 w-32 hidden md:block" />
-                <Skeleton className="h-5 w-20" />
-                <div className="text-right">
-                  <Skeleton className="h-8 w-16 ml-auto" />
-                </div>
-              </div>
-            ))}
-          </div>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Type</TableHead>
+                <TableHead>Amount</TableHead>
+                <TableHead className="hidden md:table-cell">Date</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead className="text-right">Actions</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {Array.from({ length: pageSize }).map((_, i) => (
+                <TableRow key={i}>
+                  <TableCell>
+                    <div className="space-y-1">
+                      <Skeleton className="h-5 w-20" />
+                      <Skeleton className="h-4 w-24" />
+                    </div>
+                  </TableCell>
+                  <TableCell>
+                    <Skeleton className="h-5 w-20" />
+                  </TableCell>
+                  <TableCell className="hidden md:table-cell">
+                    <Skeleton className="h-5 w-32" />
+                  </TableCell>
+                  <TableCell>
+                    <Skeleton className="h-5 w-20" />
+                  </TableCell>
+                  <TableCell className="text-right">
+                    <Skeleton className="h-8 w-16 ml-auto" />
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
         </div>
       </div>
     );
@@ -103,48 +123,51 @@ export function RecentTransactions({
 
   return (
     <div className="space-y-4 w-full">
-      <div className="rounded-md border w-full">
-        <div className="grid grid-cols-5 gap-4 p-4 text-sm font-medium">
-          <div>Type</div>
-          <div>Amount</div>
-          <div className="hidden md:block">Date</div>
-          <div>Status</div>
-          <div className="text-right">Actions</div>
-        </div>
-        <div className="divide-y w-full">
-          {data?.data.map((transaction) => (
-            <div
-              key={transaction.id}
-              className="grid grid-cols-5 gap-4 p-4 text-sm"
-            >
-              <div className="truncate">
-                <span className="font-medium">{transaction.type}</span>
-                <span className="block text-xs text-muted-foreground">
-                  with {transaction.counterpartyName}
-                </span>
-              </div>
-              <div>{formatCurrency(transaction.amount)}</div>
-              <div className="hidden md:block">
-                {formatDate(transaction.createdAt)}
-              </div>
-              <div>
-                <Badge
-                  variant="outline"
-                  className={`${getStatusColor(transaction.status)} text-white`}
-                >
-                  {transaction.status}
-                </Badge>
-              </div>
-              <div className="text-right">
-                <Link href={`/dashboard/transactions/${transaction.id}`}>
-                  <Button variant="ghost" size="sm">
-                    View
-                  </Button>
-                </Link>
-              </div>
-            </div>
-          ))}
-        </div>
+      <div className="rounded-md border w-full overflow-hidden">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Type</TableHead>
+              <TableHead>Amount</TableHead>
+              <TableHead className="hidden md:table-cell">Date</TableHead>
+              <TableHead>Status</TableHead>
+              <TableHead className="text-right">Actions</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {data?.data.map((transaction) => (
+              <TableRow key={transaction.id}>
+                <TableCell>
+                  <div className="font-medium line-clamp-1">
+                    {transaction.type}
+                  </div>
+                  <div className="text-xs text-muted-foreground">
+                    with {transaction.counterpartyName}
+                  </div>
+                </TableCell>
+                <TableCell>{formatCurrency(transaction.amount)}</TableCell>
+                <TableCell className="hidden md:table-cell">
+                  {formatDate(transaction.createdAt)}
+                </TableCell>
+                <TableCell>
+                  <Badge
+                    variant="outline"
+                    className={`${getStatusColor(transaction.status)} text-white`}
+                  >
+                    {transaction.status}
+                  </Badge>
+                </TableCell>
+                <TableCell className="text-right">
+                  <Link href={`/dashboard/transactions/${transaction.id}`}>
+                    <Button variant="ghost" size="sm">
+                      View
+                    </Button>
+                  </Link>
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
       </div>
 
       {showAll && data && data.meta.totalPages > 1 && (

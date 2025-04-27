@@ -138,7 +138,7 @@ export function NewTransactionForm() {
                   control={form.control}
                   name="sellerId"
                   render={({ field }) => (
-                    <FormItem className="flex flex-col">
+                    <FormItem className="flex flex-col w-full">
                       <FormLabel>Seller</FormLabel>
                       <UserSearch
                         onSelect={(user) => {
@@ -180,18 +180,18 @@ export function NewTransactionForm() {
                   control={form.control}
                   name="productCategory"
                   render={({ field }) => (
-                    <FormItem>
+                    <FormItem className="w-full">
                       <FormLabel>Product Category</FormLabel>
                       <Select
                         onValueChange={field.onChange}
                         defaultValue={field.value}
                       >
                         <FormControl>
-                          <SelectTrigger>
+                          <SelectTrigger className="w-full">
                             <SelectValue placeholder="Select a category" />
                           </SelectTrigger>
                         </FormControl>
-                        <SelectContent>
+                        <SelectContent className="w-full">
                           {productCategories.map((category) => (
                             <SelectItem key={category.id} value={category.name}>
                               {category.name}

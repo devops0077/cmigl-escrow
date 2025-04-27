@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { Suspense } from "react";
 import { DashboardSkeleton } from "@/components/skeletons/dashboard-skeleton";
 import { SidebarProvider } from "@/components/ui/sidebar";
+import { DashboardMobileNav } from "@/components/dashboard/dashboard-mobile-nav";
 
 export default async function DashboardLayout({
   children,
@@ -23,11 +24,12 @@ export default async function DashboardLayout({
         <DashboardSidebar />
         <main className="w-full flex ">
           <div className="flex-1 w-full">
-            <div className=" w-full  space-y-6   flex-1 flex-col">
+            <div className=" w-full  space-y-6  pb-24 flex-1 flex-col">
               <Suspense fallback={<DashboardSkeleton />}>{children}</Suspense>
             </div>
           </div>
         </main>
+        <DashboardMobileNav />
       </div>
     </SidebarProvider>
   );

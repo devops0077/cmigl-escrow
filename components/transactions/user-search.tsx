@@ -89,8 +89,8 @@ export function UserSearch({
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
-      <div className="flex items-center gap-2">
-        <PopoverTrigger asChild className="flex-1">
+      <div className="flex items-center gap-2 w-full">
+        <PopoverTrigger asChild className="flex-1 w-full">
           <Button
             variant="outline"
             role="combobox"

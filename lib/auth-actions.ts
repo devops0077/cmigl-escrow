@@ -214,12 +214,12 @@ export async function verifyCredentials(email: string, password: string) {
   }
 
   // Check if user is active (has paid registration fee)
-  if (!user.isActive) {
-    throw new InActiveAccountError(
-      "inactive_account"
-      // "Account not active. Please complete registration by paying the one-time fee."
-    );
-  }
+  // if (!user.isActive) {
+  //   throw new InActiveAccountError(
+  //     "inactive_account"
+  //     // "Account not active. Please complete registration by paying the one-time fee."
+  //   );
+  // }
 
   return {
     id: user.id,

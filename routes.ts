@@ -10,6 +10,8 @@ export const publicRoutes = [
   "/api/auth/compare",
   "/api/send-email",
   "/api/users/search",
+  "/api/auth/registration-fee/",
+  "/api/payments/verify/(.*)",
 ];
 
 /**
@@ -23,7 +25,7 @@ export const authRoutes = [
   "/auth/forgot-password",
   "/auth/reset-password",
   "/auth/verify",
-  "/auth/payment",
+  // "/auth/payment",
 ];
 
 export const adminRoutes = ["/admin"];
@@ -40,3 +42,14 @@ export const apiAuthPrefix = "/api/auth";
  * @type {string}
  */
 export const DEFAULT_LOGIN_REDIRECT = "/dashboard";
+
+/**
+ * Check if a route is public
+ * @param {string} path - The route path to check
+ * @returns {boolean} - True if the route is public, false otherwise
+ */
+export const isPublicRouteFn = (path: string): boolean => {
+  return publicRoutes.some((route) =>
+    new RegExp(`^${route.replace(/\(.*\)/, ".*")}$`).test(path)
+  );
+};

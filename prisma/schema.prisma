@@ -12,18 +12,20 @@ datasource db {
 }
 
 model Account {
-  id                String  @id @default(cuid())
+  id                String   @id @default(cuid())
   userId            String
   type              String
   provider          String
   providerAccountId String
-  refresh_token     String? @db.Text
-  access_token      String? @db.Text
+  refresh_token     String?  @db.Text
+  access_token      String?  @db.Text
   expires_at        Int?
   token_type        String?
   scope             String?
-  id_token          String? @db.Text
+  id_token          String?  @db.Text
   session_state     String?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
@@ -39,38 +41,248 @@ model Session {
 }
 
 model User {
-  id                 String              @id @default(cuid())
-  name               String?
-  email              String?             @unique
-  username           String?             @unique
-  phone              String?
-  emailVerified      DateTime?
-  image              String?
-  password           String?
-  role               UserRole            @default(USER)
-  isActive           Boolean             @default(false)
-  termsAccepted      Boolean             @default(false)
-  registrationFee    RegistrationFee?
-  bankDetails        BankDetails?
-  wallet             Wallet?
-  buyerTransactions  Transaction[]       @relation("BuyerTransactions")
-  sellerTransactions Transaction[]       @relation("SellerTransactions")
-  accounts           Account[]
-  sessions           Session[]
-  notifications      Notification[]
-  verificationTokens VerificationToken[]
-  feedbacksGiven     Feedback[]          @relation("FeedbackGiver")
-  feedbacksReceived  Feedback[]          @relation("FeedbackReceiver")
-  createdAt          DateTime            @default(now())
-  updatedAt          DateTime            @updatedAt
+  id                    String             @id @default(cuid())
+  name                  String?
+  email                 String?            @unique
+  username              String?            @unique
+  phone                 String             @unique
+  emailVerified         DateTime?
+  isActive              Boolean            @default(false)
+  registrationFee       RegistrationFee?
+  image                 String?
+  password              String?
+  role                  UserRole           @default(USER)
+  status                UserStatus         @default(PENDING)
+  termsAccepted         Boolean            @default(false)
+  createdAt             DateTime           @default(now())
+  updatedAt             DateTime           @updatedAt
+  accounts              Account[]
+  sessions              Session[]
+  sentTransactions      Transaction[]      @relation("SentTransactions")
+  receivedTransactions  Transaction[]      @relation("ReceivedTransactions")
+  wallet                Wallet?
+  notifications         Notification[]
+  verificationToken     VerificationToken?
+  paystackCustomerId    String? // Paystack customer ID
+  paystackRecipientCode String? // For transfers/withdrawals
+  bankAccounts          BankAccount[]
+  subscriptions         Subscription[]
+}
+
+enum UserRole {
+  USER
+  ADMIN
+}
+
+enum UserStatus {
+  PENDING
+  ACTIVE
+  SUSPENDED
 }
 
 model VerificationToken {
   id        String   @id @default(cuid())
-  userId    String
+  userId    String   @unique
   token     String   @unique
   expires   DateTime
+  createdAt DateTime @default(now())
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Wallet {
+  id           String              @id @default(cuid())
+  userId       String              @unique
+  balance      Float               @default(0)
+  currency     String              @default("NGN")
+  createdAt    DateTime            @default(now())
+  updatedAt    DateTime            @updatedAt
+  user         User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  transactions WalletTransaction[]
+}
+
+model WalletTransaction {
+  id            String                @id @default(cuid())
+  walletId      String
+  amount        Float
+  type          WalletTransactionType
+  status        TransactionStatus     @default(PENDING)
+  reference     String?               @unique // Paystack reference
+  description   String?
+  metadata      Json? // Additional data
+  paymentMethod PaymentMethod? // Method used
+  createdAt     DateTime              @default(now())
+  updatedAt     DateTime              @updatedAt
+  wallet        Wallet                @relation(fields: [walletId], references: [id], onDelete: Cascade)
+  paymentId     String?               @unique // Link to Payment model
+  payment       Payment?              @relation(fields: [paymentId], references: [id])
+}
+
+enum WalletTransactionType {
+  DEPOSIT
+  WITHDRAWAL
+  TRANSFER
+  PAYMENT
+  REFUND
+  FEE
+}
+
+model Transaction {
+  id              String            @id @default(cuid())
+  buyerId         String
+  sellerId        String
+  amount          Float
+  escrowFee       Float
+  productDetails  String?
+  productCategory String?
+  status          TransactionStatus @default(PENDING)
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+  buyer           User              @relation("SentTransactions", fields: [buyerId], references: [id])
+  seller          User              @relation("ReceivedTransactions", fields: [sellerId], references: [id])
+  feedback        Feedback?
+  paymentId       String?           @unique // Link to Payment model
+  payment         Payment?          @relation(fields: [paymentId], references: [id])
+}
+
+model Feedback {
+  id            String      @id @default(cuid())
+  transactionId String      @unique
+  rating        Int
+  comment       String?
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+  transaction   Transaction @relation(fields: [transactionId], references: [id], onDelete: Cascade)
+}
+
+enum TransactionStatus {
+  PENDING
+  COMPLETED
+  FAILED
+  CANCELLED
+  REFUNDED
+}
+
+enum TransactionType {
+  TRANSFER
+  PAYMENT
+  REFUND
+  REGISTRATION_FEE
+  OTHER
+}
+
+model Notification {
+  id        String           @id @default(cuid())
+  userId    String
+  title     String
+  message   String
+  type      NotificationType @default(INFO)
+  read      Boolean          @default(false)
+  createdAt DateTime         @default(now())
+  user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+enum NotificationType {
+  INFO
+  SUCCESS
+  WARNING
+  ERROR
+}
+
+// New models for Paystack integration
+
+model Payment {
+  id                String             @id @default(cuid())
+  amount            Float
+  currency          String             @default("NGN")
+  reference         String             @unique // Paystack reference
+  status            PaymentStatus      @default(PENDING)
+  paymentMethod     PaymentMethod
+  paymentGateway    PaymentGateway     @default(PAYSTACK)
+  metadata          Json? // Additional data
+  gatewayResponse   String? // Response from payment gateway
+  authorizationCode String? // For recurring payments
+  cardType          String? // Visa, Mastercard, etc.
+  last4             String? // Last 4 digits of card
+  expMonth          String? // Card expiry month
+  expYear           String? // Card expiry year
+  channel           String? // card, bank, ussd, qr, etc.
+  ipAddress         String? // Customer IP address
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
+  transaction       Transaction?
+  walletTransaction WalletTransaction?
+  webhookEvents     WebhookEvent[]
+}
+
+enum PaymentStatus {
+  PENDING
+  SUCCESS
+  FAILED
+  ABANDONED
+  CANCELLED
+  REFUNDED
+  PARTIALLY_REFUNDED
+}
+
+enum PaymentMethod {
+  CARD
+  BANK_TRANSFER
+  USSD
+  QR_CODE
+  BANK
+  WALLET
+  MOBILE_MONEY
+}
+
+enum PaymentGateway {
+  PAYSTACK
+  FLUTTERWAVE
+  STRIPE
+  MANUAL
+}
+
+model BankAccount {
+  id            String   @id @default(cuid())
+  userId        String
+  bankName      String
+  accountNumber String
+  accountName   String
+  bankCode      String // Bank code for Paystack
+  recipientCode String? // Paystack recipient code
+  isDefault     Boolean  @default(false)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Subscription {
+  id               String             @id @default(cuid())
+  userId           String
+  planCode         String // Paystack plan code
+  subscriptionCode String             @unique // Paystack subscription code
+  status           SubscriptionStatus @default(ACTIVE)
+  amount           Float
+  nextPaymentDate  DateTime?
+  cancelledAt      DateTime?
+  createdAt        DateTime           @default(now())
+  updatedAt        DateTime           @updatedAt
+  user             User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+enum SubscriptionStatus {
+  ACTIVE
+  CANCELLED
+  EXPIRED
+  PENDING
+}
+
+model WebhookEvent {
+  id        String   @id @default(cuid())
+  eventType String // charge.success, transfer.success, etc.
+  eventData Json // Full webhook payload
+  processed Boolean  @default(false)
+  paymentId String?
+  payment   Payment? @relation(fields: [paymentId], references: [id])
   createdAt DateTime @default(now())
 }
 
@@ -83,117 +295,4 @@ model RegistrationFee {
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-}
-
-model Wallet {
-  id               String              @id @default(cuid())
-  userId           String              @unique
-  balance          Float               @default(0)
-  ballanceInEscrow Float               @default(0)
-  user             User                @relation(fields: [userId], references: [id], onDelete: Cascade)
-  transactions     WalletTransaction[]
-  createdAt        DateTime            @default(now())
-  updatedAt        DateTime            @updatedAt
-}
-
-model WalletTransaction {
-  id          String            @id @default(cuid())
-  walletId    String
-  amount      Float
-  type        TransactionType
-  status      TransactionStatus
-  reference   String?
-  description String?
-  wallet      Wallet            @relation(fields: [walletId], references: [id], onDelete: Cascade)
-  createdAt   DateTime          @default(now())
-  updatedAt   DateTime          @updatedAt
-}
-
-model BankDetails {
-  id            String   @id @default(cuid())
-  userId        String   @unique
-  bankName      String
-  accountNumber String
-  accountName   String
-  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
-}
-
-model Transaction {
-  id               String            @id @default(cuid())
-  buyerId          String
-  sellerId         String
-  amount           Float
-  escrowFee        Float
-  productDetails   String
-  productCategory  String
-  status           TransactionStatus
-  paymentReference String?
-  buyer            User              @relation("BuyerTransactions", fields: [buyerId], references: [id])
-  seller           User              @relation("SellerTransactions", fields: [sellerId], references: [id])
-  feedback         Feedback[]
-  createdAt        DateTime          @default(now())
-  updatedAt        DateTime          @updatedAt
-}
-
-model Notification {
-  id        String           @id @default(cuid())
-  userId    String
-  type      NotificationType
-  title     String
-  message   String
-  read      Boolean          @default(false)
-  data      Json? // For storing additional data related to the notification
-  user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
-  createdAt DateTime         @default(now())
-  updatedAt DateTime         @updatedAt
-}
-
-enum UserRole {
-  USER
-  ADMIN
-}
-
-enum TransactionType {
-  DEPOSIT
-  WITHDRAWAL
-  ESCROW_PAYMENT
-  ESCROW_REFUND
-  ESCROW_RELEASE
-  REGISTRATION_FEE
-}
-
-enum TransactionStatus {
-  PENDING
-  PROCESSING
-  COMPLETED
-  FAILED
-  CANCELLED
-  SHIPPED
-  CONFIRMED
-}
-
-enum NotificationType {
-  TRANSACTION_CREATED
-  TRANSACTION_STATUS_CHANGED
-  WALLET_UPDATED
-  SYSTEM_NOTIFICATION
-  ADMIN_NOTIFICATION
-  REGISTRATION
-}
-
-model Feedback {
-  id            String      @id @default(cuid())
-  transactionId String
-  giverId       String
-  receiverId    String
-  rating        Int // 1-5 star rating
-  comment       String?
-  isPublic      Boolean     @default(false) // Whether this can be shown as testimonial
-  transaction   Transaction @relation(fields: [transactionId], references: [id], onDelete: Cascade)
-  giver         User        @relation("FeedbackGiver", fields: [giverId], references: [id], onDelete: Cascade)
-  receiver      User        @relation("FeedbackReceiver", fields: [receiverId], references: [id], onDelete: Cascade)
-  createdAt     DateTime    @default(now())
-  updatedAt     DateTime    @updatedAt
 }

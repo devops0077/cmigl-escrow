@@ -5,6 +5,7 @@ import {
   authRoutes,
   publicRoutes,
   adminRoutes,
+  isPublicRouteFn,
 } from "@/routes";
 
 // @ts-ignore
@@ -14,10 +15,11 @@ export default middleware(async (req, ctx) => {
 
   // @ts-ignore
   const role = req.auth?.user?.role;
+  const isActive = req.auth?.user?.isActive;
 
   const isApiRoute = nextUrl.pathname.startsWith(apiAuthPrefix);
   const isAuthRoute = authRoutes.includes(nextUrl.pathname);
-  const isPublicRoute = publicRoutes.includes(nextUrl.pathname);
+  const isPublicRoute = isPublicRouteFn(nextUrl.pathname);
   const isAdminRoute = adminRoutes.includes(nextUrl.pathname);
   const isAdmin = role === "ADMIN";
 
@@ -30,7 +32,11 @@ export default middleware(async (req, ctx) => {
   }
 
   if (isAuthRoute) {
-    if (isLoggedIn) {
+    if (isLoggedIn && !isActive) {
+      return Response.redirect(
+        new URL(`/auth/payment?userId=${req?.auth?.user.id}`, nextUrl)
+      );
+    } else if (isLoggedIn && isActive) {
       return Response.redirect(new URL(DEFAULT_LOGIN_REDIRECT, nextUrl));
     }
     return null;

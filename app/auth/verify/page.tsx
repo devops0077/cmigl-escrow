@@ -93,7 +93,11 @@ export default function VerifyPage() {
             {success ? (
               <Button
                 className="w-full"
-                onClick={() => router.push(`/auth/payment?userId=${userId}`)}
+                onClick={() =>
+                  router.push(
+                    `/auth/login?callbackUrl=/auth/payment?userId=${userId}&verified=true`
+                  )
+                }
               >
                 Continue to Payment
               </Button>

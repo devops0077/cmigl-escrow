@@ -10,6 +10,22 @@ export class CustomError extends CredentialsSignin {
   }
 }
 
+export class AppError extends Error {
+  constructor(
+    message: string,
+    public statusCode?: number,
+    public data?: any,
+    public details?: any
+  ) {
+    super(message);
+    this.name = "AppError";
+    this.statusCode = statusCode;
+    this.data = data;
+    this.details = details;
+    this.stack = undefined;
+  }
+}
+
 export class UserNotFoundError extends CustomError {
   constructor(message = "User not found") {
     super(message);

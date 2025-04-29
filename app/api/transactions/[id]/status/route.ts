@@ -133,7 +133,10 @@ export async function PATCH(
         userId: transaction.buyerId,
         title: "Transaction Failed",
         type: "TRANSACTION_STATUS_CHANGED",
-        message: `Transaction ₦${transaction.id} has failed. Amount refunded.`,
+        message: `Transaction ₦${transaction.amount} has failed. Amount refunded.`,
+        data: {
+          trxId: transaction.id,
+        },
       });
     }
 

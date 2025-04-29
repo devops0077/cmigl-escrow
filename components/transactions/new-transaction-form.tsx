@@ -95,7 +95,7 @@ export function NewTransactionForm() {
   const amount = form.watch("amount");
   useEffect(() => {
     if (amount > 0) {
-      setCalculatedFee(amount * 0.015); // 1.5% fee
+      setCalculatedFee(amount * 0.025); // 2.5% fee
     } else {
       setCalculatedFee(0);
     }
@@ -176,7 +176,6 @@ export function NewTransactionForm() {
         amount: paymentData.transactionData.amount,
         productDetails: paymentData.transactionData.productDetails,
         productCategory: paymentData.transactionData.productCategory,
-        paymentReference: reference,
       });
 
       toast.success("Transaction created", {
@@ -346,6 +345,10 @@ export function NewTransactionForm() {
                     <PaystackButton
                       amount={paymentData.amount}
                       email={paymentData.email}
+                      metadata={{
+                        type: "transaction",
+                        userId: paymentData.transactionData.sellerId,
+                      }}
                       reference={paymentData.reference}
                       onSuccess={handlePaymentSuccess}
                       onClose={handlePaymentClose}

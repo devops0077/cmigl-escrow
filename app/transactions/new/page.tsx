@@ -37,7 +37,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { DashboardShell } from "@/components/dashboard/dashboard-shell";
 import { DashboardHeader } from "@/components/dashboard/dashboard-header";
 import { UserSearch } from "@/components/transactions/user-search";
-import { createTransaction, getProductCategories } from "@/lib/data-actions";
+import { createTransaction } from "@/lib/data-actions";
 import { toast } from "sonner";
 
 const formSchema = z.object({
@@ -73,19 +73,6 @@ export default function NewTransactionPage() {
       productCategory: "",
     },
   });
-
-  useEffect(() => {
-    const fetchCategories = async () => {
-      try {
-        const data = await getProductCategories();
-        setCategories(data);
-      } catch (error) {
-        console.error("Error fetching categories:", error);
-      }
-    };
-
-    fetchCategories();
-  }, []);
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
     setIsLoading(true);
@@ -155,8 +142,11 @@ export default function NewTransactionPage() {
                       <FormLabel>Seller</FormLabel>
                       <UserSearch
                         onSelect={(user) => {
-                          field.onChange(user.id);
+                          field.onChange(!user?.id ? "" : user.id);
                         }}
+                        selectedUser={field.value}
+                        placeholder="Search for a seller..."
+                        excludeCurrentUser={true}
                       />
                       <FormDescription>
                         Search for a seller by email or username.

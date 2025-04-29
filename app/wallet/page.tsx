@@ -30,11 +30,7 @@ import { DashboardShell } from "@/components/dashboard/dashboard-shell";
 import { DashboardHeader } from "@/components/dashboard/dashboard-header";
 import { WalletTransactions } from "@/components/wallet/wallet-transactions";
 import { formatCurrency } from "@/lib/utils";
-import {
-  getUserWallet,
-  depositToWallet,
-  withdrawFromWallet,
-} from "@/lib/wallet-actions";
+import { getUserWallet } from "@/lib/wallet-actions";
 import { toast } from "sonner";
 import { queryClient } from "@/lib/react-query-provider";
 
@@ -108,76 +104,76 @@ export default function WalletPage() {
     }
   }, [status, toast]);
 
-  async function onDepositSubmit(values: z.infer<typeof depositFormSchema>) {
-    setIsDepositing(true);
-    try {
-      const result = await depositToWallet(values.amount);
+  // async function onDepositSubmit(values: z.infer<typeof depositFormSchema>) {
+  //   setIsDepositing(true);
+  //   try {
+  //     const result = await depositToWallet(values.amount);
 
-      // @ts-ignore
-      if (result.redirectUrl) {
-        // Redirect to payment gateway
-        // @ts-ignore
-        window.location.href = result.redirectUrl;
-        return;
-      }
+  //     // @ts-ignore
+  //     if (result.redirectUrl) {
+  //       // Redirect to payment gateway
+  //       // @ts-ignore
+  //       window.location.href = result.redirectUrl;
+  //       return;
+  //     }
 
-      queryClient.refetchQueries({ queryKey: ["wallet-transactions"] });
+  //     queryClient.refetchQueries({ queryKey: ["wallet-transactions"] });
 
-      setWalletBalance(result.newBalance);
-      toast.success("Deposit successful", {
-        description: `${formatCurrency(
-          values.amount
-        )} has been added to your wallet.`,
-      });
+  //     setWalletBalance(result.newBalance);
+  //     toast.success("Deposit successful", {
+  //       description: `${formatCurrency(
+  //         values.amount
+  //       )} has been added to your wallet.`,
+  //     });
 
-      depositForm.reset();
-    } catch (error) {
-      console.error("Deposit error:", error);
-      toast.error("Deposit failed", {
-        description:
-          error instanceof Error
-            ? error.message
-            : "There was a problem processing your deposit.",
-      });
-    } finally {
-      setIsDepositing(false);
-    }
-  }
+  //     depositForm.reset();
+  //   } catch (error) {
+  //     console.error("Deposit error:", error);
+  //     toast.error("Deposit failed", {
+  //       description:
+  //         error instanceof Error
+  //           ? error.message
+  //           : "There was a problem processing your deposit.",
+  //     });
+  //   } finally {
+  //     setIsDepositing(false);
+  //   }
+  // }
 
-  async function onWithdrawSubmit(values: z.infer<typeof withdrawFormSchema>) {
-    setIsWithdrawing(true);
-    try {
-      if (values.amount > walletBalance) {
-        throw new Error("Insufficient funds in your wallet");
-      }
+  // async function onWithdrawSubmit(values: z.infer<typeof withdrawFormSchema>) {
+  //   setIsWithdrawing(true);
+  //   try {
+  //     if (values.amount > walletBalance) {
+  //       throw new Error("Insufficient funds in your wallet");
+  //     }
 
-      const result = await withdrawFromWallet({
-        amount: values.amount,
-        accountName: values.accountName,
-        accountNumber: values.accountNumber,
-        bankName: values.bankName,
-      });
+  //     const result = await withdrawFromWallet({
+  //       amount: values.amount,
+  //       accountName: values.accountName,
+  //       accountNumber: values.accountNumber,
+  //       bankName: values.bankName,
+  //     });
 
-      setWalletBalance(result.newBalance);
-      toast.success("Withdrawal initiated", {
-        description: `Your withdrawal request for ${formatCurrency(
-          values.amount
-        )} has been submitted.`,
-      });
+  //     setWalletBalance(result.newBalance);
+  //     toast.success("Withdrawal initiated", {
+  //       description: `Your withdrawal request for ${formatCurrency(
+  //         values.amount
+  //       )} has been submitted.`,
+  //     });
 
-      withdrawForm.reset();
-    } catch (error) {
-      console.error("Withdrawal error:", error);
-      toast.error("Withdrawal failed", {
-        description:
-          error instanceof Error
-            ? error.message
-            : "There was a problem processing your withdrawal.",
-      });
-    } finally {
-      setIsWithdrawing(false);
-    }
-  }
+  //     withdrawForm.reset();
+  //   } catch (error) {
+  //     console.error("Withdrawal error:", error);
+  //     toast.error("Withdrawal failed", {
+  //       description:
+  //         error instanceof Error
+  //           ? error.message
+  //           : "There was a problem processing your withdrawal.",
+  //     });
+  //   } finally {
+  //     setIsWithdrawing(false);
+  //   }
+  // }
 
   if (status === "loading" || isLoading) {
     return (
@@ -230,7 +226,7 @@ export default function WalletPage() {
               <TabsContent value="deposit" className="space-y-4 pt-4">
                 <Form {...depositForm}>
                   <form
-                    onSubmit={depositForm.handleSubmit(onDepositSubmit)}
+                    // onSubmit={depositForm.handleSubmit(onDepositSubmit)}
                     className="space-y-4"
                   >
                     <FormField
@@ -268,7 +264,7 @@ export default function WalletPage() {
               <TabsContent value="withdraw" className="space-y-4 pt-4">
                 <Form {...withdrawForm}>
                   <form
-                    onSubmit={withdrawForm.handleSubmit(onWithdrawSubmit)}
+                    // onSubmit={withdrawForm.handleSubmit(onWithdrawSubmit)}
                     className="space-y-4"
                   >
                     <FormField

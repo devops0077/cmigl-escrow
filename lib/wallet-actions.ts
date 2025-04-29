@@ -26,6 +26,29 @@ export async function getWalletBalance() {
   }
 }
 
+export async function getUserWallet() {
+  const session = await auth();
+
+  if (!session?.user?.email) {
+    throw new Error("Unauthorized");
+  }
+
+  const user = await prisma.user.findUnique({
+    where: { email: session.user.email },
+    include: {
+      wallet: true,
+    },
+  });
+
+  if (!user || !user.wallet) {
+    throw new Error("Wallet not found");
+  }
+
+  return {
+    balance: user.wallet.balance,
+  };
+}
+
 export async function getWalletTransactions(limit = 10, page = 1) {
   try {
     const session = await auth();

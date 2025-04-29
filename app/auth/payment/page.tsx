@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useSession } from "next-auth/react";
+import { signOut, useSession } from "next-auth/react";
 import {
   Card,
   CardContent,
@@ -172,7 +172,18 @@ export default function PaymentPage() {
                 }
               />
             ) : (
-              <Button disabled>Unable to initialize payment</Button>
+              <div className="flex flex-col items-center justify-center">
+                <Button disabled>Unable to initialize payment</Button>
+                {session?.user.id && (
+                  <Button
+                    variant="link"
+                    className="text-sm text-muted-foreground mt-4"
+                    onClick={async () => await signOut()}
+                  >
+                    Signout
+                  </Button>
+                )}
+              </div>
             )}
           </CardFooter>
         </Card>

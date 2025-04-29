@@ -19,7 +19,7 @@ import { _escrowConfig } from "@/config";
 
 export default function PaymentPage() {
   const router = useRouter();
-  const { data: session } = useSession();
+  const { data: session, update } = useSession();
   const searchParams = useSearchParams();
   const [isLoading, setIsLoading] = useState(true);
   const [paymentData, setPaymentData] = useState<{
@@ -82,6 +82,18 @@ export default function PaymentPage() {
       if (!verificationResponse.ok) {
         const error = await verificationResponse.json();
         throw new Error(error.error || "Failed to verify payment");
+      }
+      const res = await update({
+        ...session,
+        user: {
+          ...session?.user,
+          isActive: true,
+          status: "ACTIVE",
+        },
+      });
+
+      if (res?.user.status !== "ACTIVE") {
+        throw new Error("Failed to update user status");
       }
 
       toast.success("Registration fee payment successful", {
@@ -153,7 +165,10 @@ export default function PaymentPage() {
                 onSuccess={handlePaymentSuccess}
                 onClose={handlePaymentClose}
                 metadata={
-                  type: "registration_fee"
+                  {
+                    type: "registration_fee",
+                    userId: searchParams.get("userId"),
+                  } as any
                 }
               />
             ) : (

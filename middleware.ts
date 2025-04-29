@@ -6,6 +6,7 @@ import {
   publicRoutes,
   adminRoutes,
   isPublicRouteFn,
+  paymentRoute,
 } from "@/routes";
 
 // @ts-ignore
@@ -15,12 +16,13 @@ export default middleware(async (req, ctx) => {
 
   // @ts-ignore
   const role = req.auth?.user?.role;
-  const isActive = req.auth?.user?.isActive;
+  const isActive = req.auth?.user?.status === "ACTIVE";
 
   const isApiRoute = nextUrl.pathname.startsWith(apiAuthPrefix);
   const isAuthRoute = authRoutes.includes(nextUrl.pathname);
   const isPublicRoute = isPublicRouteFn(nextUrl.pathname);
   const isAdminRoute = adminRoutes.includes(nextUrl.pathname);
+  const isPaymentRoute = paymentRoute.includes(nextUrl.pathname);
   const isAdmin = role === "ADMIN";
 
   if (isAdminRoute && !isAdmin) {
@@ -32,11 +34,7 @@ export default middleware(async (req, ctx) => {
   }
 
   if (isAuthRoute) {
-    if (isLoggedIn && !isActive) {
-      return Response.redirect(
-        new URL(`/auth/payment?userId=${req?.auth?.user.id}`, nextUrl)
-      );
-    } else if (isLoggedIn && isActive) {
+    if (isLoggedIn) {
       return Response.redirect(new URL(DEFAULT_LOGIN_REDIRECT, nextUrl));
     }
     return null;
@@ -51,6 +49,20 @@ export default middleware(async (req, ctx) => {
 
     return Response.redirect(
       new URL(`/auth/login?callbackUrl=${encodedCallbackUrl}`, nextUrl)
+    );
+  }
+
+  if (
+    isLoggedIn &&
+    !isActive &&
+    !isPaymentRoute &&
+    !isApiRoute &&
+    !isPublicRoute
+  ) {
+    // Redirect to payment page if user is not active and not on the payment route
+    console.log("USER ACTIVE", isActive);
+    return Response.redirect(
+      new URL(`/auth/payment?userId=${req?.auth?.user.id}`, nextUrl)
     );
   }
 

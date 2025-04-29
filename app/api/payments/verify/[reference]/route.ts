@@ -8,7 +8,7 @@ import { PaymentStatus } from "@/lib/generated/prisma";
 
 export async function GET(
   req: NextRequest,
-  { params }: { params: { reference: string } }
+  { params }: { params: Promise<{ reference: string }> }
 ) {
   try {
     // Get the authenticated user
@@ -17,7 +17,7 @@ export async function GET(
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { reference } = params;
+    const { reference } = await params;
     if (!reference) {
       return NextResponse.json(
         { error: "Reference is required" },
@@ -29,39 +29,20 @@ export async function GET(
     const verificationResult =
       await paystackService.verifyTransaction(reference);
 
-    // Find the payment in our database
-    const payment = await prisma.payment.findUnique({
-      where: { reference },
-    });
-
-    if (!payment) {
-      logger.warn("Payment not found for verification", { reference });
-      return NextResponse.json(verificationResult);
-    }
-
     // Check if the transaction was successful
     if (verificationResult.data.status === "success") {
-      // Update payment status
-      await prisma.payment.update({
-        where: { id: payment.id },
-        data: {
-          status: PaymentStatus.SUCCESS,
-          gatewayResponse: verificationResult.data.gateway_response,
-          cardType: verificationResult.data.authorization?.card_type,
-          last4: verificationResult.data.authorization?.last4,
-          expMonth: verificationResult.data.authorization?.exp_month,
-          expYear: verificationResult.data.authorization?.exp_year,
-          channel: verificationResult.data.channel,
-        },
-      });
-
       // Extract metadata
-      const metadata = payment.metadata || {};
+      const metadata = verificationResult.data.metadata || {};
 
       // Process based on payment type
       if (metadata?.type === "wallet_funding") {
         // Get the amount in Naira (convert from kobo)
         const amountInNaira = verificationResult.data.amount / 100;
+
+        // Ensure we have a valid user ID
+        if (!session.user.id) {
+          throw new AppError("User ID is required", 400);
+        }
 
         // Update the user's wallet balance
         await prisma.wallet.upsert({
@@ -125,8 +106,9 @@ export async function GET(
         // Activate user account
         await prisma.user.update({
           where: { id: userId },
-          data: { isActive: true },
+          data: { isActive: true, status: "ACTIVE" },
         });
+        // udpate session user
 
         logger.info("Registration fee payment verified and user activated", {
           userId,
@@ -139,7 +121,7 @@ export async function GET(
   } catch (error) {
     logger.error("Payment verification error", {
       error,
-      reference: params.reference,
+      reference: (await params).reference,
     });
 
     if (error instanceof AppError) {

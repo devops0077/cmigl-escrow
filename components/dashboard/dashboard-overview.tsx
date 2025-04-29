@@ -65,7 +65,7 @@ export function DashboardOverview() {
                 <div className="text-2xl font-bold">
                   {isLoading
                     ? "Loading..."
-                    : formatCurrency(dashboardData.walletBalance)}
+                    : formatCurrency(dashboardData?.walletBalance)}
                 </div>
                 <p className="text-xs text-muted-foreground">
                   Available for transactions

@@ -1,6 +1,6 @@
 import NextAuth from "next-auth";
 
-import { UserRole } from "./lib/generated/prisma";
+import { UserRole, UserStatus } from "./lib/generated/prisma";
 import { verifyCredentials } from "./lib/auth-actions";
 import Credentials from "next-auth/providers/credentials";
 
@@ -28,7 +28,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     }),
   ],
   callbacks: {
-    async jwt({ token, user }) {
+    async jwt({ token, user, trigger, session }) {
       if (user) {
         token.id = user.id;
         token.email = user.email;
@@ -37,10 +37,23 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         token.role = user.role;
         token.username = user.username;
         token.isActive = user.isActive;
+        token.status = user.status;
+      }
+      if (trigger === "update") {
+        if (session.user) {
+          return {
+            ...token,
+            isActive: session.user.isActive,
+            status: session.user.status,
+            email: session.user.email,
+            name: session.user.name,
+            image: session.user.image,
+          };
+        }
       }
       return token;
     },
-    async session({ session, token }) {
+    async session({ session, token, trigger }) {
       if (token) {
         session.user.id = token.id as string;
         session.user.email = token.email as string;
@@ -49,6 +62,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         session.user.role = token.role as UserRole;
         session.user.username = token.username as string;
         session.user.isActive = token.isActive as boolean;
+        session.user.status = token.status as UserStatus;
       }
       return session;
     },

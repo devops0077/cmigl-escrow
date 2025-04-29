@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useScroll } from "framer-motion";
 import {
   ChevronDown,
+  GitBranch,
   LogOut,
   Settings,
   Shield,
@@ -174,6 +175,16 @@ export function DashboardHeader({
                     <span>Admin Panel</span>
                   </DropdownMenuItem>
                 )}
+                <DropdownMenuItem
+                  disabled
+                  className="relative cursor-not-allowed"
+                >
+                  <GitBranch className="mr-2 h-4 w-4" />
+                  <span>Status</span>
+                  <span className="absolute right-2 text-xs text-muted-foreground">
+                    {data?.user.status}
+                  </span>
+                </DropdownMenuItem>
               </DropdownMenuGroup>
               <DropdownMenuSeparator />
               <DropdownMenuItem

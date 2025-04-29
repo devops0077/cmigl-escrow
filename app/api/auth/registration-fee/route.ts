@@ -17,6 +17,7 @@ export async function POST(req: NextRequest) {
     const params = req.nextUrl.searchParams;
     const userId = params.get("userId");
     const session = await auth();
+    console.log(session, "session");
     if (!session?.user && !userId) {
       logger.error("User not authenticated or userId not provided", {
         session,

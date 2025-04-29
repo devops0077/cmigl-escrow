@@ -10,6 +10,7 @@ import {
   InActiveAccountError,
   UserNotFoundError,
 } from "./error-class";
+import { auth } from "@/auth";
 
 export async function registerUser({
   name,
@@ -227,6 +228,13 @@ export async function verifyCredentials(email: string, password: string) {
     email: user.email,
     username: user.username,
     role: user.role,
+    image: user.image,
+    isActive: user.isActive,
+    status: user.status,
+    emailVerified: user.emailVerified,
+    phone: user.phone,
+    createdAt: user.createdAt,
+    updatedAt: user.updatedAt,
   };
 }
 
@@ -336,4 +344,25 @@ export async function resetPassword(token: string, newPassword: string) {
   });
 
   return { success: true };
+}
+
+export async function getAccountStatus() {
+  const session = await auth();
+  if (!session?.user) {
+    throw new Error("Unauthorized");
+  }
+
+  const user = await prisma.user.findUnique({
+    where: { id: session.user.id },
+    select: {
+      isActive: true,
+      status: true,
+    },
+  });
+
+  if (!user) {
+    throw new Error("User not found");
+  }
+
+  return user;
 }

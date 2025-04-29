@@ -18,6 +18,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { PaystackButton } from "@/components/payments/paystack-button";
 import { toast } from "sonner";
+import { generateTransactionReference } from "@/lib/utils";
 
 interface FundWalletModalProps {
   onSuccess?: () => void;
@@ -87,12 +88,9 @@ export function FundWalletModal({ onSuccess, trigger }: FundWalletModalProps) {
             metadata={{
               type: "wallet_funding",
             }}
+            reference={generateTransactionReference()}
             onSuccess={handleSuccess}
-            onError={handleError}
-            disabled={amount < 100}
-          >
-            Fund Wallet
-          </PaystackButton>
+          />
         </DialogFooter>
       </DialogContent>
     </Dialog>

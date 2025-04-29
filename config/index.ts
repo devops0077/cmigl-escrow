@@ -7,4 +7,7 @@ export const _escrowConfig = {
   maxTransactionAmount: 5000, // Maximum amount for transaction
   registrationFee: 500, // Registration fee in Naira
   registrationFeeString: "₦500.00", // Registration fee string for display
+  publicUrl: process.env.NEXT_PUBLIC_URL || "http://localhost:3000",
+  paystackPublicKey: process.env.NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY || "",
+  paystackSecretKey: process.env.PAYSTACK_SECRET_KEY,
 };

@@ -1,7 +1,6 @@
 import { type NextRequest, NextResponse } from "next/server";
 import { paystackService } from "@/lib/paystack-service";
 import { logger } from "@/lib/logger";
-import { PaymentMethod, PaymentStatus } from "@prisma/client";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 
@@ -39,8 +38,8 @@ export async function POST(req: NextRequest) {
         amount: Number.parseFloat(amount.toString()),
         currency,
         reference,
-        status: PaymentStatus.PENDING,
-        paymentMethod: PaymentMethod.CARD, // Default, will be updated after payment
+        status: "PENDING",
+        paymentMethod: "CARD", // Default, will be updated after payment
         metadata: metadata || {},
       },
     });
@@ -65,8 +64,11 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({
       success: true,
       data: {
+        // @ts-ignore
         authorization_url: paystackResponse.authorization_url,
+        // @ts-ignore
         access_code: paystackResponse.access_code,
+        // @ts-ignore
         reference: paystackResponse.reference,
         paymentId: payment.id,
       },

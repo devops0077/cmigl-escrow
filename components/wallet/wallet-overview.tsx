@@ -17,6 +17,7 @@ import { ArrowDownIcon, ArrowUpIcon, RefreshCw } from "lucide-react";
 import { FundWalletModal } from "./fund-wallet-modal";
 import { WithdrawModal } from "./withdraw-modal";
 import { PaystackScript } from "../payments/paystack-script";
+import { WalletTransactions } from "./wallet-transactions";
 
 export function WalletOverview() {
   const {
@@ -44,7 +45,7 @@ export function WalletOverview() {
   return (
     <>
       <PaystackScript />
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 p-4 md:p-6">
         <Card className="col-span-2">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <div>
@@ -65,7 +66,7 @@ export function WalletOverview() {
             </div>
           </CardContent>
           <CardFooter className="flex justify-between">
-            <FundWalletModal />
+            <FundWalletModal onSuccess={handleRefresh} />
             <WithdrawModal />
           </CardFooter>
         </Card>
@@ -111,6 +112,17 @@ export function WalletOverview() {
                 </div>
               </div>
             </div>
+          </CardContent>
+        </Card>
+      </div>
+      <div className="p-4 md:p-6">
+        <Card className="mt-4 ">
+          <CardHeader>
+            <CardTitle>Transaction History</CardTitle>
+            <CardDescription>Recent activity in your wallet</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <WalletTransactions />
           </CardContent>
         </Card>
       </div>

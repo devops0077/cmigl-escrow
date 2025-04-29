@@ -20,7 +20,7 @@ export async function GET(request: NextRequest) {
 
     // Get current date and calculate dates for the past 12 months
     const currentDate = new Date();
-    const months = [];
+    const months: any[] = [];
     for (let i = 11; i >= 0; i--) {
       const date = new Date(currentDate);
       date.setMonth(currentDate.getMonth() - i);

@@ -101,20 +101,20 @@ model Wallet {
 }
 
 model WalletTransaction {
-  id            String                @id @default(cuid())
+  id            String            @id @default(cuid())
   walletId      String
   amount        Float
-  type          WalletTransactionType
-  status        TransactionStatus     @default(PENDING)
-  reference     String?               @unique // Paystack reference
+  type          TransactionType
+  status        TransactionStatus @default(PENDING)
+  reference     String?           @unique // Paystack reference
   description   String?
   metadata      Json? // Additional data
   paymentMethod PaymentMethod? // Method used
-  createdAt     DateTime              @default(now())
-  updatedAt     DateTime              @updatedAt
-  wallet        Wallet                @relation(fields: [walletId], references: [id], onDelete: Cascade)
-  paymentId     String?               @unique // Link to Payment model
-  payment       Payment?              @relation(fields: [paymentId], references: [id])
+  createdAt     DateTime          @default(now())
+  updatedAt     DateTime          @updatedAt
+  wallet        Wallet            @relation(fields: [walletId], references: [id], onDelete: Cascade)
+  paymentId     String?           @unique // Link to Payment model
+  payment       Payment?          @relation(fields: [paymentId], references: [id])
 }
 
 enum WalletTransactionType {
@@ -156,18 +156,21 @@ model Feedback {
 
 enum TransactionStatus {
   PENDING
+  PROCESSING
   COMPLETED
   FAILED
   CANCELLED
-  REFUNDED
+  SHIPPED
+  CONFIRMED
 }
 
 enum TransactionType {
-  TRANSFER
-  PAYMENT
-  REFUND
+  DEPOSIT
+  WITHDRAWAL
+  ESCROW_PAYMENT
+  ESCROW_REFUND
+  ESCROW_RELEASE
   REGISTRATION_FEE
-  OTHER
 }
 
 model Notification {
@@ -175,20 +178,20 @@ model Notification {
   userId    String
   title     String
   message   String
-  type      NotificationType @default(INFO)
+  type      NotificationType @default(SYSTEM_NOTIFICATION)
   read      Boolean          @default(false)
   createdAt DateTime         @default(now())
   user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 enum NotificationType {
-  INFO
-  SUCCESS
-  WARNING
-  ERROR
+  TRANSACTION_CREATED
+  TRANSACTION_STATUS_CHANGED
+  WALLET_UPDATED
+  SYSTEM_NOTIFICATION
+  ADMIN_NOTIFICATION
+  REGISTRATION
 }
-
-// New models for Paystack integration
 
 model Payment {
   id                String             @id @default(cuid())

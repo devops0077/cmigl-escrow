@@ -124,7 +124,7 @@ export async function verifyEmail(token: string) {
   // Mark email as verified but user remains inactive until registration fee is paid
   await prisma.user.update({
     where: { id: verificationToken.userId },
-    data: { emailVerified: new Date() },
+    data: { emailVerified: new Date(), isActive: true },
   });
 
   // Delete the used token

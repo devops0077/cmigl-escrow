@@ -23,7 +23,7 @@ export default function AuthLayout({ children }: { children: ReactNode }) {
 
             <div className="relative h-64 w-full rounded-lg overflow-hidden mb-8">
               <Image
-                src="/placeholder.svg?height=400&width=600"
+                src="/dashboard.png?height=720&width=1280"
                 alt="Secure transactions"
                 fill
                 className="object-cover"

@@ -50,7 +50,7 @@ export function HeroSection() {
             <div className="flex items-center justify-center">
               <div className="relative w-full aspect-video overflow-hidden rounded-xl">
                 <img
-                  src="/placeholder.svg?height=720&width=1280"
+                  src="/dashboard.png?height=720&width=1280"
                   alt="Hero"
                   className="object-cover w-full h-full"
                 />

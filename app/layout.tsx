@@ -10,7 +10,7 @@ import { ReactQueryProvider } from "@/lib/react-query-provider";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "Vokun Escrow Services",
+  title: "CMIGL Escrow Services Services",
   description: "Secure transactions between buyers and sellers",
 };
 

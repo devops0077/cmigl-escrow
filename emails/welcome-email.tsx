@@ -20,16 +20,16 @@ export default function WelcomeEmail({ name }: WelcomeEmailProps) {
   return (
     <Html>
       <Head />
-      <Preview>Welcome to Vokun Escrow!</Preview>
+      <Preview>Welcome to CMIGL Escrow!</Preview>
       <Body style={main}>
         <Container style={container}>
-          <Heading style={h1}>Welcome to Vokun Escrow!</Heading>
+          <Heading style={h1}>Welcome to CMIGL Escrow!</Heading>
           <Text style={text}>Hello {name},</Text>
           <Text style={text}>
-            Thank you for completing your registration with Vokun Escrow. Your
+            Thank you for completing your registration with CMIGL Escrow. Your
             account is now active and ready to use.
           </Text>
-          <Text style={text}>With Vokun Escrow, you can:</Text>
+          <Text style={text}>With CMIGL Escrow, you can:</Text>
           <Text style={list}>
             • Safely buy and sell products and services
             <br />• Protect your transactions with our secure escrow system
@@ -49,7 +49,7 @@ export default function WelcomeEmail({ name }: WelcomeEmailProps) {
           </Text>
           <Hr style={hr} />
           <Text style={footer}>
-            &copy; {new Date().getFullYear()} Vokun Escrow. All rights reserved.
+            &copy; {new Date().getFullYear()} CMIGL Escrow. All rights reserved.
             <br />
             <Link href="https://vokunescrow.com/terms" style={link}>
               Terms of Service

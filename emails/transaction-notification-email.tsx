@@ -109,7 +109,7 @@ export default function TransactionNotificationEmail({
           </Section>
           <Hr style={hr} />
           <Text style={footer}>
-            &copy; {new Date().getFullYear()} Vokun Escrow. All rights reserved.
+            &copy; {new Date().getFullYear()} CMIGL Escrow. All rights reserved.
             <br />
             <Link href="https://vokunescrow.com/terms" style={link}>
               Terms of Service

@@ -373,12 +373,12 @@ export function MultiStepRegisterForm() {
           <ScrollArea className="h-[60vh] px-4">
             <div className="space-y-4 text-sm">
               <h2 className="text-lg font-semibold">
-                Vokun Escrow Services - Terms of Use
+                CMIGL Escrow Services - Terms of Use
               </h2>
               <p>Effective Date: April 26, 2025</p>
 
               <p>
-                Welcome to Vokun Escrow Services ("Vokun Escrow," "we," "our,"
+                Welcome to CMIGL Escrow Services ("CMIGL Escrow," "we," "our,"
                 "us"). These Terms of Use ("Terms") govern your access to and
                 use of our website, services, and applications (collectively,
                 the "Services"). By accessing or using our Services, you agree
@@ -433,27 +433,27 @@ export function MultiStepRegisterForm() {
               </ul>
               <p>
                 or as outlined during the transaction setup. Fees are
-                non-refundable unless expressly stated otherwise. Vokun Escrow
+                non-refundable unless expressly stated otherwise. CMIGL Escrow
                 reserves the right to change fees at any time, with notice
                 provided via the website.
               </p>
 
               <h3 className="font-semibold mt-4">5. Dispute Resolution</h3>
               <p>
-                If a dispute arises between transacting parties, Vokun Escrow
+                If a dispute arises between transacting parties, CMIGL Escrow
                 will make commercially reasonable efforts to facilitate
                 resolution according to the terms set at the beginning of the
                 transaction.
               </p>
               <p>
-                Vokun Escrow's decision is final and binding unless otherwise
+                CMIGL Escrow's decision is final and binding unless otherwise
                 required by law.
               </p>
 
               <h3 className="font-semibold mt-4">6. Intellectual Property</h3>
               <p>
-                All content, trademarks, and logos on the Vokun Escrow website
-                are owned by or licensed to Vokun Escrow. You may not copy,
+                All content, trademarks, and logos on the CMIGL Escrow website
+                are owned by or licensed to CMIGL Escrow. You may not copy,
                 distribute, modify, or create derivative works without our
                 express written permission.
               </p>
@@ -466,7 +466,7 @@ export function MultiStepRegisterForm() {
                 basis.
               </p>
               <p>
-                Vokun Escrow disclaims all warranties, express or implied,
+                CMIGL Escrow disclaims all warranties, express or implied,
                 including merchantability, fitness for a particular purpose, and
                 non-infringement.
               </p>
@@ -480,13 +480,13 @@ export function MultiStepRegisterForm() {
               <h3 className="font-semibold mt-4">8. Limitation of Liability</h3>
               <p>To the fullest extent permitted by law:</p>
               <p>
-                Vokun Escrow shall not be liable for any indirect, incidental,
+                CMIGL Escrow shall not be liable for any indirect, incidental,
                 special, consequential, or punitive damages.
               </p>
 
               <h3 className="font-semibold mt-4">9. Indemnification</h3>
               <p>
-                You agree to indemnify, defend, and hold harmless Vokun Escrow
+                You agree to indemnify, defend, and hold harmless CMIGL Escrow
                 and its officers, directors, employees, and agents from any
                 claims, liabilities, damages, judgments, and expenses arising
                 out of your use of the Services or your violation of these
@@ -497,7 +497,7 @@ export function MultiStepRegisterForm() {
               <p>
                 We reserve the right to suspend or terminate your access to the
                 Services at our sole discretion, without notice, for conduct we
-                believe violates these Terms or is harmful to Vokun Escrow or
+                believe violates these Terms or is harmful to CMIGL Escrow or
                 other users.
               </p>
 
@@ -523,7 +523,7 @@ export function MultiStepRegisterForm() {
               <h3 className="font-semibold mt-4">14. Contact Information</h3>
               <p>For questions regarding these Terms, please contact us at:</p>
               <p>
-                Vokun Escrow Services
+                CMIGL Escrow Services
                 <br />
                 Website: https://escrow.vokun.ng
                 <br />

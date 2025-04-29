@@ -15,7 +15,7 @@ export default function AuthLayout({ children }: { children: ReactNode }) {
         <div className="hidden lg:flex flex-1 bg-muted items-center justify-center">
           <div className="max-w-md p-8 space-y-6">
             <div className="text-center mb-8">
-              <h2 className="text-2xl font-bold">Vokun Escrow Services</h2>
+              <h2 className="text-2xl font-bold">CMIGL Escrow Services</h2>
               <p className="text-muted-foreground">
                 Secure transactions for everyone
               </p>
@@ -32,7 +32,7 @@ export default function AuthLayout({ children }: { children: ReactNode }) {
 
             <div className="bg-background rounded-lg p-6 shadow-sm">
               <p className="italic mb-4">
-                "Vokun Escrow has transformed how I conduct online business. The
+                "CMIGL Escrow has transformed how I conduct online business. The
                 security and peace of mind are worth every penny."
               </p>
               <div className="flex items-center">

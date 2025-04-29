@@ -6,7 +6,7 @@ export function Footer() {
       <div className="px-5 flex flex-col items-center justify-between gap-4 md:flex-row">
         <div className="flex flex-col items-center gap-4 md:items-start md:gap-2">
           <Link href="/" className="flex items-center space-x-2">
-            <span className="text-lg font-bold text-primary">Vokun Escrow</span>
+            <span className="text-lg font-bold text-primary">CMIGL Escrow</span>
           </Link>
           <p className="text-center text-sm text-muted-foreground md:text-left">
             Secure transactions between buyers and sellers.
@@ -34,7 +34,7 @@ export function Footer() {
             </Link>
           </nav>
           <div className="text-sm text-muted-foreground">
-            © {new Date().getFullYear()} Vokun Escrow Services. All rights
+            © {new Date().getFullYear()} CMIGL Escrow Services. All rights
             reserved.
           </div>
         </div>

@@ -20,7 +20,7 @@ export async function POST(request: Request) {
     });
 
     const mailOptions = {
-      from: `"Vokun Escrow" <${process.env.EMAIL_FROM}>`,
+      from: `"CMIGL Escrow Services" <${process.env.EMAIL_FROM}>`,
       to,
       subject: subject || "Test Email",
       html: html || "This is a test email sent from Nodemailer!",

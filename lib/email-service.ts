@@ -28,7 +28,7 @@ export class EmailService {
   private async sendEmail({ to, subject, html }: EmailOptions): Promise<void> {
     try {
       //   await this.transporter.sendMail({
-      //     from: `"Vokun Escrow" <${process.env.EMAIL_FROM}>`,
+      //     from: `"CMIGL Escrow" <${process.env.EMAIL_FROM}>`,
       //     to,
       //     subject,
       //     html,
@@ -60,7 +60,7 @@ export class EmailService {
 
     await this.sendEmail({
       to: email,
-      subject: "Welcome to Vokun Escrow",
+      subject: "Welcome to CMIGL Escrow",
       html,
     });
   }
@@ -115,11 +115,11 @@ export class EmailService {
   async sendPasswordResetEmail(email: string, token: string) {
     const resetUrl = `${process.env.NEXTAUTH_URL}/auth/reset-password?token=${token}`;
 
-    const subject = "Reset Your Vokun Escrow Password";
+    const subject = "Reset Your CMIGL Escrow Password";
     const text = `
       Hello,
       
-      You requested to reset your password for your Vokun Escrow account.
+      You requested to reset your password for your CMIGL Escrow account.
       
       Please click the link below to reset your password:
       ${resetUrl}
@@ -129,7 +129,7 @@ export class EmailService {
       If you did not request a password reset, please ignore this email.
       
       Regards,
-      Vokun Escrow Team
+      CMIGL Escrow Team
     `;
 
     await this.sendEmail({

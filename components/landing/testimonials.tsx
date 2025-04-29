@@ -55,7 +55,7 @@ export function Testimonials() {
             <CardContent>
               <p className="text-sm">
                 "As a small business owner, I've had issues with payment
-                disputes. Vokun Escrow has eliminated that problem completely.
+                disputes. CMIGL Escrow has eliminated that problem completely.
                 Now I know I'll get paid when I deliver quality products."
               </p>
             </CardContent>
@@ -74,7 +74,7 @@ export function Testimonials() {
             </CardHeader>
             <CardContent>
               <p className="text-sm">
-                "I use Vokun Escrow for all my high-value transactions. The
+                "I use CMIGL Escrow for all my high-value transactions. The
                 process is straightforward, and the peace of mind is worth every
                 penny of the small fee they charge."
               </p>

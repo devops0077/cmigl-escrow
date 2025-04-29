@@ -15,7 +15,7 @@ export function HeroSection() {
                   Secure Transactions Made Simple
                 </h1>
                 <p className="max-w-[600px] text-muted-foreground md:text-xl">
-                  Vokun Escrow protects both buyers and sellers with our secure
+                  CMIGL Escrow protects both buyers and sellers with our secure
                   escrow service. Pay with confidence, receive with peace of
                   mind.
                 </p>

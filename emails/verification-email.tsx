@@ -22,12 +22,12 @@ export default function VerificationEmail({
   return (
     <Html>
       <Head />
-      <Preview>Verify your email address for Vokun Escrow</Preview>
+      <Preview>Verify your email address for CMIGL Escrow</Preview>
       <Body style={main}>
         <Container style={container}>
           <Heading style={h1}>Email Verification</Heading>
           <Text style={text}>
-            Thank you for registering with Vokun Escrow. Please verify your
+            Thank you for registering with CMIGL Escrow. Please verify your
             email address to continue with the registration process.
           </Text>
           <Section style={buttonContainer}>
@@ -41,7 +41,7 @@ export default function VerificationEmail({
           </Text>
           <Hr style={hr} />
           <Text style={footer}>
-            &copy; {new Date().getFullYear()} Vokun Escrow. All rights reserved.
+            &copy; {new Date().getFullYear()} CMIGL Escrow. All rights reserved.
             <br />
             <Link href="https://vokunescrow.com/terms" style={link}>
               Terms of Service

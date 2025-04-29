@@ -71,7 +71,7 @@ export function MobileNav({ className }: MobileNavProps) {
               className="flex items-center"
               onClick={() => setOpen(false)}
             >
-              <span className="font-bold text-primary">Vokun Escrow</span>
+              <span className="font-bold text-primary">CMIGL Escrow</span>
             </Link>
           </div>
           <div className="flex flex-col space-y-3 px-7 pt-10">

@@ -21,7 +21,7 @@ export function SiteHeader() {
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="px-5 flex h-16 items-center">
         <Link href="/" className="flex items-center space-x-2">
-          <span className="text-xl font-bold text-primary">Vokun Escrow</span>
+          <span className="text-xl font-bold text-primary">CMIGL Escrow</span>
         </Link>
         <MainNav className="mx-6 hidden md:flex" />
         <MobileNav className="md:hidden ml-auto" />

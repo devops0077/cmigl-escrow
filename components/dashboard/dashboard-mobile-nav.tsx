@@ -291,7 +291,7 @@ export function DashboardMobileNav() {
 
                     <div className="flex justify-between items-center mt-4">
                       <p className="text-xs text-muted-foreground">
-                        © 2025 Vokun Escrow
+                        © 2025 CMIGL Escrow
                       </p>
                       <div className="flex space-x-4">
                         <Link

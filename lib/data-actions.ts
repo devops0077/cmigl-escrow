@@ -8,6 +8,7 @@ import { compare } from "bcryptjs";
 import { createNotification } from "./notification-service";
 import { emailService } from "./email-service";
 import { _escrowConfig } from "@/config";
+import { formatCurrency } from "./utils";
 
 export async function updateUserProfile({
   name,
@@ -353,7 +354,7 @@ export async function createTransaction({
           amount: -amount,
           type: "ESCROW_PAYMENT",
           status: "COMPLETED",
-          description: `Escrow payment for transaction #${transaction.id}`,
+          description: `Escrow payment for transaction ${transaction.id}`,
         },
       },
     },
@@ -370,7 +371,7 @@ export async function createTransaction({
     userId: buyer.id,
     type: "TRANSACTION_CREATED",
     title: "Transaction Created",
-    message: `You have created a new transaction for ₦${amount.toFixed(2)} with a fee of ₦${escrowFee.toFixed(2)}`,
+    message: `You have created a new transaction for ${formatCurrency(amount)} with a fee of ${formatCurrency(escrowFee)}`,
     data: { transactionId: transaction.id },
   });
 
@@ -379,7 +380,7 @@ export async function createTransaction({
     userId: sellerId,
     type: "TRANSACTION_CREATED",
     title: "New Transaction",
-    message: `${buyer.name || buyer.username} has created a new transaction with you for ₦${amount.toFixed(2)}`,
+    message: `${buyer.name || buyer.username} has created a new transaction with you for ${formatCurrency(amount)}`,
     data: { transactionId: transaction.id },
   });
 
@@ -391,8 +392,8 @@ export async function createTransaction({
       transaction.id,
       "created",
       {
-        amount,
-        fee: escrowFee,
+        amount: formatCurrency(amount),
+        fee: formatCurrency(escrowFee),
         productDetails,
       }
     );
@@ -404,8 +405,8 @@ export async function createTransaction({
         transaction.id,
         "created",
         {
-          amount,
-          fee: escrowFee,
+          amount: formatCurrency(amount),
+          fee: formatCurrency(escrowFee),
           productDetails,
           buyerName: buyer.name || buyer.username,
         }

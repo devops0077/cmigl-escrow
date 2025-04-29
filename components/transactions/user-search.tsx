@@ -99,7 +99,10 @@ export function UserSearch({
           >
             {selectedUser ? (
               <span className="truncate">
-                {selectedUserData.name || selectedUserData.email}
+                {selectedUserData?.name ||
+                  selectedUserData?.username ||
+                  selectedUserData?.email ||
+                  ""}
               </span>
             ) : (
               <span className="text-muted-foreground">{label}</span>

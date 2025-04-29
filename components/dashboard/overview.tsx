@@ -44,7 +44,7 @@ export function Overview() {
             <span
               className={dataPoint.isIncome ? "text-green-500" : "text-red-500"}
             >
-              {formatCurrency(dataPoint.total)}
+              {dataPoint.total}
             </span>
           </p>
         </div>

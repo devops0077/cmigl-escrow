@@ -40,6 +40,7 @@ import { PaystackScript } from "@/components/payments/paystack-script";
 import { PaystackButton } from "@/components/payments/paystack-button";
 import { useSession } from "next-auth/react";
 import { _escrowConfig } from "@/config";
+import { formatCurrency, generateTransactionReference } from "@/lib/utils";
 
 const formSchema = z.object({
   sellerId: z.string().min(1, {
@@ -132,7 +133,7 @@ export function NewTransactionForm() {
         }
 
         // Generate reference
-        const reference = `TX-${Date.now()}-${Math.floor(Math.random() * 1000000)}`;
+        const reference = generateTransactionReference();
 
         setPaymentData({
           reference,
@@ -255,8 +256,8 @@ export function NewTransactionForm() {
                           />
                         </FormControl>
                         <FormDescription>
-                          Enter the amount to be held in escrow. A 2.5% fee (₦
-                          {calculatedFee.toFixed(2)}) will be applied.
+                          Enter the amount to be held in escrow. A 2.5% fee (
+                          {formatCurrency(calculatedFee)}) will be applied.
                         </FormDescription>
                         <FormMessage />
                       </FormItem>
@@ -328,26 +329,29 @@ export function NewTransactionForm() {
               <div className="space-y-6">
                 <div className="text-center py-4">
                   <p className="text-lg font-medium">
-                    Total Amount: ₦
+                    Total Amount:
                     {paymentData
-                      ? (paymentData.amount / 100).toFixed(2)
-                      : "0.00"}
+                      ? formatCurrency(paymentData.amount / 100)
+                      : "₦0.00"}
                   </p>
                   <p className="text-sm text-muted-foreground">
-                    Transaction Amount: ₦
-                    {paymentData?.transactionData.amount.toFixed(2) || "0.00"} +
-                    Fee: ₦
-                    {(paymentData?.transactionData.amount * 0.015).toFixed(2) ||
-                      "0.00"}
+                    Transaction Amount:
+                    {formatCurrency(paymentData?.transactionData.amount) ||
+                      "₦0.00"}{" "}
+                    + Fee:
+                    {formatCurrency(
+                      paymentData?.transactionData.amount *
+                        _escrowConfig.escrowFee
+                    ) || "₦0.00"}
                   </p>
                 </div>
                 <div className="flex justify-center">
                   {paymentData && (
                     <PaystackButton
-                      amount={paymentData.amount}
+                      amount={paymentData.amount / 100}
                       email={paymentData.email}
                       metadata={{
-                        type: "transaction",
+                        type: "wallet_funding",
                         userId: paymentData.transactionData.sellerId,
                       }}
                       reference={paymentData.reference}

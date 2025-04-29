@@ -169,7 +169,7 @@ async function verifyWalletFunding(reference: string) {
           },
         },
         create: {
-          userId: session.user.id,
+          userId: session.user.id as string,
           balance: amountInNaira,
           transactions: {
             create: {

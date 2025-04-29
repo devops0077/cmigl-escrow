@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { Suspense, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -28,6 +28,7 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Info, CheckCircle2 } from "lucide-react";
 import { resetPassword } from "@/lib/auth-actions";
 import { FadeIn } from "@/components/animations/fade-in";
+import { RegisterPageSkeleton } from "../login/page";
 
 const formSchema = z
   .object({
@@ -41,7 +42,7 @@ const formSchema = z
     path: ["confirmPassword"],
   });
 
-export default function ResetPasswordPage() {
+function ResetPasswordPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const token = searchParams.get("token");
@@ -217,5 +218,13 @@ export default function ResetPasswordPage() {
         </Card>
       </div>
     </FadeIn>
+  );
+}
+
+export default function ResetPageWrapper() {
+  return (
+    <Suspense fallback={<RegisterPageSkeleton />}>
+      <ResetPasswordPage />
+    </Suspense>
   );
 }

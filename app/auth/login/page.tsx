@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { Suspense, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { signIn } from "next-auth/react";
@@ -41,7 +41,7 @@ const formSchema = z.object({
   }),
 });
 
-export default function LoginPage() {
+function LoginPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const callbackUrl = searchParams.get("callbackUrl") || "/dashboard";
@@ -203,5 +203,44 @@ export default function LoginPage() {
         </Card>
       </div>
     </FadeIn>
+  );
+}
+
+export default function LoginPageWrapper() {
+  return (
+    <Suspense fallback={<RegisterPageSkeleton />}>
+      <LoginPage />
+    </Suspense>
+  );
+}
+
+export function RegisterPageSkeleton() {
+  return (
+    <div className="min-h-screen flex flex-col md:flex-row overflow-hidden">
+      <div className="w-full md:w-1/2 flex flex-col justify-center items-center p-4 md:p-8 relative z-10">
+        <div className="absolute inset-0 bg-gradient-to-b from-zinc-900 via-zinc-900 to-background"></div>
+        <div className="absolute inset-0 bg-[url('/grid-pattern.svg')] bg-repeat opacity-5"></div>
+        <div className="w-full max-w-md relative z-10">
+          <div className="text-center mb-8">
+            <div className="flex justify-center mb-4">
+              <div className="w-16 h-16 rounded-full bg-zinc-800 animate-pulse"></div>
+            </div>
+            <div className="h-8 w-48 bg-zinc-800 rounded-md animate-pulse mx-auto mb-2"></div>
+            <div className="h-4 w-64 bg-zinc-800 rounded-md animate-pulse mx-auto"></div>
+          </div>
+          <div className="bg-zinc-900/50 backdrop-blur-sm border border-zinc-800 rounded-2xl p-8 shadow-xl">
+            <div className="space-y-6">
+              <div className="h-10 bg-zinc-800 rounded-md animate-pulse"></div>
+              <div className="h-10 bg-zinc-800 rounded-md animate-pulse"></div>
+              <div className="h-10 bg-zinc-800 rounded-md animate-pulse"></div>
+              <div className="h-12 bg-zinc-800 rounded-md animate-pulse"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div className="hidden md:block w-1/2 bg-zinc-900 relative overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-br from-zinc-900 via-zinc-900 to-zinc-800"></div>
+      </div>
+    </div>
   );
 }

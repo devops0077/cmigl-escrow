@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import {
@@ -16,8 +16,9 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { CheckCircle2, XCircle, Loader2 } from "lucide-react";
 import { verifyEmail } from "@/lib/auth-actions";
 import { FadeIn } from "@/components/animations/fade-in";
+import { RegisterPageSkeleton } from "../login/page";
 
-export default function VerifyPage() {
+function VerifyPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const token = searchParams.get("token");
@@ -121,5 +122,13 @@ export default function VerifyPage() {
         </Card>
       </div>
     </FadeIn>
+  );
+}
+
+export default function VerifyPageWrapper() {
+  return (
+    <Suspense fallback={<RegisterPageSkeleton />}>
+      <VerifyPage />
+    </Suspense>
   );
 }

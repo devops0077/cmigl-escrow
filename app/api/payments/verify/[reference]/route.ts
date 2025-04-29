@@ -106,7 +106,7 @@ export async function GET(
         // Activate user account
         await prisma.user.update({
           where: { id: userId },
-          data: { isActive: true, status: "ACTIVE" },
+          data: { status: "ACTIVE" },
         });
         // udpate session user
 

@@ -75,7 +75,7 @@ export function DashboardSidebar() {
           {state === "expanded" && (
             <>
               <Link href="/" className="flex items-center">
-                <span className="text-xl font-bold text-primary">Vokun</span>
+                <span className="text-xl font-bold text-primary">CMIGL</span>
                 <span className="ml-1 text-xl font-light">Escrow</span>
               </Link>
               <SidebarTrigger />

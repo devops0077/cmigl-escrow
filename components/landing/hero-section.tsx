@@ -35,7 +35,7 @@ export function HeroSection() {
               <div className="flex items-center space-x-4 text-sm">
                 <div className="flex items-center space-x-1">
                   <CheckIcon className="h-4 w-4" />
-                  <span className="text-muted-foreground">Flat 1.5% fee</span>
+                  <span className="text-muted-foreground">Flat 2.5% fee</span>
                 </div>
                 <div className="flex items-center space-x-1">
                   <CheckIcon className="h-4 w-4" />

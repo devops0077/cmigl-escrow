@@ -55,7 +55,7 @@ export function HowItWorks() {
               <h3 className="text-xl font-bold">One-Time Registration Fee</h3>
               <p className="max-w-[600px] text-muted-foreground">
                 Join Vokun Escrow with a one-time registration fee of ₦500.
-                After that, enjoy our services with just a flat 1.5% transaction
+                After that, enjoy our services with just a flat 2.5% transaction
                 fee.
               </p>
             </div>

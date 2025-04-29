@@ -325,8 +325,8 @@ export async function createTransaction({
     throw new Error("Insufficient funds");
   }
 
-  // Calculate flat 1.5% fee
-  const escrowFee = amount * 0.015;
+  // Calculate flat 2.5% fee
+  const escrowFee = amount * 0.025;
 
   // Create transaction
   const transaction = await prisma.transaction.create({

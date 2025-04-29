@@ -35,9 +35,9 @@ export function Features() {
               <div className="rounded-full bg-primary p-2 text-white">
                 <PercentIcon className="h-6 w-6" />
               </div>
-              <h3 className="text-xl font-bold">Flat 1.5% Fee</h3>
+              <h3 className="text-xl font-bold">Flat 2.5% Fee</h3>
               <p className="text-center text-muted-foreground">
-                Simple and transparent pricing with a flat 1.5% fee on all
+                Simple and transparent pricing with a flat 2.5% fee on all
                 transactions.
               </p>
             </div>

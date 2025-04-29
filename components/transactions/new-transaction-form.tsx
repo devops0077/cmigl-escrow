@@ -254,7 +254,7 @@ export function NewTransactionForm() {
                           />
                         </FormControl>
                         <FormDescription>
-                          Enter the amount to be held in escrow. A 1.5% fee (₦
+                          Enter the amount to be held in escrow. A 2.5% fee (₦
                           {calculatedFee.toFixed(2)}) will be applied.
                         </FormDescription>
                         <FormMessage />
@@ -407,7 +407,7 @@ export function NewTransactionForm() {
             </CardContent>
             <CardFooter>
               <p className="text-sm text-muted-foreground">
-                A flat 1.5% fee will be deducted from the transaction amount.
+                A flat 2.5% fee will be deducted from the transaction amount.
               </p>
             </CardFooter>
           </Card>

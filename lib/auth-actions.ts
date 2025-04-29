@@ -30,7 +30,7 @@ export async function registerUser({
   // Check if user already exists
   const existingUser = await prisma.user.findFirst({
     where: {
-      OR: [{ email }, { username }],
+      OR: [{ email }, { username }, { phone }],
     },
   });
 
@@ -40,6 +40,9 @@ export async function registerUser({
     }
     if (existingUser.username === username) {
       throw new Error("Username already taken");
+    }
+    if (existingUser.phone === phone) {
+      throw new Error("Phone number already in use");
     }
   }
 

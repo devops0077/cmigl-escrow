@@ -7,6 +7,7 @@ import { auth } from "@/auth";
 import { compare } from "bcryptjs";
 import { createNotification } from "./notification-service";
 import { emailService } from "./email-service";
+import { _escrowConfig } from "@/config";
 
 export async function updateUserProfile({
   name,
@@ -325,8 +326,7 @@ export async function createTransaction({
     throw new Error("Insufficient funds");
   }
 
-  // Calculate flat 2.5% fee
-  const escrowFee = amount * 0.025;
+  const escrowFee = amount * _escrowConfig.escrowFee;
 
   // Create transaction
   const transaction = await prisma.transaction.create({

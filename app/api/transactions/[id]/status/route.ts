@@ -26,6 +26,8 @@ export async function PATCH(
     const transactionId = (await params).id;
     const { status } = await request.json();
 
+    const isAdmin = user.role === "ADMIN";
+
     if (
       !status ||
       !Object.values(TransactionStatus).includes(status as TransactionStatus)
@@ -52,7 +54,7 @@ export async function PATCH(
       );
     }
 
-    if (status === "CONFIRMED" && transaction.buyerId !== user.id) {
+    if (status === "CONFIRMED" && transaction.buyerId !== user.id && !isAdmin) {
       return NextResponse.json(
         { error: "Only the buyer can confirm receipt" },
         { status: 403 }

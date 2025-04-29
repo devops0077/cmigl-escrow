@@ -39,6 +39,7 @@ import { FadeIn } from "@/components/animations/fade-in";
 import { PaystackScript } from "@/components/payments/paystack-script";
 import { PaystackButton } from "@/components/payments/paystack-button";
 import { useSession } from "next-auth/react";
+import { _escrowConfig } from "@/config";
 
 const formSchema = z.object({
   sellerId: z.string().min(1, {
@@ -95,7 +96,7 @@ export function NewTransactionForm() {
   const amount = form.watch("amount");
   useEffect(() => {
     if (amount > 0) {
-      setCalculatedFee(amount * 0.025); // 2.5% fee
+      setCalculatedFee(amount * _escrowConfig.escrowFee);
     } else {
       setCalculatedFee(0);
     }

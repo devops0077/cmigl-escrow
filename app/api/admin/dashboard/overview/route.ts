@@ -93,6 +93,15 @@ export async function GET(request: NextRequest) {
         escrowFee: true,
       },
     });
+    // Calculate total escrow fees
+    const totalRegistrationFees = await prisma.registrationFee.aggregate({
+      where: {
+        paid: true,
+      },
+      _sum: {
+        amount: true,
+      },
+    });
 
     // Get recent user registrations (last 30 days)
     const thirtyDaysAgo = new Date();
@@ -113,6 +122,7 @@ export async function GET(request: NextRequest) {
       pendingTransactions,
       completedTransactions,
       totalEscrowFees: escrowFees._sum.escrowFee || 0,
+      totalRegistrationFees: totalRegistrationFees._sum.amount || 0,
       newUsers,
     });
   } catch (error) {

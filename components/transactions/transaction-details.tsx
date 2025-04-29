@@ -179,6 +179,7 @@ export function TransactionDetails({ id }: { id: string }) {
   const canCompleteTransaction = isAdmin && transaction.status === "CONFIRMED";
   const canMarkAsFailed =
     isAdmin && ["PENDING", "SHIPPED", "CONFIRMED"].includes(transaction.status);
+  const canAdminMarkAsConfirmed = isAdmin && transaction.status === "SHIPPED";
 
   return (
     <>
@@ -283,7 +284,9 @@ export function TransactionDetails({ id }: { id: string }) {
                     onClick={() => handleStatusUpdate("COMPLETED")}
                     disabled={isUpdating}
                   >
-                    {isUpdating ? "Updating..." : "Release Funds to Seller"}
+                    {isUpdating
+                      ? "Updating..."
+                      : "Release Funds to Seller (Admin Only)"}
                   </Button>
                 )}
                 {canMarkAsFailed && (
@@ -295,7 +298,18 @@ export function TransactionDetails({ id }: { id: string }) {
                   >
                     {isUpdating
                       ? "Updating..."
-                      : "Mark as Failed (Refund Buyer)"}
+                      : "Mark as Failed (Refund Buyer) (Admin Only)"}
+                  </Button>
+                )}
+                {canAdminMarkAsConfirmed && (
+                  <Button
+                    className="w-full"
+                    onClick={() => handleStatusUpdate("CONFIRMED")}
+                    disabled={isUpdating}
+                  >
+                    {isUpdating
+                      ? "Updating..."
+                      : "Mark as Confirmed (Admin Only)"}
                   </Button>
                 )}
               </div>

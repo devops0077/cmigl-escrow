@@ -1,5 +1,5 @@
 export const _escrowConfig = {
-  escrowFee: 0.05, // 5% escrow fee
+  escrowFee: 0.025, // 5% escrow fee
   minEscrowAmount: 100, // Minimum amount for escrow
   maxEscrowAmount: 10000, // Maximum amount for escrow
   transactionFee: 0.02, // 2% transaction fee

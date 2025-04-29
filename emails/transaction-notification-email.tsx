@@ -102,7 +102,7 @@ export default function TransactionNotificationEmail({
           <Section style={buttonContainer}>
             <Button
               style={button}
-              href={`${process.env.NEXT_PUBLIC_APP_URL}/transactions/${transactionId}`}
+              href={`${process.env.NEXT_PUBLIC_APP_URL}/dashboard/transactions/${transactionId}`}
             >
               View Transaction
             </Button>

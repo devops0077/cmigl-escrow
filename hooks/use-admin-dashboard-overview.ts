@@ -13,6 +13,7 @@ interface AdminDashboardOverviewData {
   pendingTransactions: number;
   completedTransactions: number;
   totalEscrowFees: number;
+  totalRegistrationFees: number;
   newUsers: number;
 }
 

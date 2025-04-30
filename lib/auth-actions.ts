@@ -11,21 +11,24 @@ import {
   UserNotFoundError,
 } from "./error-class";
 import { auth } from "@/auth";
+import { _escrowConfig } from "@/config";
 
 export async function registerUser({
   name,
   email,
+  phone,
   username,
   password,
-  phone,
+  passportImage,
   termsAccepted,
 }: {
   name: string;
   email: string;
+  phone: string;
   username: string;
   password: string;
-  phone: string;
-  termsAccepted?: boolean;
+  passportImage: string;
+  termsAccepted: boolean;
 }) {
   // Check if user already exists
   const existingUser = await prisma.user.findFirst({
@@ -46,48 +49,42 @@ export async function registerUser({
     }
   }
 
-  // Validate terms acceptance
-  if (!termsAccepted) {
-    throw new Error("You must accept the terms and conditions");
-  }
-
   // Hash password
   const hashedPassword = await hash(password, 10);
 
-  // Create user (inactive until registration fee is paid)
+  // Create verification token
+  const token = nanoid(36);
+  const tokenExpiry = new Date();
+  tokenExpiry.setHours(tokenExpiry.getHours() + 24); // Token expires in 24 hours
+
+  // Create user
   const user = await prisma.user.create({
     data: {
-      name: name.trim(),
-      email: email.trim().toLowerCase(),
-      username: username.trim().toLowerCase(),
-      phone: phone?.trim(),
+      name,
+      email,
+      phone,
+      username,
       password: hashedPassword,
-      isActive: false,
-      termsAccepted: termsAccepted || false,
-      wallet: {
+      passportImage,
+      termsAccepted,
+      verificationToken: {
         create: {
-          balance: 0,
+          token,
+          expires: tokenExpiry,
         },
       },
       registrationFee: {
         create: {
-          amount: 500, // 500 Naira registration fee
+          amount: _escrowConfig.registrationFee,
           paid: false,
         },
       },
-    },
-  });
-
-  // Create verification token
-  const token = nanoid(32); // Generate a random token
-  const expires = new Date();
-  expires.setHours(expires.getHours() + 24); // 24 hour expiry
-
-  await prisma.verificationToken.create({
-    data: {
-      userId: user.id,
-      token,
-      expires,
+      wallet: {
+        create: {
+          balance: 0,
+          currency: "NGN",
+        },
+      },
     },
   });
 
@@ -96,15 +93,11 @@ export async function registerUser({
     await emailService.sendVerificationEmail(email, token);
   } catch (error) {
     console.error("Failed to send verification email:", error);
-    // Continue with registration even if email fails
+    // Continue even if email fails
   }
 
   revalidatePath("/auth/login");
-  return {
-    success: true,
-    userId: user.id,
-    email: user.email,
-  };
+  return user;
 }
 
 export async function verifyEmail(token: string) {

@@ -3,6 +3,7 @@ import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { TransactionStatus } from "@/lib/generated/prisma";
 import { createNotification } from "@/lib/notification-service";
+import { formatCurrency } from "@/lib/utils";
 
 export async function PATCH(
   request: NextRequest,
@@ -83,7 +84,8 @@ export async function PATCH(
 
     // If transaction is completed, release funds to seller
     if (status === "COMPLETED") {
-      const amountToSeller = transaction.amount - transaction.escrowFee;
+      // const amountToSeller = transaction.amount - transaction.escrowFee;
+      const amountToSeller = transaction.amount;
 
       await prisma.wallet.update({
         where: { userId: transaction.sellerId },
@@ -96,7 +98,7 @@ export async function PATCH(
               amount: amountToSeller,
               type: "ESCROW_RELEASE",
               status: "COMPLETED",
-              description: `Funds released for transaction #${transaction.id}`,
+              description: `Funds released for transaction ${transaction.id}`,
             },
           },
         },
@@ -106,7 +108,7 @@ export async function PATCH(
         userId: transaction.sellerId,
         title: "Transaction Completed",
         type: "ADMIN_NOTIFICATION",
-        message: `Transaction ₦${transaction.id} has been completed. Funds released.`,
+        message: `Transaction ${transaction.id} has been completed. Funds released.`,
       });
     }
 
@@ -123,7 +125,7 @@ export async function PATCH(
               amount: transaction.amount,
               type: "ESCROW_REFUND",
               status: "COMPLETED",
-              description: `Refund for failed transaction #${transaction.id}`,
+              description: `Refund for failed transaction ${transaction.id}`,
             },
           },
         },
@@ -133,7 +135,7 @@ export async function PATCH(
         userId: transaction.buyerId,
         title: "Transaction Failed",
         type: "TRANSACTION_STATUS_CHANGED",
-        message: `Transaction ₦${transaction.amount} has failed. Amount refunded.`,
+        message: `Transaction ${formatCurrency(transaction.amount)} has failed. Amount refunded.`,
         data: {
           trxId: transaction.id,
         },

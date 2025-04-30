@@ -53,6 +53,8 @@ export async function POST(
     const existingFeedback = await prisma.feedback.findFirst({
       where: {
         transactionId,
+        giverId: user.id,
+        receiverId,
       },
     });
 
@@ -64,7 +66,7 @@ export async function POST(
     }
 
     // Create feedback
-    const feedback = await prisma.feedback.create({
+    const feedback = await prisma.feedback.up({
       data: {
         transactionId,
         giverId: user.id,
@@ -87,7 +89,7 @@ export async function POST(
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: { id: string } }
 ) {
   try {
     const session = await auth();
@@ -104,7 +106,7 @@ export async function GET(
       return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
 
-    const transactionId = (await params).id;
+    const transactionId = params.id;
 
     // Verify transaction exists and user is part of it
     const transaction = await prisma.transaction.findUnique({

@@ -517,6 +517,14 @@ export async function updateTransactionStatus({
       buyer: `Your transaction is now being processed.`,
       seller: `Your transaction is now being processed.`,
     },
+    DISPUTED: {
+      buyer: `Your transaction has been disputed.`,
+      seller: `Your transaction has been disputed.`,
+    },
+    RESOLVED: {
+      buyer: `Your transaction dispute has been resolved.`,
+      seller: `Your transaction dispute has been resolved.`,
+    },
   };
 
   // Create notification for buyer

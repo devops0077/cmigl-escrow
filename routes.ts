@@ -13,6 +13,7 @@ export const publicRoutes = [
   "/api/users/status",
   "/api/auth/registration-fee/",
   "/api/payments/verify/(.*)",
+  "/api/upload",
 ];
 
 /**

@@ -50,6 +50,7 @@ model User {
   isActive              Boolean            @default(false)
   registrationFee       RegistrationFee?
   image                 String?
+  passportImage         String? // Added passport image field
   password              String?
   role                  UserRole           @default(USER)
   status                UserStatus         @default(PENDING)
@@ -67,6 +68,9 @@ model User {
   paystackRecipientCode String? // For transfers/withdrawals
   bankAccounts          BankAccount[]
   subscriptions         Subscription[]
+  disputesInitiated     Dispute[]          @relation("DisputeInitiator")
+  Feedback              Feedback[]         @relation("GaveFeedback")
+  feedbackReceived      Feedback[]         @relation("ReceivedFeedback")
 }
 
 enum UserRole {
@@ -140,18 +144,25 @@ model Transaction {
   updatedAt       DateTime          @updatedAt
   buyer           User              @relation("SentTransactions", fields: [buyerId], references: [id])
   seller          User              @relation("ReceivedTransactions", fields: [sellerId], references: [id])
-  feedback        Feedback?
+  feedbacks       Feedback?
   paymentId       String?           @unique // Link to Payment model
   payment         Payment?          @relation(fields: [paymentId], references: [id])
+  dispute         Dispute? // Added relation to dispute
+  hasDispute      Boolean           @default(false) // Flag to indicate if transaction has a dispute
 }
 
 model Feedback {
   id            String      @id @default(cuid())
   transactionId String      @unique
+  giverId       String
+  receiverId    String
   rating        Int
   comment       String?
+  isPublic      Boolean
   createdAt     DateTime    @default(now())
   updatedAt     DateTime    @updatedAt
+  receiver      User        @relation("ReceivedFeedback", fields: [receiverId], references: [id])
+  giver         User        @relation("GaveFeedback", fields: [giverId], references: [id])
   transaction   Transaction @relation(fields: [transactionId], references: [id], onDelete: Cascade)
 }
 
@@ -163,6 +174,8 @@ enum TransactionStatus {
   CANCELLED
   SHIPPED
   CONFIRMED
+  DISPUTED // Added disputed status
+  RESOLVED // Added resolved status
 }
 
 enum TransactionType {
@@ -172,6 +185,7 @@ enum TransactionType {
   ESCROW_REFUND
   ESCROW_RELEASE
   REGISTRATION_FEE
+  DISPUTE_RESOLUTION // Added dispute resolution type
 }
 
 model Notification {
@@ -193,6 +207,9 @@ enum NotificationType {
   SYSTEM_NOTIFICATION
   ADMIN_NOTIFICATION
   REGISTRATION
+  DISPUTE_CREATED // Added dispute notification types
+  DISPUTE_UPDATED
+  DISPUTE_RESOLVED
 }
 
 model Payment {
@@ -300,4 +317,40 @@ model RegistrationFee {
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
+
+// New model for disputes
+model Dispute {
+  id            String           @id @default(cuid())
+  transactionId String           @unique
+  initiatorId   String
+  reason        String
+  description   String?
+  evidence      String? // URL to uploaded evidence file
+  status        DisputeStatus    @default(OPEN)
+  adminNotes    String?
+  sellerAmount  Float? // Amount to be released to seller (admin decision)
+  buyerAmount   Float? // Amount to be refunded to buyer (admin decision)
+  createdAt     DateTime         @default(now())
+  updatedAt     DateTime         @updatedAt
+  resolvedAt    DateTime?
+  transaction   Transaction      @relation(fields: [transactionId], references: [id], onDelete: Cascade)
+  initiator     User             @relation("DisputeInitiator", fields: [initiatorId], references: [id])
+  messages      DisputeMessage[]
+}
+
+enum DisputeStatus {
+  OPEN
+  UNDER_REVIEW
+  RESOLVED
+  CANCELLED
+}
+
+model DisputeMessage {
+  id        String   @id @default(cuid())
+  disputeId String
+  userId    String
+  message   String
+  createdAt DateTime @default(now())
+  dispute   Dispute  @relation(fields: [disputeId], references: [id], onDelete: Cascade)
 }

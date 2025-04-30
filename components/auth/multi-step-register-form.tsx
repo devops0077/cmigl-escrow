@@ -19,17 +19,8 @@ import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Info, CheckCircle2 } from "lucide-react";
+import { Info, CheckCircle2, X } from "lucide-react";
 import { registerUser } from "@/lib/auth-actions";
-import {
-  Drawer,
-  DrawerClose,
-  DrawerContent,
-  DrawerDescription,
-  DrawerFooter,
-  DrawerHeader,
-  DrawerTitle,
-} from "@/components/ui/drawer";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useInView } from "react-intersection-observer";
 import {
@@ -40,6 +31,7 @@ import {
   SheetFooter,
   SheetHeader,
 } from "../ui/sheet";
+import { PassportImageCapture } from "@/components/auth/passport-image-capture";
 
 // Define the single form schema
 const formSchema = z
@@ -65,6 +57,7 @@ const formSchema = z
       message: "Password must be at least 8 characters.",
     }),
     confirmPassword: z.string(),
+    passportImage: z.string().optional(),
     termsAccepted: z.boolean().refine((val) => val === true, {
       message: "You must accept the terms and conditions to continue.",
     }),
@@ -82,6 +75,7 @@ export function MultiStepRegisterForm() {
   const [success, setSuccess] = useState(false);
   const [termsDrawerOpen, setTermsDrawerOpen] = useState(false);
   const [hasScrolledToBottom, setHasScrolledToBottom] = useState(false);
+  const [passportImageUrl, setPassportImageUrl] = useState<string | null>(null);
 
   // Ref for detecting when user has scrolled to the bottom of terms
   const { ref: bottomRef, inView } = useInView({
@@ -103,6 +97,7 @@ export function MultiStepRegisterForm() {
       username: "",
       password: "",
       confirmPassword: "",
+      passportImage: "",
       termsAccepted: false,
     },
   });
@@ -116,15 +111,24 @@ export function MultiStepRegisterForm() {
     } else if (step === 2) {
       fieldsToValidate = ["username", "password", "confirmPassword"];
     } else if (step === 3) {
+      // Passport image is optional but encouraged
+      fieldsToValidate = [];
+    } else if (step === 4) {
       fieldsToValidate = ["termsAccepted"];
     }
 
     const isValid = await form.trigger(fieldsToValidate);
-    if (isValid && step < 3) {
+    if (isValid && step < 4) {
       setStep(step + 1);
-    } else if (isValid && step === 3) {
+    } else if (isValid && step === 4) {
       await form.handleSubmit(onSubmit)();
     }
+  };
+
+  // Handle passport image upload
+  const handlePassportImageCapture = (imageUrl: string) => {
+    setPassportImageUrl(imageUrl);
+    form.setValue("passportImage", imageUrl);
   };
 
   // Handle final form submission
@@ -139,10 +143,11 @@ export function MultiStepRegisterForm() {
         phone: values.phone,
         username: values.username,
         password: values.password,
+        passportImage: values.passportImage as string,
         termsAccepted: values.termsAccepted,
       });
 
-      if (result.success) {
+      if (result.id) {
         setSuccess(true);
         toast.success("Registration successful", {
           description: "Please check your email to verify your account.",
@@ -178,13 +183,16 @@ export function MultiStepRegisterForm() {
       )}
       <div className="flex justify-between mb-6">
         <div
-          className={`h-2 w-1/3 rounded-full ${step >= 1 ? "bg-primary" : "bg-muted"} mr-1`}
+          className={`h-2 w-1/4 rounded-full ${step >= 1 ? "bg-primary" : "bg-muted"} mr-1`}
         ></div>
         <div
-          className={`h-2 w-1/3 rounded-full ${step >= 2 ? "bg-primary" : "bg-muted"} mr-1`}
+          className={`h-2 w-1/4 rounded-full ${step >= 2 ? "bg-primary" : "bg-muted"} mr-1`}
         ></div>
         <div
-          className={`h-2 w-1/3 rounded-full ${step >= 3 ? "bg-primary" : "bg-muted"}`}
+          className={`h-2 w-1/4 rounded-full ${step >= 3 ? "bg-primary" : "bg-muted"} mr-1`}
+        ></div>
+        <div
+          className={`h-2 w-1/4 rounded-full ${step >= 4 ? "bg-primary" : "bg-muted"}`}
         ></div>
       </div>
       {success && (
@@ -302,7 +310,68 @@ export function MultiStepRegisterForm() {
         </Form>
       )}
 
-      {step === 3 && !success && (
+      {step === 3 && (
+        <Form {...form}>
+          <form onSubmit={(e) => e.preventDefault()} className="space-y-2">
+            <FormField
+              control={form.control}
+              name="passportImage"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Passport Photograph</FormLabel>
+                  <FormDescription>
+                    Please upload or take a passport photograph. This helps us
+                    verify your identity.
+                  </FormDescription>
+                  <FormControl>
+                    <div className="space-y-1">
+                      <PassportImageCapture
+                        onImageCapture={handlePassportImageCapture}
+                        existingImage={passportImageUrl || ""}
+                      />
+
+                      {/* {passportImageUrl && (
+                        <div className="relative mt-1">
+                          <div className="border rounded-md overflow-hidden w-full h-16 flex items-center justify-center">
+                            <img
+                              src={passportImageUrl || "/placeholder.svg"}
+                              alt="Passport"
+                              className="max-w-full max-h-full object-contain"
+                            />
+                          </div>
+                          <Button
+                            type="button"
+                            variant="destructive"
+                            size="icon"
+                            className="absolute top-2 right-2 h-8 w-8"
+                            onClick={() => {
+                              setPassportImageUrl(null);
+                              form.setValue("passportImage", "");
+                            }}
+                          >
+                            <X className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      )} */}
+                    </div>
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <div className="flex justify-between">
+              <Button type="button" variant="outline" onClick={handleBack}>
+                Back
+              </Button>
+              <Button type="button" onClick={handleNextStep}>
+                {passportImageUrl ? "Next" : "Skip for now"}
+              </Button>
+            </div>
+          </form>
+        </Form>
+      )}
+
+      {step === 4 && !success && (
         <Form {...form}>
           <form onSubmit={(e) => e.preventDefault()} className="space-y-4">
             <FormField

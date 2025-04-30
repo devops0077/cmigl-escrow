@@ -125,7 +125,9 @@ export async function GET(
           where: { userId: session.user.id },
           data: {
             userId: session.user.id as string,
-            balance: amount,
+            balance: {
+              increment: amount,
+            },
             transactions: {
               create: {
                 type: "DEPOSIT",

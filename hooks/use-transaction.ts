@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import apiClient from "@/lib/api-client";
+import { Feedback } from "@/lib/generated/prisma";
 
 interface Transaction {
   id: string;
@@ -26,6 +27,8 @@ interface Transaction {
   };
   isBuyer: boolean;
   isSeller: boolean;
+  hasDispute: boolean;
+  feedback: Feedback;
 }
 
 export function useTransaction(id: string) {

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import {
@@ -22,14 +22,47 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import apiClient from "@/lib/api-client";
 import { toast } from "sonner";
 import { Skeleton } from "@/components/ui/skeleton";
+import { TransactionFeedback } from "./transaction-feedback";
+import { DisputeForm } from "./dispute-form";
+import {
+  Drawer,
+  DrawerContent,
+  DrawerDescription,
+  DrawerHeader,
+  DrawerTitle,
+} from "@/components/ui/drawer";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 export function TransactionDetails({ id }: { id: string }) {
   const router = useRouter();
   const { data: session } = useSession();
   const [isUpdating, setIsUpdating] = useState(false);
   const queryClient = useQueryClient();
+  const [feedbackOpen, setFeedbackOpen] = useState(false);
+  const [disputeOpen, setDisputeOpen] = useState(false);
+  const [showFeedbackPrompt, setShowFeedbackPrompt] = useState(false);
+  const isMobile = useIsMobile();
 
   const { data: transaction, isLoading, isError } = useTransaction(id);
+
+  // Check if we should show feedback prompt when transaction is completed
+  useEffect(() => {
+    if (transaction?.status === "COMPLETED" && !transaction?.feedback) {
+      // Show feedback prompt after a short delay
+      const timer = setTimeout(() => {
+        setShowFeedbackPrompt(true);
+      }, 1000);
+
+      return () => clearTimeout(timer);
+    }
+  }, [transaction]);
 
   const updateStatusMutation = useMutation({
     mutationFn: async (newStatus: string) => {
@@ -43,6 +76,11 @@ export function TransactionDetails({ id }: { id: string }) {
       queryClient.invalidateQueries({ queryKey: ["transactions"] });
       queryClient.invalidateQueries({ queryKey: ["wallet"] });
       queryClient.invalidateQueries({ queryKey: ["wallet-transactions"] });
+
+      // If transaction was completed, show feedback prompt
+      if (updateStatusMutation.variables === "COMPLETED") {
+        setShowFeedbackPrompt(true);
+      }
     },
   });
 
@@ -81,9 +119,22 @@ export function TransactionDetails({ id }: { id: string }) {
         return "bg-purple-500";
       case "confirmed":
         return "bg-teal-500";
+      case "disputed":
+        return "bg-orange-500";
+      case "resolved":
+        return "bg-emerald-500";
       default:
         return "bg-gray-500";
     }
+  };
+
+  const handleOpenFeedback = () => {
+    setFeedbackOpen(true);
+    setShowFeedbackPrompt(false);
+  };
+
+  const handleOpenDispute = () => {
+    setDisputeOpen(true);
   };
 
   if (isLoading) {
@@ -180,6 +231,16 @@ export function TransactionDetails({ id }: { id: string }) {
   const canMarkAsFailed =
     isAdmin && ["PENDING", "SHIPPED", "CONFIRMED"].includes(transaction.status);
   const canAdminMarkAsConfirmed = isAdmin && transaction.status === "SHIPPED";
+  const canInitiateDispute =
+    (transaction.isBuyer || transaction.isSeller) &&
+    ["PENDING", "SHIPPED", "CONFIRMED"].includes(transaction.status) &&
+    !transaction.hasDispute;
+  const canResolveDispute = isAdmin && transaction.status === "DISPUTED";
+
+  // Determine which party to show feedback for
+  const feedbackReceiverId = transaction.isBuyer
+    ? transaction.sellerId
+    : transaction.buyerId;
 
   return (
     <>
@@ -234,6 +295,20 @@ export function TransactionDetails({ id }: { id: string }) {
                 <p className="text-sm font-medium">Last Updated</p>
                 <p>{formatDate(transaction.updatedAt)}</p>
               </div>
+
+              {transaction.hasDispute && (
+                <>
+                  <Separator />
+                  <div>
+                    <p className="text-sm font-medium text-orange-500">
+                      Dispute Status
+                    </p>
+                    <p className="text-orange-500">
+                      This transaction is currently under dispute
+                    </p>
+                  </div>
+                </>
+              )}
             </CardContent>
           </Card>
           <Card>
@@ -312,11 +387,124 @@ export function TransactionDetails({ id }: { id: string }) {
                       : "Mark as Confirmed (Admin Only)"}
                   </Button>
                 )}
+                {canInitiateDispute && (
+                  <Button
+                    variant="outline"
+                    className="w-full border-orange-500 text-orange-500 hover:bg-orange-50 hover:text-orange-600"
+                    onClick={handleOpenDispute}
+                  >
+                    Initiate Dispute
+                  </Button>
+                )}
+                {canResolveDispute && (
+                  <Button
+                    className="w-full bg-orange-500 hover:bg-orange-600"
+                    onClick={() =>
+                      router.push(`/admin/disputes/${transaction.id}`)
+                    }
+                  >
+                    Resolve Dispute (Admin)
+                  </Button>
+                )}
+                {transaction.status === "COMPLETED" &&
+                  !transaction.feedback && (
+                    <Button
+                      variant="outline"
+                      className="w-full"
+                      onClick={handleOpenFeedback}
+                    >
+                      Leave Feedback
+                    </Button>
+                  )}
               </div>
             </CardFooter>
           </Card>
         </div>
       </FadeIn>
+
+      {/* Feedback UI - Responsive (Drawer for mobile, Dialog for desktop) */}
+      {isMobile ? (
+        <Drawer
+          open={feedbackOpen || showFeedbackPrompt}
+          onOpenChange={setFeedbackOpen}
+        >
+          <DrawerContent>
+            <DrawerHeader>
+              <DrawerTitle>Transaction Feedback</DrawerTitle>
+              <DrawerDescription>
+                Share your experience with this transaction
+              </DrawerDescription>
+            </DrawerHeader>
+            <div className="px-4 pb-4">
+              <TransactionFeedback
+                transactionId={transaction.id}
+                receiverId={feedbackReceiverId}
+                onClose={() => {
+                  setFeedbackOpen(false);
+                  setShowFeedbackPrompt(false);
+                }}
+              />
+            </div>
+          </DrawerContent>
+        </Drawer>
+      ) : (
+        <Dialog
+          open={feedbackOpen || showFeedbackPrompt}
+          onOpenChange={setFeedbackOpen}
+        >
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Transaction Feedback</DialogTitle>
+              <DialogDescription>
+                Share your experience with this transaction
+              </DialogDescription>
+            </DialogHeader>
+            <TransactionFeedback
+              transactionId={transaction.id}
+              receiverId={feedbackReceiverId}
+              onClose={() => {
+                setFeedbackOpen(false);
+                setShowFeedbackPrompt(false);
+              }}
+            />
+          </DialogContent>
+        </Dialog>
+      )}
+
+      {/* Dispute UI - Responsive (Drawer for mobile, Dialog for desktop) */}
+      {isMobile ? (
+        <Drawer open={disputeOpen} onOpenChange={setDisputeOpen}>
+          <DrawerContent>
+            <DrawerHeader>
+              <DrawerTitle>Initiate Dispute</DrawerTitle>
+              <DrawerDescription>
+                Please provide details about your dispute
+              </DrawerDescription>
+            </DrawerHeader>
+            <div className="px-4 pb-4">
+              <DisputeForm
+                transactionId={transaction.id}
+                onClose={() => setDisputeOpen(false)}
+              />
+            </div>
+          </DrawerContent>
+        </Drawer>
+      ) : (
+        <Dialog open={disputeOpen} onOpenChange={setDisputeOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Initiate Dispute</DialogTitle>
+              <DialogDescription>
+                Please provide details about your dispute
+              </DialogDescription>
+            </DialogHeader>
+            <DisputeForm
+              transactionId={transaction.id}
+              onClose={() => setDisputeOpen(false)}
+            />
+          </DialogContent>
+        </Dialog>
+      )}
     </>
   );
 }

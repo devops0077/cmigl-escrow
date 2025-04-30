@@ -38,6 +38,8 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         token.username = user.username;
         token.isActive = user.isActive;
         token.status = user.status;
+        token.username = user.username;
+        token.emailVerified = user.emailVerified;
       }
       if (trigger === "update") {
         if (session.user) {
@@ -63,6 +65,10 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         session.user.username = token.username as string;
         session.user.isActive = token.isActive as boolean;
         session.user.status = token.status as UserStatus;
+        session.user.emailVerified = token.emailVerified as Date | null;
+        session.user.phone = token.phone as string;
+        session.user.createdAt = token.createdAt as Date;
+        session.user.updatedAt = token.updatedAt as Date;
       }
       return session;
     },

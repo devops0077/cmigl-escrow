@@ -52,23 +52,7 @@ const formSchema = z.object({
   productDetails: z.string().min(10, {
     message: "Product details must be at least 10 characters.",
   }),
-  productCategory: z.string().min(1, {
-    message: "Please select a product category.",
-  }),
 });
-
-// Define product categories
-const productCategories = [
-  { id: "1", name: "Electronics" },
-  { id: "2", name: "Fashion" },
-  { id: "3", name: "Home & Garden" },
-  { id: "4", name: "Health & Beauty" },
-  { id: "5", name: "Sports & Outdoors" },
-  { id: "6", name: "Toys & Games" },
-  { id: "7", name: "Automotive" },
-  { id: "8", name: "Digital Services" },
-  { id: "9", name: "Other" },
-];
 
 export function NewTransactionForm() {
   const router = useRouter();
@@ -89,7 +73,6 @@ export function NewTransactionForm() {
       sellerId: "",
       amount: 0,
       productDetails: "",
-      productCategory: "",
     },
   });
 
@@ -118,7 +101,6 @@ export function NewTransactionForm() {
           sellerId: values.sellerId,
           amount: values.amount,
           productDetails: values.productDetails,
-          productCategory: values.productCategory,
         });
 
         toast.success("Transaction created", {
@@ -177,7 +159,6 @@ export function NewTransactionForm() {
         sellerId: paymentData.transactionData.sellerId,
         amount: paymentData.transactionData.amount,
         productDetails: paymentData.transactionData.productDetails,
-        productCategory: paymentData.transactionData.productCategory,
       });
 
       toast.success("Transaction created", {
@@ -263,7 +244,7 @@ export function NewTransactionForm() {
                       </FormItem>
                     )}
                   />
-                  <FormField
+                  {/* <FormField
                     control={form.control}
                     name="productCategory"
                     render={({ field }) => (
@@ -296,7 +277,7 @@ export function NewTransactionForm() {
                         <FormMessage />
                       </FormItem>
                     )}
-                  />
+                  /> */}
                   <FormField
                     control={form.control}
                     name="productDetails"
@@ -351,8 +332,9 @@ export function NewTransactionForm() {
                       amount={paymentData.amount / 100}
                       email={paymentData.email}
                       metadata={{
-                        type: "wallet_funding",
-                        userId: paymentData.transactionData.sellerId,
+                        type: "transaction",
+                        values: paymentData.transactionData,
+                        ref: paymentData.reference,
                       }}
                       reference={paymentData.reference}
                       onSuccess={handlePaymentSuccess}

@@ -78,6 +78,7 @@ export function Overview() {
         <Tooltip content={<CustomTooltip />} />
         <Bar
           dataKey="total"
+          // @ts-ignore
           fill={(entry) => (entry.isIncome ? "#16a34a" : "#ef4444")}
           radius={[4, 4, 0, 0]}
         />

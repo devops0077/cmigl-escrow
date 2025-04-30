@@ -5,6 +5,7 @@ import { AppError } from "@/lib/error-class";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { PaymentStatus } from "@/lib/generated/prisma";
+import { createTransaction } from "@/lib/data-actions";
 
 export async function GET(
   req: NextRequest,
@@ -91,7 +92,7 @@ export async function GET(
           reference,
           amount: amountInNaira,
         });
-      } else if (metadata.type === "registration_fee") {
+      } else if (metadata?.type === "registration_fee") {
         const userId = metadata.userId || session.user.id;
 
         // Update registration fee status
@@ -113,6 +114,32 @@ export async function GET(
         logger.info("Registration fee payment verified and user activated", {
           userId,
           reference,
+        });
+      } else if (metadata?.type === "transaction") {
+        const amountInNaira = verificationResult.data.amount / 100;
+        const { sellerId, amount, productDetails } = metadata.values;
+        const ref = metadata.ref;
+
+        // Update the user's wallet balance
+        await prisma.wallet.update({
+          where: { userId: session.user.id },
+          data: {
+            userId: session.user.id as string,
+            balance: amount,
+            transactions: {
+              create: {
+                type: "DEPOSIT",
+                amount: amount,
+                status: "COMPLETED",
+                description: "Wallet funding via Paystack",
+                metadata: {
+                  paymentGateway: "paystack",
+                  paymentReference: ref,
+                  paymentChannel: verificationResult.data.channel,
+                },
+              },
+            },
+          },
         });
       }
     }

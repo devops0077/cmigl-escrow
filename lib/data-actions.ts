@@ -298,12 +298,10 @@ export async function createTransaction({
   sellerId,
   amount,
   productDetails,
-  productCategory,
 }: {
   sellerId: string;
   amount: number;
   productDetails: string;
-  productCategory: string;
 }) {
   const session = await auth();
 
@@ -337,7 +335,6 @@ export async function createTransaction({
       amount,
       escrowFee,
       productDetails,
-      productCategory,
       status: "PENDING",
     },
   });

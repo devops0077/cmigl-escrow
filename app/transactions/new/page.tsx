@@ -81,7 +81,6 @@ export default function NewTransactionPage() {
         sellerId: values.sellerId,
         amount: values.amount,
         productDetails: values.productDetails,
-        productCategory: values.productCategory,
       });
 
       toast.success("Transaction created", {

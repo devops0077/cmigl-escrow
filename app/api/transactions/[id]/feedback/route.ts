@@ -4,7 +4,7 @@ import { prisma } from "@/lib/prisma";
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await auth();
@@ -21,7 +21,7 @@ export async function POST(
       return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
 
-    const transactionId = params.id;
+    const transactionId = (await params).id;
     const { receiverId, rating, comment, isPublic } = await request.json();
 
     // Verify transaction exists and user is part of it
@@ -53,8 +53,6 @@ export async function POST(
     const existingFeedback = await prisma.feedback.findFirst({
       where: {
         transactionId,
-        giverId: user.id,
-        receiverId,
       },
     });
 
@@ -89,7 +87,7 @@ export async function POST(
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await auth();
@@ -106,7 +104,7 @@ export async function GET(
       return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
 
-    const transactionId = params.id;
+    const transactionId = (await params).id;
 
     // Verify transaction exists and user is part of it
     const transaction = await prisma.transaction.findUnique({

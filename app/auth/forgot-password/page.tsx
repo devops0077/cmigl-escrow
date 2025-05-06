@@ -27,6 +27,7 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Info, CheckCircle2 } from "lucide-react";
 import { requestPasswordReset } from "@/lib/auth-actions";
 import { FadeIn } from "@/components/animations/fade-in";
+import { AppError } from "@/lib/error-class";
 
 const formSchema = z.object({
   email: z.string().email({
@@ -58,7 +59,7 @@ export default function ForgotPasswordPage() {
     } catch (error) {
       console.error("Password reset request error:", error);
       setError(
-        error instanceof Error
+        error instanceof AppError
           ? error.message
           : "Failed to send password reset email"
       );

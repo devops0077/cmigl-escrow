@@ -10,28 +10,42 @@ export async function GET(request: NextRequest) {
     }
 
     // Check if user is admin
-    const user = await prisma.user.findUnique({
+    const admin = await prisma.user.findUnique({
       where: { email: session.user.email },
     });
 
-    if (!user || user.role !== "ADMIN") {
+    if (!admin || admin.role !== "ADMIN") {
       return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
     }
 
     // Get query parameters
     const searchParams = request.nextUrl.searchParams;
-    const status = searchParams.get("status") || undefined;
     const page = Number.parseInt(searchParams.get("page") || "1");
     const limit = Number.parseInt(searchParams.get("limit") || "10");
-    const skip = (page - 1) * limit;
+    const search = searchParams.get("search") || "";
+    const status = searchParams.get("status") || undefined;
+    const sortField = searchParams.get("sortField") || "createdAt";
+    const sortDirection = searchParams.get("sortDirection") || "desc";
 
-    // Build the where clause
+    // Build where clause
     const where: any = {};
-    if (status) {
+
+    if (status && status !== "ALL") {
       where.status = status;
     }
 
-    // Get disputes with pagination
+    if (search) {
+      where.OR = [
+        { reason: { contains: search, mode: "insensitive" } },
+        { description: { contains: search, mode: "insensitive" } },
+        { transaction: { id: { contains: search } } },
+      ];
+    }
+
+    // Count total disputes matching the criteria
+    const total = await prisma.dispute.count({ where });
+
+    // Get disputes with pagination and sorting
     const disputes = await prisma.dispute.findMany({
       where,
       include: {
@@ -41,32 +55,62 @@ export async function GET(request: NextRequest) {
             amount: true,
             status: true,
             buyer: {
-              select: { id: true, name: true, username: true, email: true },
+              select: { id: true, name: true, username: true },
             },
             seller: {
-              select: { id: true, name: true, username: true, email: true },
+              select: { id: true, name: true, username: true },
             },
           },
         },
         initiator: {
-          select: { id: true, name: true, username: true, email: true },
+          select: { id: true, name: true, username: true },
         },
       },
-      orderBy: { createdAt: "desc" },
-      skip,
+      skip: (page - 1) * limit,
       take: limit,
+      orderBy: {
+        [sortField]: sortDirection,
+      },
     });
 
-    // Get total count for pagination
-    const total = await prisma.dispute.count({ where });
+    // Format the response
+    const formattedDisputes = disputes.map((dispute) => {
+      const isBuyerInitiator =
+        dispute.initiator.id === dispute.transaction.buyer.id;
+
+      return {
+        id: dispute.id,
+        transactionId: dispute.transactionId,
+        reason: dispute.reason,
+        status: dispute.status,
+        createdAt: dispute.createdAt,
+        updatedAt: dispute.updatedAt,
+        resolvedAt: dispute.resolvedAt,
+        transactionAmount: dispute.transaction.amount,
+        transactionStatus: dispute.transaction.status,
+        initiatorId: dispute.initiator.id,
+        initiatorName: dispute.initiator.name || dispute.initiator.username,
+        initiatorType: isBuyerInitiator ? "Buyer" : "Seller",
+        buyerId: dispute.transaction.buyer.id,
+        buyerName:
+          dispute.transaction.buyer.name || dispute.transaction.buyer.username,
+        sellerId: dispute.transaction.seller.id,
+        sellerName:
+          dispute.transaction.seller.name ||
+          dispute.transaction.seller.username,
+      };
+    });
+
+    // Calculate total pages
+    const totalPages = Math.ceil(total / limit);
 
     return NextResponse.json({
-      disputes,
-      pagination: {
+      disputes: formattedDisputes,
+      meta: {
         total,
         page,
         limit,
-        pages: Math.ceil(total / limit),
+        totalPages,
       },
     });
   } catch (error) {

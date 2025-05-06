@@ -3,10 +3,21 @@
 import type React from "react";
 
 import { useState } from "react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
 import { Button } from "@/components/ui/button";
+import {
+  Form,
+  FormControl,
+  FormDescription,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Label } from "@/components/ui/label";
 import {
   Select,
   SelectContent,
@@ -17,42 +28,49 @@ import {
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import apiClient from "@/lib/api-client";
 import { toast } from "sonner";
-import { useRouter } from "next/navigation";
-import { Loader2 } from "lucide-react";
+import { Upload, X, Loader2 } from "lucide-react";
+import Image from "next/image";
 
-const disputeReasons = [
-  "Product not as described",
-  "Product not received",
-  "Damaged product",
-  "Incomplete order",
-  "Counterfeit product",
-  "Other",
-];
+const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
 
-export function DisputeForm({
-  transactionId,
-  onClose,
-}: {
+const disputeFormSchema = z.object({
+  reason: z.string().min(1, "Please select a reason for the dispute"),
+  description: z
+    .string()
+    .min(10, "Please provide a detailed description of at least 10 characters"),
+  evidenceFile: z.instanceof(File).optional(),
+});
+
+type DisputeFormValues = z.infer<typeof disputeFormSchema>;
+
+interface DisputeFormProps {
   transactionId: string;
   onClose: () => void;
-}) {
-  const router = useRouter();
-  const queryClient = useQueryClient();
-  const [reason, setReason] = useState("");
-  const [description, setDescription] = useState("");
-  const [evidence, setEvidence] = useState<File | null>(null);
-  const [isUploading, setIsUploading] = useState(false);
-  const [uploadProgress, setUploadProgress] = useState(0);
+}
 
-  const createDisputeMutation = useMutation({
-    mutationFn: async (data: {
-      reason: string;
-      description: string;
-      evidence?: string;
-    }) => {
+export function DisputeForm({ transactionId, onClose }: DisputeFormProps) {
+  const [isUploading, setIsUploading] = useState(false);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const queryClient = useQueryClient();
+
+  const form = useForm<DisputeFormValues>({
+    resolver: zodResolver(disputeFormSchema),
+    defaultValues: {
+      reason: "",
+      description: "",
+    },
+  });
+
+  const disputeMutation = useMutation({
+    mutationFn: async (data: FormData) => {
       const response = await apiClient.post(
         `/transactions/${transactionId}/disputes`,
-        data
+        data,
+        {
+          headers: {
+            "Content-Type": "multipart/form-data",
+          },
+        }
       );
       return response.data;
     },
@@ -62,177 +80,254 @@ export function DisputeForm({
       });
       queryClient.invalidateQueries({ queryKey: ["transactions"] });
       toast.success("Dispute submitted", {
-        description: "Your dispute has been submitted and is under review.",
+        description:
+          "Your dispute has been submitted and will be reviewed by an administrator.",
       });
       onClose();
-      router.refresh();
     },
     onError: (error) => {
-      toast.error("Failed to submit dispute", {
+      console.error("Error submitting dispute:", error);
+      toast.error("Submission failed", {
         description:
-          error instanceof Error ? error.message : "Please try again later.",
+          "There was a problem submitting your dispute. Please try again.",
       });
     },
   });
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files[0]) {
-      setEvidence(e.target.files[0]);
-    }
-  };
-
-  const uploadFile = async (file: File): Promise<string> => {
-    setIsUploading(true);
-    setUploadProgress(0);
-
-    try {
-      // Create form data for the file upload
+  const uploadMutation = useMutation({
+    mutationFn: async (file: File) => {
       const formData = new FormData();
       formData.append("file", file);
 
-      // Simulate upload progress (in a real app, you might use XHR for actual progress)
-      const progressInterval = setInterval(() => {
-        setUploadProgress((prev) => {
-          const newProgress = prev + 10;
-          if (newProgress >= 90) {
-            clearInterval(progressInterval);
-            return 90;
-          }
-          return newProgress;
-        });
-      }, 300);
-
-      // Upload the file to our API endpoint
-      const response = await fetch("/api/upload", {
-        method: "POST",
-        body: formData,
+      const response = await apiClient.post("/upload", formData, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
       });
+      return response.data;
+    },
+  });
 
-      clearInterval(progressInterval);
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
 
-      if (!response.ok) {
-        throw new Error("Failed to upload file");
+    // Check file size
+    if (file.size > MAX_FILE_SIZE) {
+      toast.error("File too large", {
+        description: "The maximum file size is 5MB.",
+      });
+      return;
+    }
+
+    // Check file type
+    if (!file.type.startsWith("image/")) {
+      toast.error("Invalid file type", {
+        description: "Please upload an image file (JPEG, PNG, etc.).",
+      });
+      return;
+    }
+
+    // Create preview
+    const objectUrl = URL.createObjectURL(file);
+    setPreviewUrl(objectUrl);
+
+    // Set form value
+    form.setValue("evidenceFile", file);
+  };
+
+  const clearFile = () => {
+    form.setValue("evidenceFile", undefined);
+    if (previewUrl) {
+      URL.revokeObjectURL(previewUrl);
+      setPreviewUrl(null);
+    }
+  };
+
+  const onSubmit = async (values: DisputeFormValues) => {
+    setIsUploading(true);
+
+    try {
+      const formData = new FormData();
+      formData.append("reason", values.reason);
+      formData.append("description", values.description);
+
+      // If there's an evidence file, upload it first
+      let evidenceUrl = null;
+      if (values.evidenceFile) {
+        try {
+          const uploadResult = await uploadMutation.mutateAsync(
+            values.evidenceFile
+          );
+          evidenceUrl = uploadResult.url;
+          formData.append("evidenceUrl", evidenceUrl);
+        } catch (error) {
+          console.error("Error uploading file:", error);
+          toast.error("Upload failed", {
+            description:
+              "There was a problem uploading your evidence. Please try again.",
+          });
+          setIsUploading(false);
+          return;
+        }
       }
 
-      const data = await response.json();
-      setUploadProgress(100);
-
-      return data.url;
+      // Submit the dispute
+      await disputeMutation.mutateAsync(formData);
     } catch (error) {
-      console.error("Upload error:", error);
-      toast.error("Failed to upload evidence", {
-        description: "Please try again or submit without evidence.",
-      });
-      throw error;
+      console.error("Error in dispute submission:", error);
     } finally {
       setIsUploading(false);
     }
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-
-    if (!reason) {
-      toast.error("Please select a reason for your dispute");
-      return;
-    }
-
-    try {
-      let evidenceUrl: string | undefined;
-
-      if (evidence) {
-        evidenceUrl = await uploadFile(evidence);
-      }
-
-      await createDisputeMutation.mutateAsync({
-        reason,
-        description,
-        evidence: evidenceUrl,
-      });
-    } catch (error) {
-      // Error is handled in the mutation callbacks
-    }
-  };
-
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
-      <div className="space-y-2">
-        <Label htmlFor="reason">Reason for dispute</Label>
-        <Select value={reason} onValueChange={setReason} required>
-          <SelectTrigger className="w-full" id="reason">
-            <SelectValue className="w-full" placeholder="Select a reason" />
-          </SelectTrigger>
-          <SelectContent className="w-full">
-            {disputeReasons.map((reason) => (
-              <SelectItem className="w-full" key={reason} value={reason}>
-                {reason}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </div>
-
-      <div className="space-y-2">
-        <Label htmlFor="description">Description</Label>
-        <Textarea
-          id="description"
-          placeholder="Please provide details about your dispute"
-          value={description}
-          onChange={(e) => setDescription(e.target.value)}
-          rows={4}
-          required
+    <Form {...form}>
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+        <FormField
+          control={form.control}
+          name="reason"
+          render={({ field }) => (
+            <FormItem className="w-full">
+              <FormLabel>Reason for Dispute</FormLabel>
+              <Select onValueChange={field.onChange} defaultValue={field.value}>
+                <FormControl className="w-full">
+                  <SelectTrigger className="w-full">
+                    <SelectValue
+                      className="w-full"
+                      placeholder="Select a reason"
+                    />
+                  </SelectTrigger>
+                </FormControl>
+                <SelectContent className="w-full">
+                  <SelectItem value="ITEM_NOT_RECEIVED">
+                    Item Not Received
+                  </SelectItem>
+                  <SelectItem value="ITEM_NOT_AS_DESCRIBED">
+                    Item Not As Described
+                  </SelectItem>
+                  <SelectItem value="DAMAGED_ITEM">Damaged Item</SelectItem>
+                  <SelectItem value="WRONG_ITEM">
+                    Wrong Item Received
+                  </SelectItem>
+                  <SelectItem value="SELLER_NOT_RESPONDING">
+                    Seller Not Responding
+                  </SelectItem>
+                  <SelectItem value="BUYER_NOT_RESPONDING">
+                    Buyer Not Responding
+                  </SelectItem>
+                  <SelectItem value="OTHER">Other</SelectItem>
+                </SelectContent>
+              </Select>
+              <FormMessage />
+            </FormItem>
+          )}
         />
-      </div>
 
-      <div className="space-y-2">
-        <Label htmlFor="evidence">Evidence (optional)</Label>
-        <div className="flex items-center gap-2">
-          <Input
-            id="evidence"
-            type="file"
-            onChange={handleFileChange}
-            className="flex-1"
-            accept="image/*,.pdf"
-          />
-          {evidence && (
-            <div className="text-sm text-muted-foreground truncate max-w-[150px]">
-              {evidence.name}
-            </div>
+        <FormField
+          control={form.control}
+          name="description"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Description</FormLabel>
+              <FormControl>
+                <Textarea
+                  placeholder="Please provide details about your dispute..."
+                  className="min-h-[120px]"
+                  {...field}
+                />
+              </FormControl>
+              <FormDescription>
+                Include all relevant details to help us resolve your dispute
+                quickly.
+              </FormDescription>
+              <FormMessage />
+            </FormItem>
           )}
+        />
+
+        <FormField
+          control={form.control}
+          name="evidenceFile"
+          render={() => (
+            <FormItem>
+              <FormLabel>Evidence (Optional)</FormLabel>
+              <FormControl>
+                <div className="space-y-4">
+                  {!previewUrl ? (
+                    <div className="flex items-center justify-center w-full">
+                      <label
+                        htmlFor="evidence-upload"
+                        className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed rounded-lg cursor-pointer bg-muted/50 hover:bg-muted"
+                      >
+                        <div className="flex flex-col items-center justify-center pt-5 pb-6">
+                          <Upload className="w-8 h-8 mb-2 text-muted-foreground" />
+                          <p className="mb-2 text-sm text-muted-foreground">
+                            <span className="font-semibold">
+                              Click to upload
+                            </span>{" "}
+                            or drag and drop
+                          </p>
+                          <p className="text-xs text-muted-foreground">
+                            PNG, JPG or JPEG (MAX. 5MB)
+                          </p>
+                        </div>
+                        <Input
+                          id="evidence-upload"
+                          type="file"
+                          accept="image/*"
+                          className="hidden"
+                          onChange={handleFileChange}
+                        />
+                      </label>
+                    </div>
+                  ) : (
+                    <div className="relative">
+                      <div className="relative h-48 w-full rounded-lg overflow-hidden">
+                        <Image
+                          src={previewUrl || "/placeholder.svg"}
+                          alt="Evidence preview"
+                          fill
+                          className="object-contain"
+                        />
+                      </div>
+                      <Button
+                        type="button"
+                        variant="destructive"
+                        size="icon"
+                        className="absolute top-2 right-2 h-8 w-8 rounded-full"
+                        onClick={clearFile}
+                      >
+                        <X className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  )}
+                </div>
+              </FormControl>
+              <FormDescription>
+                Upload a photo or screenshot as evidence for your dispute
+                (optional).
+              </FormDescription>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <div className="flex justify-end space-x-2">
+          <Button type="button" variant="outline" onClick={onClose}>
+            Cancel
+          </Button>
+          <Button
+            type="submit"
+            disabled={isUploading || disputeMutation.isPending}
+          >
+            {(isUploading || disputeMutation.isPending) && (
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            )}
+            Submit Dispute
+          </Button>
         </div>
-        <p className="text-xs text-muted-foreground">
-          Upload images or documents as evidence for your dispute (max 5MB)
-        </p>
-
-        {isUploading && (
-          <div className="mt-2">
-            <div className="h-2 w-full bg-gray-200 rounded-full overflow-hidden">
-              <div
-                className="h-full bg-primary rounded-full transition-all duration-300 ease-in-out"
-                style={{ width: `${uploadProgress}%` }}
-              />
-            </div>
-            <p className="text-xs text-center mt-1">
-              Uploading: {uploadProgress}%
-            </p>
-          </div>
-        )}
-      </div>
-
-      <div className="flex justify-end gap-2 pt-4">
-        <Button type="button" variant="outline" onClick={onClose}>
-          Cancel
-        </Button>
-        <Button
-          type="submit"
-          disabled={createDisputeMutation.isPending || isUploading}
-        >
-          {(createDisputeMutation.isPending || isUploading) && (
-            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-          )}
-          Submit Dispute
-        </Button>
-      </div>
-    </form>
+      </form>
+    </Form>
   );
 }

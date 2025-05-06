@@ -344,11 +344,11 @@ export async function createTransaction({
     where: { userId: buyer.id },
     data: {
       balance: {
-        decrement: amount,
+        decrement: amount + escrowFee,
       },
       transactions: {
         create: {
-          amount: -amount,
+          amount: -amount - escrowFee,
           type: "ESCROW_PAYMENT",
           status: "COMPLETED",
           description: `Escrow payment for transaction ${transaction.id}`,

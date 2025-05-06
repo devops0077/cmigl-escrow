@@ -138,3 +138,54 @@ export async function updateUserRole(userId: string, role: string) {
 
   revalidatePath("/admin");
 }
+
+export async function getDisputeById(disputeId: string) {
+  await checkAdminPermission();
+
+  const dispute = await prisma.dispute.findUnique({
+    where: { id: disputeId },
+    include: {
+      transaction: {
+        include: {
+          buyer: {
+            select: {
+              id: true,
+              name: true,
+              email: true,
+              username: true,
+              phone: true,
+            },
+          },
+          seller: {
+            select: {
+              id: true,
+              name: true,
+              email: true,
+              username: true,
+              phone: true,
+            },
+          },
+        },
+      },
+      initiator: {
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          username: true,
+        },
+      },
+      messages: {
+        orderBy: {
+          createdAt: "asc",
+        },
+      },
+    },
+  });
+
+  if (!dispute) {
+    throw new Error("Dispute not found");
+  }
+
+  return dispute;
+}

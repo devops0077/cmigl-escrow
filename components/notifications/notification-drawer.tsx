@@ -135,7 +135,7 @@ export function NotificationDrawer({ className }: NotificationDrawerProps) {
             </TabsList>
           </div>
 
-          <ScrollArea className=" h-[500px]">
+          <ScrollArea className=" h-[440px]">
             <div className="flex-1 overflow-auto">
               <TabsContent value="all" className="m-0 p-0 h-full">
                 <div className="divide-y">

@@ -35,7 +35,7 @@ const formSchema = z.object({
     message: "Please select a rating.",
   }),
   comment: z.string().optional(),
-  isPublic: z.boolean().default(false),
+  isPublic: z.boolean(),
 });
 
 interface TransactionFeedbackProps {

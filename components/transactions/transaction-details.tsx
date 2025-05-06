@@ -39,6 +39,9 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { CheckCircle2, Info } from "lucide-react";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import Image from "next/image";
 
 export function TransactionDetails({ id }: { id: string }) {
   const router = useRouter();
@@ -48,6 +51,7 @@ export function TransactionDetails({ id }: { id: string }) {
   const [feedbackOpen, setFeedbackOpen] = useState(false);
   const [disputeOpen, setDisputeOpen] = useState(false);
   const [showFeedbackPrompt, setShowFeedbackPrompt] = useState(false);
+  const [imagePreviewUrl, setImagePreviewUrl] = useState<string | null>(null);
   const isMobile = useIsMobile();
 
   const { data: transaction, isLoading, isError } = useTransaction(id);
@@ -135,6 +139,10 @@ export function TransactionDetails({ id }: { id: string }) {
 
   const handleOpenDispute = () => {
     setDisputeOpen(true);
+  };
+
+  const handleOpenImagePreview = (url: string) => {
+    setImagePreviewUrl(url);
   };
 
   if (isLoading) {
@@ -242,6 +250,10 @@ export function TransactionDetails({ id }: { id: string }) {
     ? transaction.sellerId
     : transaction.buyerId;
 
+  // Check if this transaction has a resolved dispute
+  const hasResolvedDispute =
+    transaction.dispute && transaction.dispute.status === "RESOLVED";
+
   return (
     <>
       <DashboardHeader
@@ -256,6 +268,20 @@ export function TransactionDetails({ id }: { id: string }) {
         </Badge>
       </DashboardHeader>
       <FadeIn>
+        {/* Dispute Resolution Alert - Show if dispute was resolved */}
+        {hasResolvedDispute && (
+          <Alert className="mb-6 border-green-200 bg-green-50 dark:border-green-900 dark:bg-green-950">
+            <CheckCircle2 className="h-4 w-4 text-green-600 dark:text-green-400" />
+            <AlertTitle className="text-green-800 dark:text-green-300">
+              Dispute Resolved
+            </AlertTitle>
+            <AlertDescription className="text-green-700 dark:text-green-400">
+              This transaction had a dispute that has been resolved by an
+              administrator.
+            </AlertDescription>
+          </Alert>
+        )}
+
         <div className="grid gap-6 md:grid-cols-2 mt-6">
           <Card>
             <CardHeader>
@@ -296,7 +322,7 @@ export function TransactionDetails({ id }: { id: string }) {
                 <p>{formatDate(transaction.updatedAt)}</p>
               </div>
 
-              {transaction.hasDispute && (
+              {transaction.hasDispute && !hasResolvedDispute && (
                 <>
                   <Separator />
                   <div>
@@ -420,6 +446,135 @@ export function TransactionDetails({ id }: { id: string }) {
             </CardFooter>
           </Card>
         </div>
+
+        {/* Dispute Resolution Details - Show if dispute was resolved */}
+        {hasResolvedDispute && transaction.dispute && (
+          <Card className="mt-6">
+            <CardHeader>
+              <CardTitle>Dispute Resolution</CardTitle>
+              <CardDescription>
+                Details about how this dispute was resolved
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div>
+                <h4 className="text-sm font-medium mb-2">Dispute Reason</h4>
+                <p className="text-sm">{transaction.dispute.reason}</p>
+              </div>
+
+              <div>
+                <h4 className="text-sm font-medium mb-2">
+                  Dispute Description
+                </h4>
+                <p className="text-sm whitespace-pre-wrap">
+                  {transaction.dispute.description}
+                </p>
+              </div>
+
+              {transaction.dispute.evidence && (
+                <div>
+                  <h4 className="text-sm font-medium mb-2">Evidence</h4>
+                  <div
+                    className="relative h-40 w-40 cursor-pointer border rounded-md overflow-hidden"
+                    onClick={() =>
+                      handleOpenImagePreview(transaction.dispute.evidence!)
+                    }
+                  >
+                    <Image
+                      src={transaction.dispute.evidence || "/placeholder.svg"}
+                      alt="Dispute evidence"
+                      fill
+                      className="object-cover"
+                    />
+                  </div>
+                </div>
+              )}
+
+              <Separator />
+
+              <div>
+                <h4 className="text-sm font-medium mb-2">Resolution Details</h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="p-4 bg-muted rounded-md">
+                    <p className="text-sm font-medium mb-1">Buyer Allocation</p>
+                    <p className="text-lg font-semibold">
+                      {formatCurrency(transaction.dispute.buyerAmount || 0)}
+                    </p>
+                    {transaction.dispute.buyerAmount > 0 && (
+                      <p className="text-xs text-muted-foreground mt-1">
+                        {(
+                          (transaction.dispute.buyerAmount /
+                            transaction.amount) *
+                          100
+                        ).toFixed(0)}
+                        % of transaction amount
+                      </p>
+                    )}
+                  </div>
+                  <div className="p-4 bg-muted rounded-md">
+                    <p className="text-sm font-medium mb-1">
+                      Seller Allocation
+                    </p>
+                    <p className="text-lg font-semibold">
+                      {formatCurrency(transaction.dispute.sellerAmount || 0)}
+                    </p>
+                    {transaction.dispute.sellerAmount > 0 && (
+                      <p className="text-xs text-muted-foreground mt-1">
+                        {(
+                          (transaction.dispute.sellerAmount /
+                            transaction.amount) *
+                          100
+                        ).toFixed(0)}
+                        % of transaction amount
+                      </p>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {transaction.dispute.adminNotes && (
+                <div>
+                  <h4 className="text-sm font-medium mb-2">Admin Notes</h4>
+                  <Alert>
+                    <Info className="h-4 w-4" />
+                    <AlertTitle>Resolution Notes</AlertTitle>
+                    <AlertDescription className="whitespace-pre-wrap">
+                      {transaction.dispute.adminNotes}
+                    </AlertDescription>
+                  </Alert>
+                </div>
+              )}
+
+              <div>
+                <h4 className="text-sm font-medium mb-2">
+                  Resolution Timeline
+                </h4>
+                <div className="text-sm space-y-2">
+                  <div className="flex items-center">
+                    <Badge variant="outline" className="mr-2">
+                      Disputed
+                    </Badge>
+                    <span>{formatDate(transaction.dispute.createdAt)}</span>
+                  </div>
+                  <div className="flex items-center">
+                    <Badge
+                      variant="outline"
+                      className="mr-2 bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300"
+                    >
+                      Resolved
+                    </Badge>
+                    <span>
+                      {formatDate(
+                        transaction.dispute.resolvedAt ||
+                          transaction.dispute.updatedAt
+                      )}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
       </FadeIn>
 
       {/* Feedback UI - Responsive (Drawer for mobile, Dialog for desktop) */}
@@ -505,6 +660,28 @@ export function TransactionDetails({ id }: { id: string }) {
           </DialogContent>
         </Dialog>
       )}
+
+      {/* Image Preview Dialog */}
+      <Dialog
+        open={!!imagePreviewUrl}
+        onOpenChange={() => setImagePreviewUrl(null)}
+      >
+        <DialogContent className="max-w-3xl">
+          <DialogHeader>
+            <DialogTitle>Evidence Image</DialogTitle>
+          </DialogHeader>
+          <div className="relative h-[60vh] w-full">
+            {imagePreviewUrl && (
+              <Image
+                src={imagePreviewUrl || "/placeholder.svg"}
+                alt="Dispute evidence"
+                fill
+                className="object-contain"
+              />
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
     </>
   );
 }

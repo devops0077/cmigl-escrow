@@ -66,7 +66,7 @@ export async function POST(
     }
 
     // Create feedback
-    const feedback = await prisma.feedback.up({
+    const feedback = await prisma.feedback.create({
       data: {
         transactionId,
         giverId: user.id,

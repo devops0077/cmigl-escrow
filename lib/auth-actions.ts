@@ -6,6 +6,7 @@ import { prisma } from "./prisma";
 import { emailService } from "./email-service";
 import { nanoid } from "nanoid";
 import {
+  AppError,
   CustomError,
   InActiveAccountError,
   UserNotFoundError,
@@ -225,6 +226,7 @@ export async function verifyCredentials(email: string, password: string) {
     username: user.username,
     role: user.role,
     image: user.image,
+    passportImage: user.passportImage,
     isActive: user.isActive,
     status: user.status,
     emailVerified: user.emailVerified,
@@ -284,7 +286,7 @@ export async function requestPasswordReset(email: string) {
 
   // Delete any existing tokens
   await prisma.verificationToken.deleteMany({
-    where: { userId: user.id, token: { contains: "reset_" } },
+    where: { userId: user.id },
   });
 
   // Create reset token
@@ -305,7 +307,7 @@ export async function requestPasswordReset(email: string) {
     await emailService.sendPasswordResetEmail(email, token);
   } catch (error) {
     console.error("Failed to send password reset email:", error);
-    throw new Error("Failed to send password reset email");
+    throw new AppError("Failed to send password reset email");
   }
 
   return { success: true };

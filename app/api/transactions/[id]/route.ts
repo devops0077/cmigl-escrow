@@ -21,10 +21,8 @@ export async function GET(
       return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
 
-    const transactionId = (await params).id;
-
     const transaction = await prisma.transaction.findUnique({
-      where: { id: transactionId },
+      where: { id: (await params).id },
       include: {
         buyer: {
           select: {
@@ -42,6 +40,31 @@ export async function GET(
             email: true,
           },
         },
+        feedbacks: {
+          select: {
+            id: true,
+            rating: true,
+            comment: true,
+            createdAt: true,
+            giverId: true,
+            receiverId: true,
+          },
+        },
+        dispute: {
+          select: {
+            id: true,
+            reason: true,
+            description: true,
+            evidence: true,
+            status: true,
+            createdAt: true,
+            updatedAt: true,
+            resolvedAt: true,
+            buyerAmount: true,
+            sellerAmount: true,
+            adminNotes: true,
+          },
+        },
       },
     });
 
@@ -52,7 +75,7 @@ export async function GET(
       );
     }
 
-    // Check if user is part of this transaction
+    // Check if user is part of this transaction or is an admin
     if (
       transaction.buyerId !== user.id &&
       transaction.sellerId !== user.id &&
@@ -61,14 +84,15 @@ export async function GET(
       return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
     }
 
-    // Add isBuyer and isSeller flags
-    const responseData = {
+    // Check if transaction has a dispute
+    const hasDispute = !!transaction.dispute;
+
+    return NextResponse.json({
       ...transaction,
       isBuyer: transaction.buyerId === user.id,
       isSeller: transaction.sellerId === user.id,
-    };
-
-    return NextResponse.json(responseData);
+      hasDispute,
+    });
   } catch (error) {
     console.error("Error fetching transaction:", error);
     return NextResponse.json(

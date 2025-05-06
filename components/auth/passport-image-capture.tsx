@@ -8,6 +8,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Camera, Upload, X, RefreshCw } from "lucide-react";
 import { toast } from "sonner";
 import Image from "next/image";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 interface PassportImageCaptureProps {
   onImageCapture: (imageUrl: string) => void;
@@ -26,12 +27,16 @@ export function PassportImageCapture({
   const fileInputRef = useRef<HTMLInputElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
 
+  const isMobile = useIsMobile();
+
   // Start camera stream
   const startCamera = useCallback(async () => {
     try {
       setIsCapturing(true);
       const stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: "user", width: 640, height: 480 },
+        video: isMobile
+          ? { facingMode: "user", width: 640, height: 480 }
+          : true
       });
 
       streamRef.current = stream;

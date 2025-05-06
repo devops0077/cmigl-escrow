@@ -15,6 +15,7 @@ import {
   Shield,
   CreditCard,
   History,
+  AlertCircleIcon,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -50,6 +51,7 @@ export function DashboardMobileNav() {
   const adminNavItems = [
     { name: "Admin Panel", href: "/admin", icon: Shield },
     // { name: "Users", href: "/admin/users", icon: Users },
+    { name: "Disputes", href: "/admin/disputes", icon: AlertCircleIcon },
   ];
 
   const handleLogout = async () => {

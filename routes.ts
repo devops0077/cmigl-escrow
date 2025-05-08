@@ -5,6 +5,14 @@
  */
 export const publicRoutes = [
   "/",
+  "/help",
+  "/terms",
+  "/privacy",
+  "/knowledge-base",
+  "/knowledge-base/(.*)",
+  "/tutorials",
+  "/tutorials/(.*)",
+  "/faq",
   "/new-verification",
   "/api/referral/validate",
   "/api/auth/compare",

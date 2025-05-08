@@ -3,6 +3,132 @@
 import { revalidatePath } from "next/cache";
 import { prisma } from "./prisma";
 import { auth } from "@/auth";
+import { hash } from "bcryptjs";
+import { AppError } from "./error-class";
+
+export async function ensureAdminExists() {
+  // Count admin users
+  const adminCount = await prisma.user.count({
+    where: {
+      role: "ADMIN",
+    },
+  });
+
+  // If no admin exists, create one with default credentials
+  if (adminCount === 0) {
+    const defaultAdminPassword =
+      process.env.DEFAULT_ADMIN_PASSWORD || "Admin@123456";
+    const hashedPassword = await hash(defaultAdminPassword, 10);
+
+    const admin = await prisma.user.create({
+      data: {
+        name: "System Administrator",
+        email: (process.env.DEFAULT_ADMIN_EMAIL as string) || "admin@cmigl.com",
+        username: "admin",
+        password: hashedPassword,
+        phone: (process.env.DEFAULT_ADMIN_PHONE as string) || "+2348000000000",
+        role: "ADMIN",
+        isActive: true,
+        emailVerified: new Date(),
+        status: "ACTIVE",
+        termsAccepted: true,
+        wallet: {
+          create: {
+            balance: 0,
+            currency: "NGN",
+          },
+        },
+        registrationFee: {
+          create: {
+            amount: 0,
+            paid: true,
+          },
+        },
+      },
+    });
+
+    console.log("Created default admin user:", admin.email);
+    return { success: true, message: "Default admin user created" };
+  }
+
+  return { success: true, message: "Admin user already exists" };
+}
+
+// Get admin dashboard overview
+export async function getAdminDashboardOverview() {
+  const session = await auth();
+  if (!session?.user || session.user.role !== "ADMIN") {
+    throw new AppError("Unauthorized");
+  }
+
+  const [
+    totalUsers,
+    totalTransactions,
+    totalDisputes,
+    totalEscrowFees,
+    recentTransactions,
+    transactionStats,
+  ] = await Promise.all([
+    prisma.user.count(),
+    prisma.transaction.count(),
+    prisma.dispute.count(),
+    prisma.transaction.aggregate({
+      _sum: {
+        escrowFee: true,
+      },
+    }),
+    prisma.transaction.findMany({
+      take: 5,
+      orderBy: {
+        createdAt: "desc",
+      },
+      include: {
+        buyer: {
+          select: {
+            id: true,
+            name: true,
+            username: true,
+            email: true,
+            phone: true,
+          },
+        },
+        seller: {
+          select: {
+            id: true,
+            name: true,
+            username: true,
+            phone: true,
+            email: true,
+          },
+        },
+      },
+    }),
+    prisma.transaction.groupBy({
+      by: ["status"],
+      _count: {
+        id: true,
+      },
+    }),
+  ]);
+
+  // Get dispute statistics
+  const disputeStats = await prisma.dispute.groupBy({
+    by: ["status"],
+    _count: {
+      id: true,
+    },
+  });
+
+  return {
+    totalUsers,
+    totalTransactions,
+    totalDisputes,
+    totalEscrowFees: totalEscrowFees._sum.escrowFee || 0,
+    recentTransactions,
+    transactionStats,
+    disputeStats,
+  };
+}
 
 async function checkAdminPermission() {
   const session = await auth();

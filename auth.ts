@@ -78,6 +78,6 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     newUser: "/auth/register",
   },
   session: {
-    maxAge: 1 * 24 * 60 * 60,
+    maxAge: 1 * 24 * 60 * 60, // 1 day
   },
 });

@@ -21,8 +21,8 @@ export function MainNav({ className }: MainNavProps) {
       public: true,
     },
     {
-      href: "/how-it-works",
-      label: "How It Works",
+      href: "/help",
+      label: "Help",
       active: pathname === "/how-it-works",
       public: true,
     },

@@ -43,13 +43,17 @@ import { formatCurrency } from "@/lib/utils";
 import { useWalletBalance } from "@/hooks/use-wallet-balance";
 import { ScrollArea } from "../ui/scroll-area";
 import { ThemeToggle } from "../theme-toggle";
+import { UserRole } from "@/lib/generated/prisma";
 
 export function DashboardSidebar() {
   const pathname = usePathname();
   const { data: session } = useSession();
   const { state } = useSidebar();
   const isCollapsed = state === "collapsed";
-  const isAdmin = session?.user?.role === "ADMIN";
+  const isAdmin = session?.user?.role === UserRole.ADMIN;
+
+  console.log("isAdmin", isAdmin);
+  console.log("session", session?.user?.role);
 
   const { data: walletData, isLoading: isLoadingWallet } = useWalletBalance();
 

@@ -8,6 +8,7 @@ import {
   isPublicRouteFn,
   paymentRoute,
 } from "@/routes";
+import axios from "axios";
 
 // @ts-ignore
 export default middleware(async (req, ctx) => {
@@ -25,6 +26,16 @@ export default middleware(async (req, ctx) => {
   const isPaymentRoute = paymentRoute.includes(nextUrl.pathname);
   const isAdmin = role === "ADMIN";
 
+  const pathname = nextUrl.pathname;
+
+  // Check if admin exists on app initialization
+  if (pathname === "/" || pathname === "/admin") {
+    try {
+      await axios.get(process.env.NEXT_PUBLIC_APP_URL + "/api/admin/exists");
+    } catch (error) {
+      console.error("Error ensuring admin exists:", error);
+    }
+  }
   if (isAdminRoute && !isAdmin) {
     return Response.redirect(new URL(DEFAULT_LOGIN_REDIRECT, nextUrl));
   }

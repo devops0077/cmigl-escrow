@@ -82,6 +82,36 @@ export async function PATCH(
       data: { status: status as TransactionStatus },
     });
 
+    //  if status is confirmed by buyer, release funds to seller
+    if (status === TransactionStatus.CONFIRMED) {
+      // const amountToSeller = transaction.amount - transaction.escrowFee;
+      const amountToSeller = transaction.amount;
+
+      await prisma.wallet.update({
+        where: { userId: transaction.sellerId },
+        data: {
+          balance: {
+            increment: amountToSeller,
+          },
+          transactions: {
+            create: {
+              amount: amountToSeller,
+              type: "ESCROW_RELEASE",
+              status: "COMPLETED",
+              description: `Funds released for transaction ${transaction.id}`,
+            },
+          },
+        },
+      });
+
+      createNotification({
+        userId: transaction.sellerId,
+        title: "Transaction Completed",
+        type: "SYSTEM_NOTIFICATION",
+        message: `Transaction ${transaction.id} has been completed. Funds released.`,
+      });
+    }
+
     // If transaction is completed, release funds to seller
     if (status === "COMPLETED") {
       // const amountToSeller = transaction.amount - transaction.escrowFee;

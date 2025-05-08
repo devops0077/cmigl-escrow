@@ -23,6 +23,7 @@ import {
   updateTransactionStatus,
 } from "@/lib/data-actions";
 import { toast } from "sonner";
+import { TransactionStatus } from "@/lib/generated/prisma";
 
 interface Transaction {
   id: string;
@@ -78,9 +79,9 @@ export default function TransactionDetailPage() {
 
       fetchTransaction();
     }
-  }, [status, transactionId, toast]);
+  }, [status, transactionId]);
 
-  const handleStatusUpdate = async (newStatus: string) => {
+  const handleStatusUpdate = async (newStatus: TransactionStatus) => {
     if (!transaction) return;
 
     setIsUpdating(true);

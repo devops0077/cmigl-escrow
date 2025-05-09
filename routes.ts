@@ -13,6 +13,7 @@ export const publicRoutes = [
   "/tutorials",
   "/tutorials/(.*)",
   "/faq",
+  "/feeback",
   "/new-verification",
   "/api/referral/validate",
   "/api/auth/compare",
@@ -23,6 +24,7 @@ export const publicRoutes = [
   "/api/payments/verify/(.*)",
   "/api/upload",
   "/api/admin/exists",
+  "/api/content/(.*)",
 ];
 
 /**

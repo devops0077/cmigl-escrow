@@ -27,7 +27,7 @@ export function Footer() {
               Privacy
             </Link>
             <Link
-              href="/contact"
+              href="/help"
               className="text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
             >
               Contact

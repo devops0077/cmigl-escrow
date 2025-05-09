@@ -55,8 +55,6 @@ model User {
   role                  UserRole           @default(USER)
   status                UserStatus         @default(PENDING)
   termsAccepted         Boolean            @default(false)
-  createdAt             DateTime           @default(now())
-  updatedAt             DateTime           @updatedAt
   accounts              Account[]
   sessions              Session[]
   sentTransactions      Transaction[]      @relation("SentTransactions")
@@ -71,6 +69,10 @@ model User {
   disputesInitiated     Dispute[]          @relation("DisputeInitiator")
   Feedback              Feedback[]         @relation("GaveFeedback")
   feedbackReceived      Feedback[]         @relation("ReceivedFeedback")
+  feedbacks             PlatformFeedback[] // Added relation to platform feedback
+  contentItems          ContentItem[] // Added relation to content items
+  createdAt             DateTime           @default(now())
+  updatedAt             DateTime           @updatedAt
 }
 
 enum UserRole {
@@ -353,4 +355,70 @@ model DisputeMessage {
   message   String
   createdAt DateTime @default(now())
   dispute   Dispute  @relation(fields: [disputeId], references: [id], onDelete: Cascade)
+}
+
+// New model for platform feedback
+model PlatformFeedback {
+  id          String         @id @default(cuid())
+  userId      String
+  title       String
+  description String         @db.Text
+  rating      Int
+  type        FeedbackType
+  status      FeedbackStatus @default(PENDING)
+  attachments String? // URL to attachment file
+  adminNotes  String?        @db.Text
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+  user        User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+enum FeedbackType {
+  SUGGESTION
+  BUG_REPORT
+  FEATURE_REQUEST
+  GENERAL
+}
+
+enum FeedbackStatus {
+  PENDING
+  REVIEWED
+  IMPLEMENTED
+  REJECTED
+}
+
+// New model for content management
+model ContentItem {
+  id          String            @id @default(cuid())
+  title       String
+  slug        String            @unique
+  content     String            @db.Text
+  type        ContentType
+  category    String?
+  tags        String[]
+  published   Boolean           @default(false)
+  authorId    String
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+  publishedAt DateTime?
+  version     Int               @default(1)
+  author      User              @relation(fields: [authorId], references: [id])
+  revisions   ContentRevision[]
+}
+
+model ContentRevision {
+  id          String      @id @default(cuid())
+  contentId   String
+  content     String      @db.Text
+  version     Int
+  createdAt   DateTime    @default(now())
+  contentItem ContentItem @relation(fields: [contentId], references: [id], onDelete: Cascade)
+}
+
+enum ContentType {
+  KNOWLEDGE_BASE
+  TUTORIAL
+  TERMS_OF_SERVICE
+  PRIVACY_POLICY
+  FAQ
 }

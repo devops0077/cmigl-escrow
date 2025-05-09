@@ -52,3 +52,11 @@ export class InActiveAccountError extends CustomError {
     Object.setPrototypeOf(this, InActiveAccountError.prototype);
   }
 }
+export class UnauthorizedError extends CustomError {
+  constructor(message = "Unauthorized") {
+    super(message);
+    this.name = "UnauthorizedError";
+
+    Object.setPrototypeOf(this, InActiveAccountError.prototype);
+  }
+}

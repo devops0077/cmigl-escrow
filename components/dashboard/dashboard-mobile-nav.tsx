@@ -45,7 +45,7 @@ export function DashboardMobileNav() {
 
   const secondaryNavItems = [
     { name: "Settings", href: "/dashboard/settings", icon: Settings },
-    { name: "Help & Support", href: "/support", icon: HelpCircle },
+    { name: "Help & Support", href: "/help", icon: HelpCircle },
   ];
 
   const adminNavItems = [

@@ -24,6 +24,7 @@ import {
   BreadcrumbList,
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
+import { toast } from "sonner";
 
 // This would typically come from a database or CMS
 const articlesData = {
@@ -242,7 +243,7 @@ export function ArticleContent({ slug }: { slug: string }) {
 
   if (!article) {
     return (
-      <main className="container py-12">
+      <main className="container mx-auto py-12">
         <div className="mx-auto max-w-3xl text-center">
           <h2 className="text-2xl font-bold">Article Not Found</h2>
           <p className="mt-2 text-muted-foreground">
@@ -272,13 +273,13 @@ export function ArticleContent({ slug }: { slug: string }) {
       });
     } else {
       navigator.clipboard.writeText(window.location.href);
-      alert("Link copied to clipboard!");
+      toast.info("Link copied to clipboard!");
     }
   };
 
   return (
     <main className="flex-1">
-      <div className="container py-8">
+      <div className="container mx-auto py-8">
         <Breadcrumb className="mb-6">
           <BreadcrumbList>
             <BreadcrumbItem>

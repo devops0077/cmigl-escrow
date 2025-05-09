@@ -13,6 +13,7 @@ import {
   History,
   Shield,
   AlertCircleIcon,
+  BookOpen,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -65,12 +66,14 @@ export function DashboardSidebar() {
 
   const secondaryNavItems = [
     { name: "Settings", href: "/dashboard/settings", icon: Settings },
-    { name: "Help & Support", href: "/support", icon: HelpCircle },
+    { name: "Help & Support", href: "/help", icon: HelpCircle },
   ];
 
   const adminNavItems = [
     { name: "Admin Panel", href: "/admin", icon: Shield },
     { name: "Disputes", href: "/admin/disputes", icon: AlertCircleIcon },
+    { name: "Content", href: "/admin/content", icon: BookOpen },
+    { name: "Feedback", href: "/admin/feedback", icon: Users },
   ];
 
   return (

@@ -39,3 +39,12 @@ export function generateTransactionReference(): string {
     .padStart(6, "0");
   return `VOKUN-${timestamp}-${random}`;
 }
+
+export function slugify(text: string): string {
+  return text
+    .toLowerCase()
+    .replace(/\s+/g, "-")
+    .replace(/[^\w-]+/g, "")
+    .replace(/--+/g, "-")
+    .replace(/^-+|-+$/g, "");
+}

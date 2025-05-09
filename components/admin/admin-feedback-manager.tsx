@@ -364,10 +364,13 @@ export default function AdminFeedbackManager() {
                   value={newStatus}
                   onValueChange={(value) => setNewStatus(value as any)}
                 >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select status" />
+                  <SelectTrigger className="w-full">
+                    <SelectValue
+                      className="w-full"
+                      placeholder="Select status"
+                    />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent className="w-full">
                     <SelectItem value="PENDING">Pending</SelectItem>
                     <SelectItem value="REVIEWED">Reviewed</SelectItem>
                     <SelectItem value="IMPLEMENTED">Implemented</SelectItem>

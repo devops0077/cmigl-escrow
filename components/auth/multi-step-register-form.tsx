@@ -32,6 +32,8 @@ import {
   SheetHeader,
 } from "../ui/sheet";
 import { PassportImageCapture } from "@/components/auth/passport-image-capture";
+import { DynamicContent } from "../content/dynamic-content";
+import { ContentVersionInfo } from "../content/content-version-info";
 
 // Define the single form schema
 const formSchema = z
@@ -67,7 +69,11 @@ const formSchema = z
     path: ["confirmPassword"],
   });
 
-export function MultiStepRegisterForm() {
+export function MultiStepRegisterForm({
+  termsContent,
+}: {
+  termsContent?: any;
+}) {
   const router = useRouter();
   const [step, setStep] = useState(1);
   const [isLoading, setIsLoading] = useState(false);
@@ -440,167 +446,31 @@ export function MultiStepRegisterForm() {
             </SheetDescription>
           </SheetHeader>
           <ScrollArea className="h-[60vh] px-4">
-            <div className="space-y-4 text-sm">
-              <h2 className="text-lg font-semibold">
-                CMIGL Escrow Services - Terms of Use
-              </h2>
-              <p>Effective Date: April 26, 2025</p>
-
-              <p>
-                Welcome to CMIGL Escrow Services ("CMIGL Escrow," "we," "our,"
-                "us"). These Terms of Use ("Terms") govern your access to and
-                use of our website, services, and applications (collectively,
-                the "Services"). By accessing or using our Services, you agree
-                to be bound by these Terms.
-              </p>
-
-              <p>
-                If you do not agree to these Terms, do not use the Services.
-              </p>
-
-              <h3 className="font-semibold mt-4">1. Eligibility</h3>
-              <p>
-                You must be at least 18 years old and legally capable of
-                entering into binding contracts to use our Services. By using
-                Vokun, you represent and warrant that you meet these eligibility
-                requirements.
-              </p>
-
-              <h3 className="font-semibold mt-4">2. Services Description</h3>
-              <p>
-                Vokun provides online escrow services to facilitate secure
-                transactions between parties. We act as a neutral third party to
-                hold assets until the terms of a transaction are met.
-              </p>
-              <p>We are not a bank, lender, broker, or financial advisor.</p>
-
-              <h3 className="font-semibold mt-4">3. User Responsibilities</h3>
-              <p>You agree to:</p>
-              <ul className="list-disc pl-5 space-y-1">
-                <li>Provide accurate and complete information.</li>
-                <li>Only use the Services for lawful purposes.</li>
-                <li>
-                  Maintain the confidentiality of your account credentials.
-                </li>
-                <li>Promptly update your information if it changes.</li>
-              </ul>
-              <p>You must not:</p>
-              <ul className="list-disc pl-5 space-y-1">
-                <li>Violate any laws or third-party rights.</li>
-                <li>
-                  Use the Services for money laundering, fraud, or other illegal
-                  activities.
-                </li>
-                <li>Interfere with the Services' security or functionality.</li>
-              </ul>
-
-              <h3 className="font-semibold mt-4">4. Fees</h3>
-              <p>Use of our escrow services may be subject to fees:</p>
-              <ul className="list-disc pl-5 space-y-1">
-                <li>A 500.00 NGN one-time sign-up fee</li>
-                <li>2.0% of total transaction amount</li>
-              </ul>
-              <p>
-                or as outlined during the transaction setup. Fees are
-                non-refundable unless expressly stated otherwise. CMIGL Escrow
-                reserves the right to change fees at any time, with notice
-                provided via the website.
-              </p>
-
-              <h3 className="font-semibold mt-4">5. Dispute Resolution</h3>
-              <p>
-                If a dispute arises between transacting parties, CMIGL Escrow
-                will make commercially reasonable efforts to facilitate
-                resolution according to the terms set at the beginning of the
-                transaction.
-              </p>
-              <p>
-                CMIGL Escrow's decision is final and binding unless otherwise
-                required by law.
-              </p>
-
-              <h3 className="font-semibold mt-4">6. Intellectual Property</h3>
-              <p>
-                All content, trademarks, and logos on the CMIGL Escrow website
-                are owned by or licensed to CMIGL Escrow. You may not copy,
-                distribute, modify, or create derivative works without our
-                express written permission.
-              </p>
-
-              <h3 className="font-semibold mt-4">
-                7. Disclaimer of Warranties
-              </h3>
-              <p>
-                The Services are provided on an "AS IS" and "AS AVAILABLE"
-                basis.
-              </p>
-              <p>
-                CMIGL Escrow disclaims all warranties, express or implied,
-                including merchantability, fitness for a particular purpose, and
-                non-infringement.
-              </p>
-              <p>We do not guarantee that:</p>
-              <ul className="list-disc pl-5 space-y-1">
-                <li>The Services will meet your requirements.</li>
-                <li>The Services will be uninterrupted or error-free.</li>
-                <li>Any defects will be corrected.</li>
-              </ul>
-
-              <h3 className="font-semibold mt-4">8. Limitation of Liability</h3>
-              <p>To the fullest extent permitted by law:</p>
-              <p>
-                CMIGL Escrow shall not be liable for any indirect, incidental,
-                special, consequential, or punitive damages.
-              </p>
-
-              <h3 className="font-semibold mt-4">9. Indemnification</h3>
-              <p>
-                You agree to indemnify, defend, and hold harmless CMIGL Escrow
-                and its officers, directors, employees, and agents from any
-                claims, liabilities, damages, judgments, and expenses arising
-                out of your use of the Services or your violation of these
-                Terms.
-              </p>
-
-              <h3 className="font-semibold mt-4">10. Termination</h3>
-              <p>
-                We reserve the right to suspend or terminate your access to the
-                Services at our sole discretion, without notice, for conduct we
-                believe violates these Terms or is harmful to CMIGL Escrow or
-                other users.
-              </p>
-
-              <h3 className="font-semibold mt-4">11. Privacy</h3>
-              <p>
-                Our collection and use of your information is governed by our
-                Privacy Policy.
-              </p>
-
-              <h3 className="font-semibold mt-4">12. Changes to Terms</h3>
-              <p>
-                We may update these Terms from time to time. Changes are
-                effective when posted. Your continued use of the Services
-                constitutes acceptance of the revised Terms.
-              </p>
-
-              <h3 className="font-semibold mt-4">13. Governing Law</h3>
-              <p>
-                These Terms are governed by the laws of the Nigerian State,
-                without regard to conflict of law principles.
-              </p>
-
-              <h3 className="font-semibold mt-4">14. Contact Information</h3>
-              <p>For questions regarding these Terms, please contact us at:</p>
-              <p>
-                CMIGL Escrow Services
-                <br />
-                Website: https://escrow.vokun.ng
-                <br />
-                Email: info@vokun.ng
-              </p>
-
-              <div ref={bottomRef} className="h-4"></div>
-            </div>
+            {termsContent ? (
+              <>
+                <DynamicContent
+                  content={termsContent.content}
+                  contentId={termsContent.id}
+                  contentType="TERMS_OF_SERVICE"
+                />
+                <ContentVersionInfo
+                  version={termsContent.version}
+                  updatedAt={termsContent.updatedAt}
+                  publishedAt={termsContent.publishedAt}
+                />
+                <div ref={bottomRef} className="h-4"></div>
+              </>
+            ) : (
+              <div className="text-center py-10">
+                <h3 className="text-lg font-medium">
+                  Terms of Service Not Available
+                </h3>
+                <p className="text-muted-foreground mt-2">
+                  Our terms of service are currently being updated. Please check
+                  back later.
+                </p>
+              </div>
+            )}
           </ScrollArea>
           <SheetFooter className="flex flex-row items-center justify-between">
             <Button

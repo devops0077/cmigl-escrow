@@ -1,5 +1,3 @@
-"use client";
-
 import Link from "next/link";
 import {
   Card,
@@ -10,8 +8,10 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { MultiStepRegisterForm } from "@/components/auth/multi-step-register-form";
+import { getLatestTermsOfService } from "@/lib/content-actions";
 
-export default function RegisterPage() {
+export default async function RegisterPage() {
+  const termsContent = await getLatestTermsOfService();
   return (
     <div className="w-full max-w-md p-4 md:p-0">
       <Card>
@@ -24,7 +24,7 @@ export default function RegisterPage() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <MultiStepRegisterForm />
+          <MultiStepRegisterForm termsContent={termsContent} />
         </CardContent>
         <CardFooter>
           <div className="text-sm text-muted-foreground w-full text-center">

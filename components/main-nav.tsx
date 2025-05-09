@@ -15,21 +15,15 @@ export function MainNav({ className }: MainNavProps) {
 
   const routes = [
     {
-      href: "/",
-      label: "Home",
-      active: pathname === "/",
-      public: true,
-    },
-    {
-      href: "/help",
-      label: "Help",
-      active: pathname === "/how-it-works",
-      public: true,
-    },
-    {
       href: "/dashboard",
       label: "Dashboard",
       active: pathname.startsWith("/dashboard"),
+      public: false,
+    },
+    {
+      href: "/dashboard/wallet",
+      label: "Wallet",
+      active: pathname.startsWith("/wallet"),
       public: false,
     },
     {
@@ -39,10 +33,10 @@ export function MainNav({ className }: MainNavProps) {
       public: false,
     },
     {
-      href: "/dashboard/wallet",
-      label: "Wallet",
-      active: pathname.startsWith("/wallet"),
-      public: false,
+      href: "/help",
+      label: "Help",
+      active: pathname === "/how-it-works",
+      public: true,
     },
   ];
 

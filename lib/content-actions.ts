@@ -335,7 +335,7 @@ export async function getContentRevisions(id: string) {
 }
 
 // Get latest terms of service - cached for 5 minutes
-export const getLatestTermsOfService = cache(async () => {
+export const getLatestTermsOfService = async () => {
   const terms = await prisma.contentItem.findFirst({
     where: {
       type: "TERMS_OF_SERVICE",
@@ -347,10 +347,10 @@ export const getLatestTermsOfService = cache(async () => {
   });
 
   return terms;
-});
+};
 
 // Get latest privacy policy - cached for 5 minutes
-export const getLatestPrivacyPolicy = cache(async () => {
+export const getLatestPrivacyPolicy = async () => {
   const privacy = await prisma.contentItem.findFirst({
     where: {
       type: "PRIVACY_POLICY",
@@ -362,4 +362,4 @@ export const getLatestPrivacyPolicy = cache(async () => {
   });
 
   return privacy;
-});
+};

@@ -2,57 +2,59 @@
 
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { getContentById } from "@/lib/content-client";
-import { Skeleton } from "@/components/ui/skeleton";
-import { Alert, AlertDescription } from "@/components/ui/alert";
-import { AlertCircle, RefreshCw } from "lucide-react";
+import { Loader2, AlertCircle, RefreshCw } from "lucide-react";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
+import { getContentById } from "@/lib/content-client";
 
 interface DynamicContentProps {
   content: string;
   contentId: string;
   contentType: string;
+  initialVersion?: number;
 }
 
 export function DynamicContent({
-  content,
+  content: initialContent,
   contentId,
   contentType,
+  initialVersion,
 }: DynamicContentProps) {
-  // Initial content from server-side props
-  const [initialContent] = useState(content);
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
-  // Client-side fetching with React Query for real-time updates
-  const { data, error, isLoading, isError, refetch, dataUpdatedAt } = useQuery({
+  // Use React Query to potentially fetch updated content
+  const { data, isLoading, isError, error, refetch } = useQuery({
     queryKey: ["content", contentId],
-    queryFn: () => getContentById(contentId),
-    // Start with initial data from server
-    initialData: { content: initialContent, id: contentId },
-    // Stale time of 5 minutes - content won't refetch for 5 minutes unless forced
-    staleTime: 5 * 60 * 1000,
-    // Cache time of 10 minutes
-    gcTime: 10 * 60 * 1000,
-    // Retry 3 times if fetch fails
-    retry: 3,
-    retryDelay: (attempt) =>
-      Math.min(attempt > 1 ? 2 ** attempt * 1000 : 1000, 30 * 1000),
+    queryFn: async () => await getContentById(contentId),
+    // Start with the initial content we got from the server
+    initialData: { id: contentId, content: initialContent },
+    // Only refetch on mount or manual refetch
+    staleTime: Number.POSITIVE_INFINITY,
+    refetchOnWindowFocus: false,
+    refetchOnMount: false,
   });
 
-  // Show content from query or fall back to initial content
-  const displayContent = data?.content || initialContent;
+  const handleRefresh = async () => {
+    setIsRefreshing(true);
+    try {
+      await refetch();
+    } finally {
+      setIsRefreshing(false);
+    }
+  };
 
-  // Format the last updated time
-  const lastUpdated = new Date(dataUpdatedAt).toLocaleString();
-
-  if (isLoading) {
+  if (isLoading || isRefreshing) {
     return (
       <div className="space-y-4">
-        <Skeleton className="h-6 w-3/4" />
+        <div className="flex items-center justify-center py-8">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        </div>
         <Skeleton className="h-4 w-full" />
-        <Skeleton className="h-4 w-full" />
-        <Skeleton className="h-4 w-2/3" />
-        <Skeleton className="h-6 w-1/2 mt-8" />
-        <Skeleton className="h-4 w-full" />
+        <Skeleton className="h-4 w-[90%]" />
+        <Skeleton className="h-4 w-[80%]" />
+        <Skeleton className="h-20 w-full" />
+        <Skeleton className="h-4 w-[85%]" />
         <Skeleton className="h-4 w-full" />
       </div>
     );
@@ -60,35 +62,45 @@ export function DynamicContent({
 
   if (isError) {
     return (
-      <Alert variant="destructive" className="mb-6">
-        <AlertCircle className="h-4 w-4" />
-        <AlertDescription className="flex items-center justify-between">
-          <span>Failed to load the latest content. Using cached version.</span>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => refetch()}
-            className="ml-2"
-          >
-            <RefreshCw className="mr-2 h-4 w-4" />
-            Retry
-          </Button>
-        </AlertDescription>
-      </Alert>
+      <div>
+        <Alert variant="destructive" className="mb-4">
+          <AlertCircle className="h-4 w-4" />
+          <AlertTitle>Error</AlertTitle>
+          <AlertDescription>
+            Failed to load content.{" "}
+            {error instanceof Error ? error.message : "Please try again."}
+          </AlertDescription>
+        </Alert>
+        <Button onClick={handleRefresh} className="flex items-center gap-2">
+          <RefreshCw className="h-4 w-4" />
+          Try Again
+        </Button>
+        {/* Fallback to initial content */}
+        <div
+          className="mt-6 prose dark:prose-invert max-w-none"
+          dangerouslySetInnerHTML={{ __html: initialContent }}
+        />
+      </div>
     );
   }
 
   return (
-    <div>
-      {/* Render the content safely */}
+    <div className="overflow-auto">
       <div
-        className="prose prose-sm sm:prose lg:prose-lg max-w-none"
-        dangerouslySetInnerHTML={{ __html: displayContent }}
+        className="prose dark:prose-invert max-w-none"
+        dangerouslySetInnerHTML={{ __html: data.content }}
       />
-
-      {/* Small indicator showing when content was last checked */}
-      <div className="text-xs text-muted-foreground mt-4 text-right">
-        Content last checked: {lastUpdated}
+      <div className="mt-4 text-right">
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={handleRefresh}
+          disabled={isRefreshing}
+          className="text-xs text-muted-foreground hover:text-foreground"
+        >
+          <RefreshCw className="mr-1 h-3 w-3" />
+          Refresh
+        </Button>
       </div>
     </div>
   );

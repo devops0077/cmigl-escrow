@@ -1,21 +1,10 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import Link from "next/link";
-import {
-  Search,
-  BookOpen,
-  ChevronRight,
-  Clock,
-  ArrowRight,
-  Tag,
-  Users,
-  Shield,
-  CreditCard,
-  FileText,
-  HelpCircle,
-} from "lucide-react";
-import { Input } from "@/components/ui/input";
+import { useQuery } from "@tanstack/react-query";
+import { AlertCircle, RefreshCw, Search, FileText } from "lucide-react";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -25,488 +14,308 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Input } from "@/components/ui/input";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
-import { Separator } from "@/components/ui/separator";
+import { getContentByType } from "@/lib/content-client";
 
-// Types for our knowledge base articles
-type ArticleCategory =
-  | "getting-started"
-  | "account"
-  | "transactions"
-  | "security"
-  | "payments"
-  | "disputes"
-  | "general";
-
-interface Article {
+interface KnowledgeBaseItem {
   id: string;
   title: string;
-  description: string;
-  category: ArticleCategory;
-  tags: string[];
-  readTime: number;
   slug: string;
-  popular?: boolean;
-  featured?: boolean;
+  content: string;
+  category: string | null;
+  tags: string[];
+  version: number;
+  updatedAt: string;
+  publishedAt: string | null;
 }
 
-// Sample knowledge base articles
-const articles: Article[] = [
-  {
-    id: "1",
-    title: "Getting Started with CMIGL Escrow",
-    description:
-      "Learn the basics of our escrow service and how to complete your first transaction.",
-    category: "getting-started",
-    tags: ["beginners", "overview", "basics"],
-    readTime: 5,
-    slug: "getting-started-with-escrow",
-    featured: true,
-  },
-  {
-    id: "2",
-    title: "How to Create and Verify Your Account",
-    description:
-      "A step-by-step guide to setting up your account and completing verification.",
-    category: "account",
-    tags: ["verification", "kyc", "registration"],
-    readTime: 7,
-    slug: "create-and-verify-account",
-    popular: true,
-  },
-  {
-    id: "3",
-    title: "Understanding Transaction Fees",
-    description:
-      "Learn about our fee structure and how fees are calculated for different transaction types.",
-    category: "transactions",
-    tags: ["fees", "pricing", "costs"],
-    readTime: 4,
-    slug: "understanding-transaction-fees",
-    popular: true,
-  },
-  {
-    id: "4",
-    title: "Securing Your Account with Two-Factor Authentication",
-    description:
-      "Enhance your account security by enabling and using two-factor authentication.",
-    category: "security",
-    tags: ["2fa", "security", "protection"],
-    readTime: 6,
-    slug: "two-factor-authentication",
-  },
-  {
-    id: "5",
-    title: "Adding and Withdrawing Funds from Your Wallet",
-    description:
-      "Learn how to manage your escrow wallet, add funds, and make withdrawals.",
-    category: "payments",
-    tags: ["wallet", "funds", "withdrawals"],
-    readTime: 8,
-    slug: "managing-your-wallet",
-    popular: true,
-  },
-  {
-    id: "6",
-    title: "How to Handle Transaction Disputes",
-    description:
-      "A comprehensive guide to the dispute resolution process and how to submit evidence.",
-    category: "disputes",
-    tags: ["disputes", "resolution", "conflicts"],
-    readTime: 10,
-    slug: "handling-disputes",
-    featured: true,
-  },
-  {
-    id: "7",
-    title: "Buyer's Guide to Safe Transactions",
-    description:
-      "Best practices for buyers to ensure safe and successful transactions.",
-    category: "transactions",
-    tags: ["buyers", "safety", "best-practices"],
-    readTime: 9,
-    slug: "buyers-guide",
-  },
-  {
-    id: "8",
-    title: "Seller's Guide to Safe Transactions",
-    description:
-      "Best practices for sellers to ensure safe and successful transactions.",
-    category: "transactions",
-    tags: ["sellers", "safety", "best-practices"],
-    readTime: 9,
-    slug: "sellers-guide",
-  },
-  {
-    id: "9",
-    title: "Understanding Escrow Statuses",
-    description:
-      "Learn about the different transaction statuses and what they mean.",
-    category: "transactions",
-    tags: ["status", "tracking", "process"],
-    readTime: 5,
-    slug: "escrow-statuses",
-  },
-  {
-    id: "10",
-    title: "Payment Methods Accepted",
-    description:
-      "A detailed overview of all payment methods supported by our platform.",
-    category: "payments",
-    tags: ["payments", "methods", "options"],
-    readTime: 4,
-    slug: "payment-methods",
-  },
-  {
-    id: "11",
-    title: "How to Contact Support",
-    description:
-      "Different ways to get help and support for your escrow transactions.",
-    category: "general",
-    tags: ["support", "help", "contact"],
-    readTime: 3,
-    slug: "contact-support",
-  },
-  {
-    id: "12",
-    title: "Account Recovery Options",
-    description:
-      "What to do if you forget your password or lose access to your account.",
-    category: "account",
-    tags: ["recovery", "password", "access"],
-    readTime: 5,
-    slug: "account-recovery",
-  },
-  {
-    id: "13",
-    title: "Data Privacy and Protection",
-    description:
-      "How we protect your data and maintain privacy on our platform.",
-    category: "security",
-    tags: ["privacy", "data", "protection"],
-    readTime: 7,
-    slug: "data-privacy",
-  },
-  {
-    id: "14",
-    title: "International Transactions",
-    description:
-      "Guidelines for conducting escrow transactions across international borders.",
-    category: "transactions",
-    tags: ["international", "global", "cross-border"],
-    readTime: 8,
-    slug: "international-transactions",
-  },
-  {
-    id: "15",
-    title: "Mobile App Features",
-    description:
-      "A guide to using our mobile application for escrow transactions on the go.",
-    category: "general",
-    tags: ["mobile", "app", "features"],
-    readTime: 6,
-    slug: "mobile-app-features",
-  },
-];
+interface KnowledgeBaseClientProps {
+  initialArticles: KnowledgeBaseItem[];
+}
 
-// Category information with icons and descriptions
-const categories = [
-  {
-    id: "getting-started",
-    name: "Getting Started",
-    icon: <BookOpen className="h-5 w-5" />,
-    description: "Essential guides for new users",
-  },
-  {
-    id: "account",
-    name: "Account Management",
-    icon: <Users className="h-5 w-5" />,
-    description: "Managing your profile and settings",
-  },
-  {
-    id: "transactions",
-    name: "Transactions",
-    icon: <ArrowRight className="h-5 w-5" />,
-    description: "Creating and managing escrow transactions",
-  },
-  {
-    id: "security",
-    name: "Security",
-    icon: <Shield className="h-5 w-5" />,
-    description: "Keeping your account and transactions secure",
-  },
-  {
-    id: "payments",
-    name: "Payments & Wallet",
-    icon: <CreditCard className="h-5 w-5" />,
-    description: "Managing funds and payment methods",
-  },
-  {
-    id: "disputes",
-    name: "Disputes & Resolution",
-    icon: <HelpCircle className="h-5 w-5" />,
-    description: "Handling transaction disputes",
-  },
-  {
-    id: "general",
-    name: "General Information",
-    icon: <FileText className="h-5 w-5" />,
-    description: "Platform policies and general guides",
-  },
-];
-
-export function KnowledgeBaseClient() {
+export function KnowledgeBaseClient({
+  initialArticles,
+}: KnowledgeBaseClientProps) {
   const [searchQuery, setSearchQuery] = useState("");
-  const [filteredArticles, setFilteredArticles] = useState<Article[]>(articles);
-  const [activeCategory, setActiveCategory] = useState<string>("all");
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
-  // Filter articles based on search query and active category
-  useEffect(() => {
-    let filtered = articles;
+  // Use React Query to fetch knowledge base articles
+  const { data, isLoading, isError, error, refetch } = useQuery({
+    queryKey: ["content", "KNOWLEDGE_BASE"],
+    queryFn: async () => await getContentByType("KNOWLEDGE_BASE"),
+    // Start with the initial articles we got from the server
+    initialData: initialArticles,
+    // Stale time of 5 minutes
+    staleTime: 5 * 60 * 1000,
+    refetchOnWindowFocus: false,
+  });
 
-    // Filter by search query
-    if (searchQuery) {
-      const query = searchQuery.toLowerCase();
-      filtered = filtered.filter(
-        (article) =>
-          article.title.toLowerCase().includes(query) ||
-          article.description.toLowerCase().includes(query) ||
-          article.tags.some((tag) => tag.toLowerCase().includes(query))
-      );
+  const handleRefresh = async () => {
+    setIsRefreshing(true);
+    try {
+      await refetch();
+    } finally {
+      setIsRefreshing(false);
     }
+  };
 
-    // Filter by category
-    if (activeCategory !== "all") {
-      filtered = filtered.filter(
-        (article) => article.category === activeCategory
-      );
-    }
+  // Extract all categories from articles
+  const categories = Array.from(
+    new Set(data?.map((article) => article.category || "Uncategorized"))
+  ).sort();
 
-    setFilteredArticles(filtered);
-  }, [searchQuery, activeCategory]);
+  // Filter articles based on search query and selected category
+  const filteredArticles = data?.filter((article) => {
+    const matchesSearch = searchQuery
+      ? article.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        article.content.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        article.tags.some((tag) =>
+          tag.toLowerCase().includes(searchQuery.toLowerCase())
+        )
+      : true;
 
-  // Get featured articles
-  const featuredArticles = articles.filter((article) => article.featured);
+    const matchesCategory = selectedCategory
+      ? (article.category || "Uncategorized") === selectedCategory
+      : true;
 
-  // Get popular articles
-  const popularArticles = articles.filter((article) => article.popular);
+    return matchesSearch && matchesCategory;
+  });
 
-  return (
-    <main className="w-full">
-      <section className="w-full bg-gradient-to-b from-muted/50 to-muted py-12 md:py-24 lg:py-32">
-        <div className="mx-auto px-4 md:px-6">
-          <div className="mx-auto flex max-w-[58rem] flex-col items-center space-y-4 text-center">
-            <h1 className="text-3xl font-bold leading-tight tracking-tighter md:text-5xl lg:text-6xl lg:leading-[1.1]">
-              Knowledge Base
-            </h1>
-            <p className="max-w-[46rem] text-lg text-muted-foreground sm:text-xl">
-              Find comprehensive guides and resources to help you make the most
-              of our escrow services.
-            </p>
-            <div className="relative w-full max-w-2xl">
-              <Search className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-muted-foreground" />
-              <Input
-                type="search"
-                placeholder="Search for articles, guides, and topics..."
-                className="w-full pl-10 pr-4 py-6 text-base"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-              />
-            </div>
-          </div>
+  // Get excerpt from content
+  const getExcerpt = (content: string, maxLength = 150) => {
+    // Strip HTML tags
+    const text = content.replace(/<[^>]*>/g, "");
+    // Truncate to maxLength
+    return text.length > maxLength
+      ? text.substring(0, maxLength) + "..."
+      : text;
+  };
+
+  if (isLoading || isRefreshing) {
+    return (
+      <div className="space-y-6">
+        <div className="flex flex-col sm:flex-row gap-4 justify-between mb-6">
+          <Skeleton className="h-10 w-full sm:w-64" />
+          <Skeleton className="h-10 w-full sm:w-64" />
         </div>
-      </section>
 
-      <section className="container mx-auto py-12 md:py-16 lg:py-20">
-        <Tabs
-          defaultValue="all"
-          className="w-full"
-          onValueChange={setActiveCategory}
-        >
-          <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-            <h2 className="text-2xl font-bold tracking-tight">
-              Browse by Category
-            </h2>
-            <TabsList className="h-auto flex-wrap justify-start md:justify-end">
-              <TabsTrigger value="all" className="text-sm">
-                All Categories
-              </TabsTrigger>
-              {categories.map((category) => (
-                <TabsTrigger
-                  key={category.id}
-                  value={category.id}
-                  className="text-sm"
-                >
-                  {category.name}
-                </TabsTrigger>
-              ))}
-            </TabsList>
-          </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {Array(6)
+            .fill(0)
+            .map((_, i) => (
+              <Card key={i}>
+                <CardHeader className="p-4">
+                  <Skeleton className="h-6 w-3/4 mb-2" />
+                  <Skeleton className="h-4 w-1/2" />
+                </CardHeader>
+                <CardContent className="p-4 pt-0">
+                  <Skeleton className="h-4 w-full mb-2" />
+                  <Skeleton className="h-4 w-full mb-2" />
+                  <Skeleton className="h-4 w-2/3" />
+                </CardContent>
+                <CardFooter className="p-4 pt-0">
+                  <Skeleton className="h-8 w-full" />
+                </CardFooter>
+              </Card>
+            ))}
+        </div>
+      </div>
+    );
+  }
 
-          <Separator className="my-6" />
+  if (isError) {
+    return (
+      <div>
+        <Alert variant="destructive" className="mb-4">
+          <AlertCircle className="h-4 w-4" />
+          <AlertTitle>Error</AlertTitle>
+          <AlertDescription>
+            Failed to load knowledge base articles.{" "}
+            {error instanceof Error ? error.message : "Please try again."}
+          </AlertDescription>
+        </Alert>
+        <Button onClick={handleRefresh} className="flex items-center gap-2">
+          <RefreshCw className="h-4 w-4" />
+          Try Again
+        </Button>
 
-          <TabsContent value="all" className="mt-0">
-            {/* Featured Articles Section */}
-            {featuredArticles.length > 0 && (
-              <div className="mb-12">
-                <h3 className="mb-6 text-xl font-semibold">
-                  Featured Articles
-                </h3>
-                <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-                  {featuredArticles.map((article) => (
-                    <ArticleCard key={article.id} article={article} />
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* All Articles Section */}
-            <div>
-              <h3 className="mb-6 text-xl font-semibold">
-                All Articles{" "}
-                {searchQuery && `(${filteredArticles.length} results)`}
-              </h3>
-              {filteredArticles.length > 0 ? (
-                <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-                  {filteredArticles.map((article) => (
-                    <ArticleCard key={article.id} article={article} />
-                  ))}
-                </div>
-              ) : (
-                <div className="rounded-lg border border-dashed p-8 text-center">
-                  <h4 className="mb-2 text-lg font-medium">
-                    No articles found
-                  </h4>
-                  <p className="text-muted-foreground">
-                    Try adjusting your search or filter to find what you're
-                    looking for.
-                  </p>
-                </div>
-              )}
-            </div>
-          </TabsContent>
-
-          {/* Category-specific tabs */}
-          {categories.map((category) => (
-            <TabsContent key={category.id} value={category.id} className="mt-0">
-              <div className="mb-8">
-                <div className="flex items-center gap-3 mb-4">
-                  {category.icon}
-                  <h3 className="text-xl font-semibold">{category.name}</h3>
-                </div>
-                <p className="text-muted-foreground">{category.description}</p>
-              </div>
-
-              {filteredArticles.length > 0 ? (
-                <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-                  {filteredArticles.map((article) => (
-                    <ArticleCard key={article.id} article={article} />
-                  ))}
-                </div>
-              ) : (
-                <div className="rounded-lg border border-dashed p-8 text-center">
-                  <h4 className="mb-2 text-lg font-medium">
-                    No articles found
-                  </h4>
-                  <p className="text-muted-foreground">
-                    Try adjusting your search or filter to find what you're
-                    looking for.
-                  </p>
-                </div>
-              )}
-            </TabsContent>
-          ))}
-        </Tabs>
-
-        {/* Popular Articles Section */}
-        {popularArticles.length > 0 && (
-          <div className="mt-16">
-            <h3 className="mb-6 text-xl font-semibold">Popular Articles</h3>
-            <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-              {popularArticles.map((article) => (
-                <ArticleCard key={article.id} article={article} />
-              ))}
-            </div>
+        {/* Fallback to initial articles */}
+        {initialArticles.length > 0 && (
+          <div className="mt-6">
+            <p className="text-sm text-muted-foreground mb-4">
+              Showing cached articles:
+            </p>
+            {renderArticleGrid(initialArticles)}
           </div>
         )}
+      </div>
+    );
+  }
 
-        {/* Help Section */}
-        <div className="mt-16 rounded-lg bg-muted p-8 text-center">
-          <h3 className="mb-2 text-xl font-semibold">
-            Can't find what you're looking for?
-          </h3>
-          <p className="mb-6 text-muted-foreground">
-            Our support team is ready to help you with any questions you may
-            have.
-          </p>
-          <div className="flex flex-col gap-4 sm:flex-row sm:justify-center">
-            <Button asChild>
-              <Link href="/help">Contact Support</Link>
-            </Button>
-            <Button variant="outline" asChild>
-              <Link href="/faq">
-                View FAQ
-                <ChevronRight className="ml-1 h-4 w-4" />
-              </Link>
+  // If we have no articles to display
+  if (!filteredArticles || filteredArticles.length === 0) {
+    return (
+      <div>
+        <div className="flex flex-col sm:flex-row gap-4 justify-between mb-6">
+          <div className="relative">
+            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+            <Input
+              type="search"
+              placeholder="Search knowledge base..."
+              className="pl-8 w-full sm:w-64"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+            />
+          </div>
+
+          <div className="flex gap-2">
+            <select
+              className="h-10 rounded-md border border-input bg-background px-3 py-2"
+              value={selectedCategory || ""}
+              onChange={(e) => setSelectedCategory(e.target.value || null)}
+            >
+              <option value="">All Categories</option>
+              {categories.map((category) => (
+                <option key={category} value={category}>
+                  {category}
+                </option>
+              ))}
+            </select>
+
+            <Button
+              variant="outline"
+              onClick={() => {
+                setSearchQuery("");
+                setSelectedCategory(null);
+              }}
+            >
+              Clear Filters
             </Button>
           </div>
         </div>
-      </section>
-    </main>
-  );
-}
 
-// Article Card Component
-function ArticleCard({ article }: { article: Article }) {
-  const categoryInfo = categories.find((cat) => cat.id === article.category);
+        <div className="text-center py-12 border rounded-lg bg-card">
+          <FileText className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+          <h3 className="text-lg font-medium mb-2">No articles found</h3>
+          <p className="text-muted-foreground mb-4">
+            {searchQuery || selectedCategory
+              ? "Try adjusting your search or filters"
+              : "No knowledge base articles are available at this time"}
+          </p>
+          {(searchQuery || selectedCategory) && (
+            <Button
+              variant="outline"
+              onClick={() => {
+                setSearchQuery("");
+                setSelectedCategory(null);
+              }}
+            >
+              Clear Filters
+            </Button>
+          )}
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <Card className="flex h-full flex-col">
-      <CardHeader className="pb-3">
-        <div className="flex items-center gap-2 mb-2">
-          {categoryInfo?.icon}
-          <Badge variant="secondary" className="px-2 py-0 text-xs">
-            {categoryInfo?.name}
-          </Badge>
-          {article.featured && (
-            <Badge variant="default" className="ml-auto px-2 py-0 text-xs">
-              Featured
-            </Badge>
-          )}
-          {article.popular && !article.featured && (
-            <Badge variant="outline" className="ml-auto px-2 py-0 text-xs">
-              Popular
-            </Badge>
-          )}
+    <div>
+      <div className="flex flex-col sm:flex-row gap-4 justify-between mb-6">
+        <div className="relative">
+          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+          <Input
+            type="search"
+            placeholder="Search knowledge base..."
+            className="pl-8 w-full sm:w-64"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+          />
         </div>
-        <CardTitle className="line-clamp-2">{article.title}</CardTitle>
-        <CardDescription className="line-clamp-2">
-          {article.description}
-        </CardDescription>
-      </CardHeader>
-      <CardContent className="flex-1">
-        <div className="flex flex-wrap gap-2">
-          {article.tags.map((tag) => (
-            <Badge key={tag} variant="outline" className="px-2 py-0 text-xs">
-              <Tag className="mr-1 h-3 w-3" />
-              {tag}
-            </Badge>
-          ))}
+
+        <div className="flex gap-2">
+          <select
+            className="h-10 rounded-md border border-input bg-background px-3 py-2"
+            value={selectedCategory || ""}
+            onChange={(e) => setSelectedCategory(e.target.value || null)}
+          >
+            <option value="">All Categories</option>
+            {categories.map((category) => (
+              <option key={category} value={category}>
+                {category}
+              </option>
+            ))}
+          </select>
+
+          <Button
+            variant="outline"
+            onClick={() => {
+              setSearchQuery("");
+              setSelectedCategory(null);
+            }}
+          >
+            Clear Filters
+          </Button>
         </div>
-      </CardContent>
-      <CardFooter className="flex items-center justify-between pt-3">
-        <div className="flex items-center text-sm text-muted-foreground">
-          <Clock className="mr-1 h-4 w-4" />
-          {article.readTime} min read
-        </div>
-        <Button variant="ghost" size="sm" className="gap-1" asChild>
-          <Link href={`/knowledge-base/${article.slug}`}>
-            Read Article
-            <ChevronRight className="h-4 w-4" />
-          </Link>
+      </div>
+
+      {renderArticleGrid(filteredArticles)}
+
+      <div className="mt-8 text-right">
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={handleRefresh}
+          disabled={isRefreshing}
+          className="text-xs text-muted-foreground hover:text-foreground"
+        >
+          <RefreshCw className="mr-1 h-3 w-3" />
+          Refresh Articles
         </Button>
-      </CardFooter>
-    </Card>
+      </div>
+    </div>
   );
+
+  function renderArticleGrid(articles: KnowledgeBaseItem[]) {
+    return (
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        {articles.map((article) => (
+          <Card key={article.id} className="flex flex-col h-full">
+            <CardHeader className="p-4">
+              <CardTitle className="line-clamp-2">{article.title}</CardTitle>
+              <CardDescription>
+                {article.category || "Uncategorized"}
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="p-4 pt-0 flex-grow">
+              <div className="flex flex-wrap gap-2 mb-3">
+                {article.tags.slice(0, 3).map((tag) => (
+                  <Badge key={tag} variant="secondary" className="text-xs">
+                    {tag}
+                  </Badge>
+                ))}
+                {article.tags.length > 3 && (
+                  <Badge variant="outline" className="text-xs">
+                    +{article.tags.length - 3} more
+                  </Badge>
+                )}
+              </div>
+              <p className="text-sm text-muted-foreground line-clamp-3">
+                {getExcerpt(article.content)}
+              </p>
+            </CardContent>
+            <CardFooter className="p-4 pt-0">
+              <Button asChild className="w-full">
+                <Link href={`/knowledge-base/${article.slug}`}>
+                  Read Article
+                </Link>
+              </Button>
+            </CardFooter>
+          </Card>
+        ))}
+      </div>
+    );
+  }
 }

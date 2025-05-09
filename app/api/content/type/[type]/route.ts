@@ -2,31 +2,75 @@ import { type NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { logger } from "@/lib/logger";
 
-// GET /api/content/type/:type - Get content by type
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ type: string }> }
 ) {
   try {
-    const type = (await params).type;
+    const { type } = await params;
 
-    if (!type) {
+    // Validate content type
+    const validTypes = [
+      "KNOWLEDGE_BASE",
+      "TUTORIAL",
+      "TERMS_OF_SERVICE",
+      "PRIVACY_POLICY",
+      "FAQ",
+    ];
+    if (!validTypes.includes(type)) {
       return NextResponse.json(
-        { error: "Content type is required" },
+        { error: "Invalid content type" },
         { status: 400 }
       );
     }
 
-    // Check if we should only return published content
-    const { searchParams } = new URL(request.url);
-    const publishedOnly = searchParams.get("published") === "true";
+    // Get search params
+    const searchParams = request.nextUrl.searchParams;
+    const published = searchParams.get("published") === "true";
+    const category = searchParams.get("category");
+    const tag = searchParams.get("tag");
+    const search = searchParams.get("search");
 
-    // Get content from database
+    // Build where clause
+    const where: any = {
+      type: type as any,
+    };
+
+    // Add filters if provided
+    if (published) {
+      where.published = true;
+    }
+
+    if (category) {
+      where.category = category;
+    }
+
+    if (tag) {
+      where.tags = {
+        has: tag,
+      };
+    }
+
+    if (search) {
+      where.OR = [
+        {
+          title: {
+            contains: search,
+            mode: "insensitive",
+          },
+        },
+        {
+          content: {
+            contains: search,
+            mode: "insensitive",
+          },
+        },
+      ];
+    }
+
+    // Get content
     const content = await prisma.contentItem.findMany({
-      where: {
-        type: type as any,
-        ...(publishedOnly ? { published: true } : {}),
-      },
+      where,
       orderBy: {
         updatedAt: "desc",
       },
@@ -40,16 +84,11 @@ export async function GET(
       },
     });
 
-    // Add cache control headers
-    const headers = new Headers();
-    headers.set(
-      "Cache-Control",
-      "public, max-age=300, s-maxage=600, stale-while-revalidate=86400"
-    );
-
+    // Set cache control headers
     return NextResponse.json(content, {
-      headers,
-      status: 200,
+      headers: {
+        "Cache-Control": "public, s-maxage=60, stale-while-revalidate=300",
+      },
     });
   } catch (error) {
     logger.error("Error fetching content by type:", error);

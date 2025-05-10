@@ -315,3 +315,124 @@ export async function getDisputeById(disputeId: string) {
 
   return dispute;
 }
+
+export async function getUserRestrictions(userId: string) {
+  await checkAdminPermission();
+
+  const restrictions = await prisma.userRestriction.findMany({
+    where: { userId },
+    include: {
+      appliedBy: {
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          username: true,
+        },
+      },
+      resolvedBy: {
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          username: true,
+        },
+      },
+    },
+    orderBy: { appliedAt: "desc" },
+  });
+
+  return restrictions;
+}
+
+export async function restrictUser(
+  userId: string,
+  reason: string,
+  details: string
+) {
+  const admin = await checkAdminPermission();
+
+  // Create restriction and update user status
+  const restriction = await prisma.userRestriction.create({
+    data: {
+      userId,
+      reason,
+      details: details || "",
+      appliedById: admin.id,
+      appliedAt: new Date(),
+      active: true,
+    },
+  });
+  await prisma.user.update({
+    where: { id: userId },
+    data: { restricted: true },
+  }),
+    // Create notification for the user
+    await prisma.notification.create({
+      data: {
+        userId,
+        title: "Account Restricted",
+        message:
+          "Your account has been temporarily restricted. Please check your account status for more information.",
+        type: "SYSTEM_NOTIFICATION",
+        read: false,
+      },
+    });
+
+  revalidatePath("/admin/users");
+  return restriction;
+}
+
+export async function removeUserRestriction(restrictionId: string) {
+  const admin = await checkAdminPermission();
+
+  // Get the restriction to find the user
+  const restriction = await prisma.userRestriction.findUnique({
+    where: { id: restrictionId },
+  });
+
+  if (!restriction) {
+    throw new Error("Restriction not found");
+  }
+
+  // Update the current restriction
+  await prisma.userRestriction.update({
+    where: { id: restrictionId },
+    data: {
+      active: false,
+      resolvedAt: new Date(),
+      resolvedById: admin.id,
+    },
+  });
+
+  // Check if user has any other active restrictions
+  const remainingActiveRestrictions = await prisma.userRestriction.count({
+    where: {
+      userId: restriction.userId,
+      active: true,
+    },
+  });
+
+  // Only update user's restricted status if no active restrictions remain
+  if (remainingActiveRestrictions === 0) {
+    await prisma.user.update({
+      where: { id: restriction.userId },
+      data: { restricted: false },
+    });
+
+    // Create notification for the user
+    await prisma.notification.create({
+      data: {
+        userId: restriction.userId,
+        title: "Account Restriction Removed",
+        message:
+          "The restriction on your account has been removed. Your account is now active.",
+        type: "SYSTEM_NOTIFICATION",
+        read: false,
+      },
+    });
+  }
+
+  revalidatePath("/admin/users");
+  return { success: true };
+}

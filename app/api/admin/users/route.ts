@@ -58,6 +58,7 @@ export async function GET(request: Request) {
           email: true,
           username: true,
           image: true,
+          restricted: true,
           role: true,
           createdAt: true,
           wallet: {
@@ -67,8 +68,10 @@ export async function GET(request: Request) {
           },
           _count: {
             select: {
-              buyerTransactions: true,
-              sellerTransactions: true,
+              // buyerTransactions: true,
+              receivedTransactions: true,
+              sentTransactions: true,
+              // sellerTransactions: true,
             },
           },
         },
@@ -89,9 +92,10 @@ export async function GET(request: Request) {
       username: user.username,
       image: user.image,
       role: user.role,
+      restricted: user.restricted,
       walletBalance: user.wallet?.balance || 0,
       transactionCount:
-        user._count.buyerTransactions + user._count.sellerTransactions,
+        user._count.receivedTransactions + user._count.sentTransactions,
       createdAt: user.createdAt.toISOString(),
     }));
 

@@ -54,6 +54,7 @@ model User {
   password              String?
   role                  UserRole           @default(USER)
   status                UserStatus         @default(PENDING)
+  restricted            Boolean            @default(false)
   termsAccepted         Boolean            @default(false)
   accounts              Account[]
   sessions              Session[]
@@ -66,13 +67,17 @@ model User {
   paystackRecipientCode String? // For transfers/withdrawals
   bankAccounts          BankAccount[]
   subscriptions         Subscription[]
+  feedbacks             PlatformFeedback[]
+  contentItems          ContentItem[]
   disputesInitiated     Dispute[]          @relation("DisputeInitiator")
   Feedback              Feedback[]         @relation("GaveFeedback")
   feedbackReceived      Feedback[]         @relation("ReceivedFeedback")
-  feedbacks             PlatformFeedback[] // Added relation to platform feedback
-  contentItems          ContentItem[] // Added relation to content items
-  createdAt             DateTime           @default(now())
-  updatedAt             DateTime           @updatedAt
+  restrictions          UserRestriction[]  @relation("UserRestriction")
+  restrictionResovedBy  UserRestriction[]  @relation("RestrictionResovedBy")
+  restrictionAppliedBy  UserRestriction[]  @relation("RestrictionAppliedBy")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 enum UserRole {
@@ -357,7 +362,6 @@ model DisputeMessage {
   dispute   Dispute  @relation(fields: [disputeId], references: [id], onDelete: Cascade)
 }
 
-// New model for platform feedback
 model PlatformFeedback {
   id          String         @id @default(cuid())
   userId      String
@@ -371,6 +375,26 @@ model PlatformFeedback {
   createdAt   DateTime       @default(now())
   updatedAt   DateTime       @updatedAt
   user        User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model UserRestriction {
+  id              String    @id @default(cuid())
+  userId          String
+  reason          String
+  details         String
+  appliedById     String
+  active          Boolean
+  appealSubmitted Boolean   @default(false)
+  appliedAt       DateTime?
+  appealText      String?
+  appealDate      DateTime?
+  resolvedAt      DateTime?
+  resolvedById    String?
+  user            User      @relation("UserRestriction", fields: [userId], references: [id])
+  resolvedBy      User?     @relation("RestrictionResovedBy", fields: [resolvedById], references: [id])
+  appliedBy       User?     @relation("RestrictionAppliedBy", fields: [appliedById], references: [id])
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
 }
 
 enum FeedbackType {

@@ -37,7 +37,9 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         token.role = user.role;
         token.username = user.username;
         token.isActive = user.isActive;
+        token.restricted = user.restricted;
         token.status = user.status;
+        token.phone = user.phone;
         token.username = user.username;
         token.emailVerified = user.emailVerified;
       }
@@ -46,6 +48,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           return {
             ...token,
             isActive: session.user.isActive,
+            restricted: session.user.restricted,
             status: session.user.status,
             email: session.user.email,
             name: session.user.name,
@@ -65,6 +68,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         session.user.username = token.username as string;
         session.user.isActive = token.isActive as boolean;
         session.user.status = token.status as UserStatus;
+        session.user.restricted = token.restricted as boolean;
         session.user.emailVerified = token.emailVerified as Date | null;
         session.user.phone = token.phone as string;
         session.user.createdAt = token.createdAt as Date;

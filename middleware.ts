@@ -18,12 +18,15 @@ export default middleware(async (req, ctx) => {
   // @ts-ignore
   const role = req.auth?.user?.role;
   const isActive = req.auth?.user?.status === "ACTIVE";
+  const isRestricted = req.auth?.user?.restricted;
 
   const isApiRoute = nextUrl.pathname.startsWith(apiAuthPrefix);
   const isAuthRoute = authRoutes.includes(nextUrl.pathname);
   const isPublicRoute = isPublicRouteFn(nextUrl.pathname);
   const isAdminRoute = adminRoutes.includes(nextUrl.pathname);
   const isPaymentRoute = paymentRoute.includes(nextUrl.pathname);
+  const isRestrictionRoute = nextUrl.pathname === "/account-restricted";
+
   const isAdmin = role === "ADMIN";
 
   const pathname = nextUrl.pathname;
@@ -63,12 +66,24 @@ export default middleware(async (req, ctx) => {
     );
   }
 
+  // Handle restricted users
+  if (
+    isLoggedIn &&
+    isRestricted &&
+    !isRestrictionRoute &&
+    !isApiRoute &&
+    !isPublicRoute
+  ) {
+    return Response.redirect(new URL("/account-restricted", nextUrl));
+  }
+
   if (
     isLoggedIn &&
     !isActive &&
     !isPaymentRoute &&
     !isApiRoute &&
-    !isPublicRoute
+    !isPublicRoute &&
+    !isRestrictionRoute
   ) {
     // Redirect to payment page if user is not active and not on the payment route
     console.log("USER ACTIVE", isActive);

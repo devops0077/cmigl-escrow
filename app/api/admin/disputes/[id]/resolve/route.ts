@@ -7,7 +7,7 @@ import { formatCurrency } from "@/lib/utils";
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await auth();
@@ -24,7 +24,7 @@ export async function POST(
       return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
     }
 
-    const disputeId = params.id;
+    const disputeId = (await params).id;
     const { sellerAmount, buyerAmount, adminNotes } = await request.json();
 
     // Validate input

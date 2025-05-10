@@ -229,6 +229,7 @@ export async function verifyCredentials(email: string, password: string) {
     passportImage: user.passportImage,
     isActive: user.isActive,
     status: user.status,
+    restricted: user.restricted,
     emailVerified: user.emailVerified,
     phone: user.phone,
     createdAt: user.createdAt,

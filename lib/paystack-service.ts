@@ -65,6 +65,51 @@ export type PaystackTransactionInitializeResponse = {
   };
 };
 
+export type PaystackTransferRecipientResponse = {
+  status: boolean;
+  message: string;
+  data: {
+    active: boolean;
+    createdAt: string;
+    currency: string;
+    domain: string;
+    id: number;
+    integration: number;
+    name: string;
+    recipient_code: string;
+    type: string;
+    updatedAt: string;
+    is_deleted: boolean;
+    details: {
+      account_number: string;
+      account_name: string;
+      bank_code: string;
+      bank_name: string;
+    };
+  };
+};
+
+export type PaystackTransferResponse = {
+  status: boolean;
+  message: string;
+  data: {
+    id: number;
+    reference: string;
+    integration: number;
+    domain: string;
+    amount: number;
+    currency: string;
+    source: string;
+    reason: string;
+    recipient: number;
+    status: string;
+    transfer_code: string;
+    transferred_at: string | null;
+    created_at: string;
+    updated_at: string;
+  };
+};
+
 export class PaystackService {
   private readonly secretKey: string;
   private readonly publicKey: string;
@@ -526,6 +571,184 @@ export class PaystackService {
         error,
       });
       throw error;
+    }
+  }
+
+  /**
+   * Create a transfer recipient
+   * @param params Recipient parameters
+   * @returns Promise with recipient data
+   */
+  async createTransferRecipient(params: {
+    type: string;
+    name: string;
+    account_number: string;
+    bank_code: string;
+    currency?: string;
+    description?: string;
+    metadata?: Record<string, any>;
+  }): Promise<PaystackTransferRecipientResponse> {
+    try {
+      const response = await fetch(`${this.baseUrl}/transferrecipient`, {
+        method: "POST",
+        headers: this.getHeaders(),
+        body: JSON.stringify(params),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        logger.error("Paystack transfer recipient creation failed", {
+          accountNumber: params.account_number,
+          bankCode: params.bank_code,
+          status: response.status,
+          error: errorData,
+        });
+        throw new AppError(
+          errorData.message || "Failed to create transfer recipient",
+          response.status,
+          errorData
+        );
+      }
+
+      const data = await response.json();
+      logger.info("Paystack transfer recipient created", {
+        accountNumber: params.account_number.slice(-4).padStart(10, "*"), // Log only last 4 digits
+        recipientCode: data.data.recipient_code,
+      });
+
+      return data;
+    } catch (error) {
+      logger.error("Paystack transfer recipient creation error", {
+        accountNumber: params.account_number.slice(-4).padStart(10, "*"),
+        error,
+      });
+      if (error instanceof AppError) {
+        throw error;
+      }
+      throw new AppError(
+        "Failed to create transfer recipient",
+        500,
+        error instanceof Error ? error.message : String(error)
+      );
+    }
+  }
+
+  /**
+   * Initiate a transfer
+   * @param params Transfer parameters
+   * @returns Promise with transfer data
+   */
+  async initiateTransfer(params: {
+    source: string;
+    amount: number;
+    recipient: string;
+    reason?: string;
+    reference?: string;
+    currency?: string;
+  }): Promise<PaystackTransferResponse> {
+    try {
+      // Convert amount to kobo
+      const amountInKobo = Math.round(params.amount * 100);
+
+      const response = await fetch(`${this.baseUrl}/transfer`, {
+        method: "POST",
+        headers: this.getHeaders(),
+        body: JSON.stringify({
+          ...params,
+          amount: amountInKobo,
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        logger.error("Paystack transfer initiation failed", {
+          recipient: params.recipient,
+          amount: params.amount,
+          status: response.status,
+          error: errorData,
+        });
+        throw new AppError(
+          errorData.message || "Failed to initiate transfer",
+          response.status,
+          errorData
+        );
+      }
+
+      const data = await response.json();
+      logger.info("Paystack transfer initiated", {
+        recipient: params.recipient,
+        amount: params.amount,
+        reference: data.data.reference,
+        transferCode: data.data.transfer_code,
+      });
+
+      return data;
+    } catch (error) {
+      logger.error("Paystack transfer initiation error", {
+        recipient: params.recipient,
+        amount: params.amount,
+        error,
+      });
+      if (error instanceof AppError) {
+        throw error;
+      }
+      throw new AppError(
+        "Failed to initiate transfer",
+        500,
+        error instanceof Error ? error.message : String(error)
+      );
+    }
+  }
+
+  /**
+   * Verify a transfer
+   * @param reference Transfer reference
+   * @returns Promise with transfer verification data
+   */
+  async verifyTransfer(reference: string): Promise<any> {
+    try {
+      const response = await fetch(
+        `${this.baseUrl}/transfer/verify/${reference}`,
+        {
+          method: "GET",
+          headers: this.getHeaders(),
+        }
+      );
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        logger.error("Paystack transfer verification failed", {
+          reference,
+          status: response.status,
+          error: errorData,
+        });
+        throw new AppError(
+          errorData.message || "Failed to verify transfer",
+          response.status,
+          errorData
+        );
+      }
+
+      const data = await response.json();
+      logger.info("Paystack transfer verified", {
+        reference,
+        status: data.data.status,
+      });
+
+      return data;
+    } catch (error) {
+      logger.error("Paystack transfer verification error", {
+        reference,
+        error,
+      });
+      if (error instanceof AppError) {
+        throw error;
+      }
+      throw new AppError(
+        "Failed to verify transfer",
+        500,
+        error instanceof Error ? error.message : String(error)
+      );
     }
   }
 

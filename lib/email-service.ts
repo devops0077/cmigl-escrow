@@ -25,7 +25,7 @@ export class EmailService {
   //     });
   //   }
 
-  private async sendEmail({ to, subject, html }: EmailOptions): Promise<void> {
+  public async sendEmail({ to, subject, html }: EmailOptions): Promise<void> {
     try {
       //   await this.transporter.sendMail({
       //     from: `"CMIGL Escrow" <${process.env.EMAIL_FROM}>`,

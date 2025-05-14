@@ -1,33 +1,39 @@
-import type React from "react"
-import type { Metadata } from "next"
-import { Inter } from "next/font/google"
-import "./globals.css"
-import { ThemeProvider } from "@/components/theme-provider"
-import { AuthProvider } from "@/lib/auth-provider"
-import { Toaster } from "sonner"
-import { ReactQueryProvider } from "@/lib/react-query-provider"
-import { HelpBubble } from "@/components/help/help-bubble"
-import { RestrictionProvider } from "@/providers/restriction-provider"
+import type React from "react";
+import type { Metadata } from "next";
+import { Inter } from "next/font/google";
+import "./globals.css";
+import { ThemeProvider } from "@/components/theme-provider";
+import { AuthProvider } from "@/lib/auth-provider";
+import { Toaster } from "sonner";
+import { ReactQueryProvider } from "@/lib/react-query-provider";
+import { HelpBubble } from "@/components/help/help-bubble";
+import { RestrictionProvider } from "@/providers/restriction-provider";
 
-const inter = Inter({ subsets: ["latin"] })
+const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
   title: "CMIGL Escrow Services",
   description: "Secure transactions between buyers and sellers",
-}
+};
 
 export default function RootLayout({
   children,
 }: Readonly<{
-  children: React.ReactNode
+  children: React.ReactNode;
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
+      <meta name="apple-mobile-web-app-title" content="Escrow" />
       <body className={`${inter.className} w-full`}>
         <ReactQueryProvider>
           <AuthProvider>
             <RestrictionProvider>
-              <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
+              <ThemeProvider
+                attribute="class"
+                defaultTheme="system"
+                enableSystem
+                disableTransitionOnChange
+              >
                 {children}
                 <HelpBubble />
                 <Toaster
@@ -38,8 +44,10 @@ export default function RootLayout({
                         "group toast group-[.toaster]:bg-background group-[.toaster]:text-foreground group-[.toaster]:border-border group-[.toaster]:shadow-lg",
                       title: "group-[.toast]:text-foreground font-semibold",
                       description: "group-[.toast]:text-muted-foreground",
-                      actionButton: "group-[.toast]:bg-primary group-[.toast]:text-primary-foreground",
-                      cancelButton: "group-[.toast]:bg-muted group-[.toast]:text-muted-foreground",
+                      actionButton:
+                        "group-[.toast]:bg-primary group-[.toast]:text-primary-foreground",
+                      cancelButton:
+                        "group-[.toast]:bg-muted group-[.toast]:text-muted-foreground",
                       success:
                         "group-[.toaster]:bg-gradient-to-r group-[.toaster]:from-green-700 group-[.toaster]:to-green-800 group-[.toaster]:text-white group-[.toaster]:border-green-600",
                       error:
@@ -58,5 +66,5 @@ export default function RootLayout({
         </ReactQueryProvider>
       </body>
     </html>
-  )
+  );
 }

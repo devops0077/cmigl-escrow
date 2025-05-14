@@ -37,7 +37,7 @@ export function generateTransactionReference(): string {
   const random = Math.floor(Math.random() * 1000000)
     .toString()
     .padStart(6, "0");
-  return `VOKUN-${timestamp}-${random}`;
+  return `ESCROW-CMIGL-${timestamp}-${random}`;
 }
 
 export function slugify(text: string): string {

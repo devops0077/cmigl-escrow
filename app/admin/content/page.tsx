@@ -58,8 +58,8 @@ export default async function AdminContentPage() {
         text="Create, edit, and manage all platform content from a single
             dashboard."
       />
-      <div className="container py-10">
-        <div className="space-y-3 px-4 sm:px-6">
+      <div className="  py-10">
+        <div className="space-y-3 px-4 sm:px-6 overflow-x-hidden">
           <Tabs defaultValue="knowledge-base" className="w-full">
             <TabsList className="grid grid-cols-5 w-full">
               <TabsTrigger value="knowledge-base">

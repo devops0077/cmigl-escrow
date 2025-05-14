@@ -40,7 +40,6 @@ export function HelpBubble() {
   const [lastScrollY, setLastScrollY] = useState(0);
   const { data: session } = useSession();
 
-  // Simulate unread messages (in a real app, this would come from an API)
   useEffect(() => {
     // Randomly set unread status for demo purposes
     const randomCheck = () => {
@@ -81,7 +80,7 @@ export function HelpBubble() {
       description: "Chat with us on WhatsApp",
       action: () => {
         window.open(
-          "https://wa.me/1234567890?text=Hello%20from%20CMIGL%20Escrow",
+          "https://chat.whatsapp.com/JjD7zLq6BQr3mAcWqMP9Si",
           "_blank"
         );
       },
@@ -95,7 +94,7 @@ export function HelpBubble() {
       action: () => {
         const subject = "Support Request from CMIGL Escrow";
         const body = `User: ${session?.user?.email || "Not logged in"}\nPage: ${window.location.href}\n\nHello, I need help with...`;
-        window.location.href = `mailto:support@cmiglescrow.com?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+        window.location.href = `mailto:support@cmigl.org?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
       },
       color: "bg-blue-500 hover:bg-blue-600",
     },

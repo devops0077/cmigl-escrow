@@ -52,6 +52,7 @@ import { Switch } from "@/components/ui/switch";
 import { Loader2, Plus, Pencil, Trash2, Eye, FileText } from "lucide-react";
 import ContentEditor from "@/components/admin/content-editor";
 import { ContentRevisionHistory } from "@/components/admin/content-revision-history";
+import { truncateText } from "@/lib/utils";
 
 type ContentType =
   | "KNOWLEDGE_BASE"
@@ -329,8 +330,10 @@ export default function AdminContentManager({
             <TableBody>
               {contentItems.map((item) => (
                 <TableRow key={item.id}>
-                  <TableCell className="font-medium">{item.title}</TableCell>
-                  <TableCell>{item.slug}</TableCell>
+                  <TableCell className="font-medium">
+                    {truncateText(item.title, 15)}
+                  </TableCell>
+                  <TableCell>{truncateText(item.slug, 15)}</TableCell>
                   <TableCell>
                     <Badge variant={item.published ? "default" : "outline"}>
                       {item.published ? "Published" : "Draft"}

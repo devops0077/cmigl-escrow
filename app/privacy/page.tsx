@@ -33,7 +33,7 @@ export default async function PrivacyPolicyPage() {
           </div>
         </section>
 
-        <section className="container mx-auto py-12 md:py-16 lg:py-20">
+        <section className="container mx-auto px-4 py-12 md:py-16 lg:py-20">
           <div className="mx-auto max-w-3xl space-y-8">
             {privacyContent ? (
               <>

@@ -1,16 +1,16 @@
-import type { Metadata } from "next"
-import { SiteHeader } from "@/components/site-header"
-import { getPublishedContentByType } from "@/lib/content-actions"
-import { FAQContent } from "@/components/content/faq-content"
+import type { Metadata } from "next";
+import { SiteHeader } from "@/components/site-header";
+import { getPublishedContentByType } from "@/lib/content-actions";
+import { FAQContent } from "@/components/content/faq-content";
 
 export const metadata: Metadata = {
   title: "Frequently Asked Questions - CMIGL Escrow Services",
   description: "Find answers to common questions about CMIGL Escrow Services",
-}
+};
 
 export default async function FAQPage() {
   // Fetch FAQ content from database
-  const faqContent = await getPublishedContentByType("FAQ")
+  const faqContent = await getPublishedContentByType("FAQ");
 
   // Fallback content in case database fetch fails or is empty
   const fallbackContent =
@@ -49,7 +49,7 @@ export default async function FAQPage() {
             createdAt: new Date().toISOString(),
             authorId: "system",
           },
-        ]
+        ];
 
   return (
     <div className="flex min-h-screen flex-col">
@@ -62,16 +62,17 @@ export default async function FAQPage() {
                 Frequently Asked Questions
               </h1>
               <p className="max-w-[46rem] text-lg text-muted-foreground sm:text-xl">
-                Find answers to common questions about our escrow services, transactions, and platform features.
+                Find answers to common questions about our escrow services,
+                transactions, and platform features.
               </p>
             </div>
           </div>
         </section>
 
-        <section className="container mx-auto max-w-4xl space-y-8 py-12 md:py-16 lg:py-20">
+        <section className="container px-4 mx-auto max-w-4xl space-y-8 py-12 md:py-16 lg:py-20">
           <FAQContent initialFaqs={fallbackContent} />
         </section>
       </main>
     </div>
-  )
+  );
 }

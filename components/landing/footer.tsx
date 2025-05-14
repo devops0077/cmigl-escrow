@@ -30,7 +30,7 @@ export function Footer() {
               href="/help"
               className="text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
             >
-              Contact
+              Help
             </Link>
           </nav>
           <div className="text-sm text-muted-foreground">

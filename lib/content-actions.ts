@@ -349,7 +349,6 @@ export const getLatestTermsOfService = async () => {
   return terms;
 };
 
-// Get latest privacy policy - cached for 5 minutes
 export const getLatestPrivacyPolicy = async () => {
   const privacy = await prisma.contentItem.findFirst({
     where: {

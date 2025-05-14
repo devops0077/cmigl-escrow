@@ -30,11 +30,11 @@ export default async function FeedbackPage() {
     <>
       <SiteHeader />
 
-      <div className="container mx-auto max-w-4xl py-10">
+      <div className="container px-4 mx-auto max-w-4xl py-10">
         <div className="space-y-6">
           <div>
             <h1 className="text-3xl font-bold tracking-tight">Feedback</h1>
-            <p className="text-muted-foreground mt-2">
+            <p className="text-muted-foreground text-sm mt-2">
               We value your input! Share your thoughts, report issues, or
               suggest improvements to help us enhance your experience.
             </p>

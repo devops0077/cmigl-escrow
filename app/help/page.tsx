@@ -49,7 +49,7 @@ export default function HelpPage() {
           </div>
         </section>
 
-        <section className="mx-auto container py-12 md:py-16 lg:py-20">
+        <section className="mx-auto container px-4 py-12 md:py-16 lg:py-20">
           <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
             <Card className="flex flex-col">
               <CardHeader className="pb-3">

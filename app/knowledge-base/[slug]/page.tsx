@@ -11,15 +11,15 @@ import { DynamicContent } from "@/components/content/dynamic-content";
 import { ContentVersionInfo } from "@/components/content/content-version-info";
 
 interface KnowledgeBaseArticlePageProps {
-  params: {
+  params: Promise<{
     slug: string;
-  };
+  }>;
 }
 
 export async function generateMetadata({
   params,
 }: KnowledgeBaseArticlePageProps): Promise<Metadata> {
-  const article = await getContentBySlug(params.slug);
+  const article = await getContentBySlug((await params).slug);
 
   if (!article) {
     return {
@@ -37,7 +37,7 @@ export async function generateMetadata({
 export default async function KnowledgeBaseArticlePage({
   params,
 }: KnowledgeBaseArticlePageProps) {
-  const article = await getContentBySlug(params.slug);
+  const article = await getContentBySlug((await params).slug);
 
   if (!article || article.type !== "KNOWLEDGE_BASE" || !article.published) {
     notFound();
@@ -47,7 +47,7 @@ export default async function KnowledgeBaseArticlePage({
     <div className="flex min-h-screen flex-col">
       <SiteHeader />
       <main className="flex-1">
-        <div className="container mx-auto py-8 md:py-12">
+        <div className="container mx-auto px-1 py-8 md:py-12">
           <Button variant="ghost" size="sm" asChild className="mb-6">
             <Link href="/knowledge-base">
               <ChevronLeft className="mr-2 h-4 w-4" />

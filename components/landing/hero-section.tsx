@@ -26,7 +26,7 @@ export function HeroSection() {
                     Get Started
                   </Button>
                 </Link>
-                <Link href="#how-it-works">
+                <Link href="/help">
                   <Button size="lg" variant="outline" className="w-full">
                     How It Works
                   </Button>

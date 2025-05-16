@@ -24,10 +24,10 @@ export function Testimonials() {
             <CardHeader className="pb-2">
               <div className="flex items-center space-x-4">
                 <Avatar>
-                  <AvatarFallback>CO</AvatarFallback>
+                  <AvatarFallback>IS</AvatarFallback>
                 </Avatar>
                 <div>
-                  <p className="text-sm font-medium">Chidi Okolie</p>
+                  <p className="text-sm font-medium">Ibrahim Shehu</p>
                   <p className="text-sm text-muted-foreground">Buyer</p>
                 </div>
               </div>
@@ -47,7 +47,7 @@ export function Testimonials() {
                   <AvatarFallback>JS</AvatarFallback>
                 </Avatar>
                 <div>
-                  <p className="text-sm font-medium"></p>
+                  <p className="text-sm font-medium">Ademola Jerry</p>
                   <p className="text-sm text-muted-foreground">Seller</p>
                 </div>
               </div>
@@ -64,10 +64,10 @@ export function Testimonials() {
             <CardHeader className="pb-2">
               <div className="flex items-center space-x-4">
                 <Avatar>
-                  <AvatarFallback>Daniel Ayobamidele</AvatarFallback>
+                  <AvatarFallback>US</AvatarFallback>
                 </Avatar>
                 <div>
-                  <p className="text-sm font-medium">Michael Johnson</p>
+                  <p className="text-sm font-medium">Ugochukwu Sunday</p>
                   <p className="text-sm text-muted-foreground">Buyer</p>
                 </div>
               </div>

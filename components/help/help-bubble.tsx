@@ -125,7 +125,7 @@ export function HelpBubble() {
     <div
       className={cn(
         "fixed z-50 transition-all duration-300 ease-in-out",
-        isVisible ? "bottom-6 right-6" : "bottom-[-100px] right-6"
+        isVisible ? "bottom-20 right-6" : "bottom-[-100px] right-6"
       )}
       aria-label="Help and support"
     >

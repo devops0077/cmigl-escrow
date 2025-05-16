@@ -46,7 +46,7 @@ export function WalletOverview() {
     <>
       <PaystackScript />
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 p-4 md:p-6">
-        <Card className="col-span-2">
+        <Card className="md:col-span-2">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <div>
               <CardTitle className="text-sm font-medium">
@@ -70,7 +70,7 @@ export function WalletOverview() {
             <WithdrawModal />
           </CardFooter>
         </Card>
-        <Card>
+        <Card className="w-full">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <div>
               <CardTitle className="text-sm font-medium">
@@ -79,9 +79,9 @@ export function WalletOverview() {
               <CardDescription>Last 30 days</CardDescription>
             </div>
           </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              <div className="flex items-center">
+          <CardContent className="w-full">
+            <div className="space-y-4 w-full">
+              <div className="flex items-center w-full">
                 <div className="mr-2 rounded-full bg-green-100 p-1 dark:bg-green-900">
                   <ArrowUpIcon className="h-3 w-3 text-green-600 dark:text-green-400" />
                 </div>

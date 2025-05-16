@@ -64,7 +64,7 @@ export function DashboardMobileNav() {
       {/* Fixed bottom navigation */}
       <div className="fixed bottom-0 left-0 right-0 z-50 md:hidden">
         <div className="bg-background/90 backdrop-blur-lg border-t border-border px-2 py-2">
-          <div className="flex justify-between items-center">
+          <div className="flex justify-between items-center px-3">
             {mainNavItems.slice(0, 3).map((item) => (
               <Link
                 key={item.name}

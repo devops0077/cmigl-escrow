@@ -37,11 +37,11 @@ export default function AuthLayout({ children }: { children: ReactNode }) {
               </p>
               <div className="flex items-center">
                 <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center text-primary font-bold">
-                  JD
+                  US
                 </div>
                 <div className="ml-3">
-                  <p className="font-medium">John Doe</p>
-                  <p className="text-sm text-muted-foreground">Regular User</p>
+                  <p className="font-medium">Ugochukwu Sunday</p>
+                  <p className="text-sm text-muted-foreground">Buyer</p>
                 </div>
               </div>
             </div>

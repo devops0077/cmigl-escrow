@@ -18,6 +18,7 @@ import { FundWalletModal } from "./fund-wallet-modal";
 import { WithdrawModal } from "./withdraw-modal";
 import { PaystackScript } from "../payments/paystack-script";
 import { WalletTransactions } from "./wallet-transactions";
+import { RewardHistory } from "./reward-history";
 
 export function WalletOverview() {
   const {
@@ -114,6 +115,9 @@ export function WalletOverview() {
             </div>
           </CardContent>
         </Card>
+        <div className="col-span-full mt-6">
+          <RewardHistory />
+        </div>
       </div>
       <div className="p-4 md:p-6">
         <Card className="mt-4 ">

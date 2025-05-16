@@ -41,25 +41,25 @@ model Session {
 }
 
 model User {
-  id                    String             @id @default(cuid())
+  id                    String               @id @default(cuid())
   name                  String?
-  email                 String?            @unique
-  username              String?            @unique
-  phone                 String             @unique
+  email                 String?              @unique
+  username              String?              @unique
+  phone                 String               @unique
   emailVerified         DateTime?
-  isActive              Boolean            @default(false)
+  isActive              Boolean              @default(false)
   registrationFee       RegistrationFee?
   image                 String?
   passportImage         String? // Added passport image field
   password              String?
-  role                  UserRole           @default(USER)
-  status                UserStatus         @default(PENDING)
-  restricted            Boolean            @default(false)
-  termsAccepted         Boolean            @default(false)
+  role                  UserRole             @default(USER)
+  status                UserStatus           @default(PENDING)
+  restricted            Boolean              @default(false)
+  termsAccepted         Boolean              @default(false)
   accounts              Account[]
   sessions              Session[]
-  sentTransactions      Transaction[]      @relation("SentTransactions")
-  receivedTransactions  Transaction[]      @relation("ReceivedTransactions")
+  sentTransactions      Transaction[]        @relation("SentTransactions")
+  receivedTransactions  Transaction[]        @relation("ReceivedTransactions")
   wallet                Wallet?
   notifications         Notification[]
   verificationToken     VerificationToken?
@@ -69,12 +69,15 @@ model User {
   subscriptions         Subscription[]
   feedbacks             PlatformFeedback[]
   contentItems          ContentItem[]
-  disputesInitiated     Dispute[]          @relation("DisputeInitiator")
-  Feedback              Feedback[]         @relation("GaveFeedback")
-  feedbackReceived      Feedback[]         @relation("ReceivedFeedback")
-  restrictions          UserRestriction[]  @relation("UserRestriction")
-  restrictionResovedBy  UserRestriction[]  @relation("RestrictionResovedBy")
-  restrictionAppliedBy  UserRestriction[]  @relation("RestrictionAppliedBy")
+  disputesInitiated     Dispute[]            @relation("DisputeInitiator")
+  Feedback              Feedback[]           @relation("GaveFeedback")
+  feedbackReceived      Feedback[]           @relation("ReceivedFeedback")
+  restrictions          UserRestriction[]    @relation("UserRestriction")
+  restrictionResovedBy  UserRestriction[]    @relation("RestrictionResovedBy")
+  restrictionAppliedBy  UserRestriction[]    @relation("RestrictionAppliedBy")
+  rewardDistributions   RewardDistribution[] @relation("UserRewards")
+  createdRewardPrograms RewardProgram[]      @relation("RewardProgramCreator")
+  rewardAuditLogs       RewardAuditLog[]     @relation("RewardAuditor")
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -113,20 +116,21 @@ model Wallet {
 }
 
 model WalletTransaction {
-  id            String            @id @default(cuid())
-  walletId      String
-  amount        Float
-  type          TransactionType
-  status        TransactionStatus @default(PENDING)
-  reference     String?           @unique // Paystack reference
-  description   String?
-  metadata      Json? // Additional data
-  paymentMethod PaymentMethod? // Method used
-  createdAt     DateTime          @default(now())
-  updatedAt     DateTime          @updatedAt
-  wallet        Wallet            @relation(fields: [walletId], references: [id], onDelete: Cascade)
-  paymentId     String?           @unique // Link to Payment model
-  payment       Payment?          @relation(fields: [paymentId], references: [id])
+  id                 String              @id @default(cuid())
+  walletId           String
+  amount             Float
+  type               TransactionType
+  status             TransactionStatus   @default(PENDING)
+  reference          String?             @unique // Paystack reference
+  description        String?
+  metadata           Json? // Additional data
+  paymentMethod      PaymentMethod? // Method used
+  createdAt          DateTime            @default(now())
+  updatedAt          DateTime            @updatedAt
+  wallet             Wallet              @relation(fields: [walletId], references: [id], onDelete: Cascade)
+  paymentId          String?             @unique // Link to Payment model
+  payment            Payment?            @relation(fields: [paymentId], references: [id])
+  rewardDistribution RewardDistribution?
 }
 
 enum WalletTransactionType {
@@ -193,6 +197,7 @@ enum TransactionType {
   ESCROW_RELEASE
   REGISTRATION_FEE
   DISPUTE_RESOLUTION // Added dispute resolution type
+  REWARD // Added reward type
 }
 
 model Notification {
@@ -445,4 +450,125 @@ enum ContentType {
   TERMS_OF_SERVICE
   PRIVACY_POLICY
   FAQ
+}
+
+model RewardProgram {
+  id            String               @id @default(cuid())
+  name          String
+  description   String?
+  isActive      Boolean              @default(true)
+  createdAt     DateTime             @default(now())
+  updatedAt     DateTime             @updatedAt
+  createdById   String
+  createdBy     User                 @relation("RewardProgramCreator", fields: [createdById], references: [id])
+  criteria      RewardCriteria[]
+  schedules     RewardSchedule[]
+  distributions RewardDistribution[]
+  auditLogs     RewardAuditLog[]
+}
+
+model RewardCriteria {
+  id              String        @id @default(cuid())
+  programId       String
+  program         RewardProgram @relation(fields: [programId], references: [id], onDelete: Cascade)
+  criteriaType    CriteriaType
+  minTransactions Int? // Minimum number of transactions
+  minVolume       Float? // Minimum transaction volume
+  minAccountAge   Int? // Minimum account age in days
+  userRole        UserRole? // Target specific user roles
+  customQuery     String? // For complex criteria (JSON)
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+}
+
+model RewardSchedule {
+  id            String        @id @default(cuid())
+  programId     String
+  program       RewardProgram @relation(fields: [programId], references: [id], onDelete: Cascade)
+  scheduleType  ScheduleType
+  amount        Float // Reward amount
+  currency      String        @default("NGN")
+  startDate     DateTime
+  endDate       DateTime?
+  frequency     Frequency? // For recurring rewards
+  dayOfWeek     Int? // 0-6 for weekly (0 = Sunday)
+  dayOfMonth    Int? // 1-31 for monthly
+  lastRun       DateTime? // Last time this schedule was executed
+  nextRun       DateTime? // Next scheduled run
+  maxRewards    Int? // Maximum number of rewards to distribute
+  rewardsIssued Int           @default(0) // Number of rewards already issued
+  isActive      Boolean       @default(true)
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+}
+
+model RewardDistribution {
+  id                String             @id @default(cuid())
+  programId         String
+  program           RewardProgram      @relation(fields: [programId], references: [id], onDelete: Cascade)
+  userId            String
+  user              User               @relation("UserRewards", fields: [userId], references: [id])
+  amount            Float
+  currency          String             @default("NGN")
+  status            RewardStatus       @default(PENDING)
+  transactionId     String?            @unique // Reference to wallet transaction if applicable
+  walletTransaction WalletTransaction? @relation(fields: [transactionId], references: [id])
+  metadata          Json? // Additional data about the reward
+  distributedAt     DateTime           @default(now())
+  processedAt       DateTime? // When the reward was processed
+  failureReason     String? // If the reward failed
+}
+
+model RewardAuditLog {
+  id            String        @id @default(cuid())
+  programId     String
+  program       RewardProgram @relation(fields: [programId], references: [id], onDelete: Cascade)
+  actionType    RewardAction
+  performedById String
+  performedBy   User          @relation("RewardAuditor", fields: [performedById], references: [id])
+  details       Json // Details of the action
+  timestamp     DateTime      @default(now())
+  ipAddress     String? // IP address of the admin
+  userAgent     String? // User agent of the admin
+}
+
+enum CriteriaType {
+  TRANSACTION_COUNT
+  TRANSACTION_VOLUME
+  ACCOUNT_AGE
+  USER_ROLE
+  CUSTOM
+}
+
+enum ScheduleType {
+  ONE_TIME
+  RECURRING
+}
+
+enum Frequency {
+  DAILY
+  WEEKLY
+  MONTHLY
+}
+
+enum RewardStatus {
+  PENDING
+  PROCESSED
+  FAILED
+}
+
+enum RewardAction {
+  PROGRAM_CREATED
+  PROGRAM_UPDATED
+  PROGRAM_DELETED
+  PROGRAM_ACTIVATED
+  PROGRAM_DEACTIVATED
+  CRITERIA_ADDED
+  CRITERIA_UPDATED
+  CRITERIA_REMOVED
+  SCHEDULE_ADDED
+  SCHEDULE_UPDATED
+  SCHEDULE_REMOVED
+  REWARDS_DISTRIBUTED
+  MANUAL_REWARD_ISSUED
 }

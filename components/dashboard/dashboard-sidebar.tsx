@@ -14,6 +14,7 @@ import {
   Shield,
   AlertCircleIcon,
   BookOpen,
+  Award,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -73,6 +74,7 @@ export function DashboardSidebar() {
     { name: "Admin Panel", href: "/admin", icon: Shield },
     { name: "Disputes", href: "/admin/disputes", icon: AlertCircleIcon },
     { name: "Content", href: "/admin/content", icon: BookOpen },
+    { name: "Rewards", href: "/admin/rewards", icon: Award },
     { name: "Feedback", href: "/admin/feedback", icon: Users },
   ];
 

@@ -15,6 +15,8 @@ import {
   AlertCircleIcon,
   BookOpen,
   Award,
+  Clock,
+  PenTool,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -75,7 +77,12 @@ export function DashboardSidebar() {
     { name: "Disputes", href: "/admin/disputes", icon: AlertCircleIcon },
     { name: "Content", href: "/admin/content", icon: BookOpen },
     { name: "Rewards", href: "/admin/rewards", icon: Award },
+    { name: "Cron Jobs", href: "/admin/cron-jobs", icon: Clock },
     { name: "Feedback", href: "/admin/feedback", icon: Users },
+  ];
+
+  const adminToolsItems = [
+    { name: "CEB Tool", href: "/admin/cron-builder", icon: PenTool },
   ];
 
   return (
@@ -202,6 +209,58 @@ export function DashboardSidebar() {
                 <SidebarGroupContent>
                   <SidebarMenu>
                     {adminNavItems.map((item) => (
+                      <SidebarMenuItem key={item.name}>
+                        <TooltipProvider delayDuration={0}>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <SidebarMenuButton
+                                asChild
+                                isActive={pathname === item.href}
+                                className={cn(
+                                  "transition-all duration-200",
+                                  pathname === item.href &&
+                                    "bg-primary/10 text-primary font-medium"
+                                )}
+                              >
+                                <Link
+                                  href={item.href}
+                                  className="flex items-center"
+                                >
+                                  <item.icon
+                                    className={cn(
+                                      "h-5 w-5",
+                                      pathname === item.href
+                                        ? "text-primary"
+                                        : "text-muted-foreground group-hover:text-primary"
+                                    )}
+                                  />
+                                  {!isCollapsed && (
+                                    <span className="ml-3">{item.name}</span>
+                                  )}
+                                </Link>
+                              </SidebarMenuButton>
+                            </TooltipTrigger>
+                            {isCollapsed && (
+                              <TooltipContent side="right">
+                                {item.name}
+                              </TooltipContent>
+                            )}
+                          </Tooltip>
+                        </TooltipProvider>
+                      </SidebarMenuItem>
+                    ))}
+                  </SidebarMenu>
+                </SidebarGroupContent>
+              </SidebarGroup>
+
+              <SidebarSeparator />
+              <SidebarGroup>
+                <SidebarGroupLabel className={cn(isCollapsed && "sr-only")}>
+                  Admin Tools
+                </SidebarGroupLabel>
+                <SidebarGroupContent>
+                  <SidebarMenu>
+                    {adminToolsItems.map((item) => (
                       <SidebarMenuItem key={item.name}>
                         <TooltipProvider delayDuration={0}>
                           <Tooltip>

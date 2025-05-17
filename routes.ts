@@ -26,6 +26,7 @@ export const publicRoutes = [
   "/api/admin/exists",
   "/api/content/(.*)",
   "/api/users/(.*)",
+  "/api/cron/(.*)",
 ];
 
 /**

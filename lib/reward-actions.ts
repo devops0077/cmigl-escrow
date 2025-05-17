@@ -7,6 +7,7 @@ import { AppError } from "./error-class";
 import { logger } from "./logger";
 import { createNotification } from "./notification-service";
 import { z } from "zod";
+import { formatCurrency } from "./utils";
 
 // Validation schemas
 const rewardProgramSchema = z.object({
@@ -857,7 +858,7 @@ async function issueReward(
     userId,
     type: "SYSTEM_NOTIFICATION",
     title: "Reward Received",
-    message: `You have received a reward of ₦${amount.toFixed(2)}`,
+    message: `You have received a reward of ${formatCurrency(amount)}`,
     data: {
       programId,
       amount,

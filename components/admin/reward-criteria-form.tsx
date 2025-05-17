@@ -216,18 +216,21 @@ export function RewardCriteriaForm({
                 control={form.control}
                 name="userRole"
                 render={({ field }) => (
-                  <FormItem>
+                  <FormItem className="w-full">
                     <FormLabel>User Role</FormLabel>
                     <Select
                       onValueChange={field.onChange}
                       defaultValue={field.value}
                     >
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select user role" />
+                      <FormControl className="w-full">
+                        <SelectTrigger className="w-full">
+                          <SelectValue
+                            className="w-full"
+                            placeholder="Select user role"
+                          />
                         </SelectTrigger>
                       </FormControl>
-                      <SelectContent>
+                      <SelectContent className="w-full">
                         <SelectItem value="USER">Regular User</SelectItem>
                         <SelectItem value="ADMIN">Administrator</SelectItem>
                       </SelectContent>

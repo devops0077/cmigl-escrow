@@ -41,6 +41,7 @@ import {
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
 import { toast } from "sonner";
+import { ScrollArea } from "../ui/scroll-area";
 
 const formSchema = z.object({
   programId: z.string(),
@@ -130,250 +131,258 @@ export function RewardScheduleForm({
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-            <FormField
-              control={form.control}
-              name="scheduleType"
-              render={({ field }) => (
-                <FormItem className="w-full">
-                  <FormLabel>Schedule Type</FormLabel>
-                  <Select
-                    onValueChange={field.onChange}
-                    defaultValue={field.value}
-                  >
-                    <FormControl className="w-full">
-                      <SelectTrigger className="w-full">
-                        <SelectValue placeholder="Select schedule type" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent className="w-full">
-                      <SelectItem value="ONE_TIME">One-time</SelectItem>
-                      <SelectItem value="RECURRING">Recurring</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <FormDescription>
-                    Whether this is a one-time or recurring reward
-                  </FormDescription>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="amount"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Reward Amount (₦)</FormLabel>
-                  <FormControl>
-                    <Input type="number" min="1" step="0.01" {...field} />
-                  </FormControl>
-                  <FormDescription>
-                    Amount to reward each eligible user
-                  </FormDescription>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="startDate"
-              render={({ field }) => (
-                <FormItem className="flex flex-col">
-                  <FormLabel>Start Date</FormLabel>
-                  <Popover>
-                    <PopoverTrigger asChild>
-                      <FormControl>
-                        <Button
-                          variant={"outline"}
-                          className={cn(
-                            "w-full pl-3 text-left font-normal",
-                            !field.value && "text-muted-foreground"
-                          )}
-                        >
-                          {field.value ? (
-                            format(field.value, "PPP")
-                          ) : (
-                            <span>Pick a date</span>
-                          )}
-                          <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                        </Button>
+        <ScrollArea className="h-[500px] ">
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+              <FormField
+                control={form.control}
+                name="scheduleType"
+                render={({ field }) => (
+                  <FormItem className="w-full">
+                    <FormLabel>Schedule Type</FormLabel>
+                    <Select
+                      onValueChange={field.onChange}
+                      defaultValue={field.value}
+                    >
+                      <FormControl className="w-full">
+                        <SelectTrigger className="w-full">
+                          <SelectValue placeholder="Select schedule type" />
+                        </SelectTrigger>
                       </FormControl>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0" align="start">
-                      <Calendar
-                        mode="single"
-                        selected={field.value}
-                        onSelect={field.onChange}
-                        initialFocus
-                      />
-                    </PopoverContent>
-                  </Popover>
-                  <FormDescription>
-                    When to start distributing rewards
-                  </FormDescription>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+                      <SelectContent className="w-full">
+                        <SelectItem value="ONE_TIME">One-time</SelectItem>
+                        <SelectItem value="RECURRING">Recurring</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormDescription>
+                      Whether this is a one-time or recurring reward
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
 
-            {scheduleType === "RECURRING" && (
-              <>
-                <FormField
-                  control={form.control}
-                  name="endDate"
-                  render={({ field }) => (
-                    <FormItem className="flex flex-col">
-                      <FormLabel>End Date (Optional)</FormLabel>
-                      <Popover>
-                        <PopoverTrigger asChild>
-                          <FormControl>
-                            <Button
-                              variant={"outline"}
-                              className={cn(
-                                "w-full pl-3 text-left font-normal",
-                                !field.value && "text-muted-foreground"
-                              )}
-                            >
-                              {field.value ? (
-                                format(field.value, "PPP")
-                              ) : (
-                                <span>No end date</span>
-                              )}
-                              <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                            </Button>
-                          </FormControl>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-auto p-0" align="start">
-                          <Calendar
-                            mode="single"
-                            selected={field.value}
-                            onSelect={field.onChange}
-                            initialFocus
-                          />
-                        </PopoverContent>
-                      </Popover>
-                      <FormDescription>
-                        When to stop distributing rewards (leave empty for no
-                        end date)
-                      </FormDescription>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+              <FormField
+                control={form.control}
+                name="amount"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Reward Amount (₦)</FormLabel>
+                    <FormControl>
+                      <Input type="number" min="1" step="0.01" {...field} />
+                    </FormControl>
+                    <FormDescription>
+                      Amount to reward each eligible user
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
 
-                <FormField
-                  control={form.control}
-                  name="frequency"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Frequency</FormLabel>
-                      <Select
-                        onValueChange={field.onChange}
-                        defaultValue={field.value}
-                      >
+              <FormField
+                control={form.control}
+                name="startDate"
+                render={({ field }) => (
+                  <FormItem className="flex flex-col">
+                    <FormLabel>Start Date</FormLabel>
+                    <Popover>
+                      <PopoverTrigger asChild>
                         <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select frequency" />
-                          </SelectTrigger>
+                          <Button
+                            variant={"outline"}
+                            className={cn(
+                              "w-full pl-3 text-left font-normal",
+                              !field.value && "text-muted-foreground"
+                            )}
+                          >
+                            {field.value ? (
+                              format(field.value, "PPP")
+                            ) : (
+                              <span>Pick a date</span>
+                            )}
+                            <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                          </Button>
                         </FormControl>
-                        <SelectContent>
-                          <SelectItem value="DAILY">Daily</SelectItem>
-                          <SelectItem value="WEEKLY">Weekly</SelectItem>
-                          <SelectItem value="MONTHLY">Monthly</SelectItem>
-                        </SelectContent>
-                      </Select>
-                      <FormDescription>
-                        How often to distribute rewards
-                      </FormDescription>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0" align="start">
+                        <Calendar
+                          mode="single"
+                          selected={field.value}
+                          onSelect={field.onChange}
+                          initialFocus
+                        />
+                      </PopoverContent>
+                    </Popover>
+                    <FormDescription>
+                      When to start distributing rewards
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
 
-                {frequency === "WEEKLY" && (
+              {scheduleType === "RECURRING" && (
+                <>
                   <FormField
                     control={form.control}
-                    name="dayOfWeek"
+                    name="endDate"
                     render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Day of Week</FormLabel>
+                      <FormItem className="flex flex-col">
+                        <FormLabel>End Date (Optional)</FormLabel>
+                        <Popover>
+                          <PopoverTrigger asChild>
+                            <FormControl>
+                              <Button
+                                variant={"outline"}
+                                className={cn(
+                                  "w-full pl-3 text-left font-normal",
+                                  !field.value && "text-muted-foreground"
+                                )}
+                              >
+                                {field.value ? (
+                                  format(field.value, "PPP")
+                                ) : (
+                                  <span>No end date</span>
+                                )}
+                                <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                              </Button>
+                            </FormControl>
+                          </PopoverTrigger>
+                          <PopoverContent className="w-auto p-0" align="start">
+                            <Calendar
+                              mode="single"
+                              selected={field.value}
+                              onSelect={field.onChange}
+                              initialFocus
+                            />
+                          </PopoverContent>
+                        </Popover>
+                        <FormDescription>
+                          When to stop distributing rewards (leave empty for no
+                          end date)
+                        </FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="frequency"
+                    render={({ field }) => (
+                      <FormItem className="w-full">
+                        <FormLabel>Frequency</FormLabel>
                         <Select
-                          onValueChange={(value) =>
-                            field.onChange(Number.parseInt(value))
-                          }
-                          defaultValue={field.value?.toString()}
+                          onValueChange={field.onChange}
+                          defaultValue={field.value}
                         >
-                          <FormControl>
-                            <SelectTrigger>
-                              <SelectValue placeholder="Select day of week" />
+                          <FormControl className="w-full">
+                            <SelectTrigger className="w-full">
+                              <SelectValue
+                                className="w-full"
+                                placeholder="Select frequency"
+                              />
                             </SelectTrigger>
                           </FormControl>
-                          <SelectContent>
-                            <SelectItem value="0">Sunday</SelectItem>
-                            <SelectItem value="1">Monday</SelectItem>
-                            <SelectItem value="2">Tuesday</SelectItem>
-                            <SelectItem value="3">Wednesday</SelectItem>
-                            <SelectItem value="4">Thursday</SelectItem>
-                            <SelectItem value="5">Friday</SelectItem>
-                            <SelectItem value="6">Saturday</SelectItem>
+                          <SelectContent className="w-full">
+                            <SelectItem value="DAILY">Daily</SelectItem>
+                            <SelectItem value="WEEKLY">Weekly</SelectItem>
+                            <SelectItem value="MONTHLY">Monthly</SelectItem>
                           </SelectContent>
                         </Select>
                         <FormDescription>
-                          Which day of the week to distribute rewards
+                          How often to distribute rewards
                         </FormDescription>
                         <FormMessage />
                       </FormItem>
                     )}
                   />
-                )}
 
-                {frequency === "MONTHLY" && (
-                  <FormField
-                    control={form.control}
-                    name="dayOfMonth"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Day of Month</FormLabel>
-                        <FormControl>
-                          <Input type="number" min="1" max="31" {...field} />
-                        </FormControl>
-                        <FormDescription>
-                          Which day of the month to distribute rewards (1-31)
-                        </FormDescription>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                )}
-              </>
-            )}
+                  {frequency === "WEEKLY" && (
+                    <FormField
+                      control={form.control}
+                      name="dayOfWeek"
+                      render={({ field }) => (
+                        <FormItem className="w-full">
+                          <FormLabel>Day of Week</FormLabel>
+                          <Select
+                            onValueChange={(value) =>
+                              field.onChange(Number.parseInt(value))
+                            }
+                            defaultValue={field.value?.toString()}
+                          >
+                            <FormControl className="w-full">
+                              <SelectTrigger className="w-full">
+                                <SelectValue
+                                  className="w-full"
+                                  placeholder="Select day of week"
+                                />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent className="w-full">
+                              <SelectItem value="0">Sunday</SelectItem>
+                              <SelectItem value="1">Monday</SelectItem>
+                              <SelectItem value="2">Tuesday</SelectItem>
+                              <SelectItem value="3">Wednesday</SelectItem>
+                              <SelectItem value="4">Thursday</SelectItem>
+                              <SelectItem value="5">Friday</SelectItem>
+                              <SelectItem value="6">Saturday</SelectItem>
+                            </SelectContent>
+                          </Select>
+                          <FormDescription>
+                            Which day of the week to distribute rewards
+                          </FormDescription>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  )}
 
-            <FormField
-              control={form.control}
-              name="maxRewards"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Maximum Rewards (Optional)</FormLabel>
-                  <FormControl>
-                    <Input type="number" min="1" {...field} />
-                  </FormControl>
-                  <FormDescription>
-                    Maximum number of rewards to distribute (leave empty for
-                    unlimited)
-                  </FormDescription>
-                  <FormMessage />
-                </FormItem>
+                  {frequency === "MONTHLY" && (
+                    <FormField
+                      control={form.control}
+                      name="dayOfMonth"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Day of Month</FormLabel>
+                          <FormControl>
+                            <Input type="number" min="1" max="31" {...field} />
+                          </FormControl>
+                          <FormDescription>
+                            Which day of the month to distribute rewards (1-31)
+                          </FormDescription>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  )}
+                </>
               )}
-            />
 
-            <Button type="submit" disabled={isSubmitting}>
-              {isSubmitting ? "Adding..." : "Add Schedule"}
-            </Button>
-          </form>
-        </Form>
+              <FormField
+                control={form.control}
+                name="maxRewards"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Maximum Rewards (Optional)</FormLabel>
+                    <FormControl>
+                      <Input type="number" min="1" {...field} />
+                    </FormControl>
+                    <FormDescription>
+                      Maximum number of rewards to distribute (leave empty for
+                      unlimited)
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <Button type="submit" disabled={isSubmitting}>
+                {isSubmitting ? "Adding..." : "Add Schedule"}
+              </Button>
+            </form>
+          </Form>
+        </ScrollArea>
       </CardContent>
     </Card>
   );

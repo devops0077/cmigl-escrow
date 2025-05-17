@@ -636,6 +636,16 @@ async function processRewardSchedule(schedule: any) {
       },
     });
 
+    const firstAdmin = await prisma.user.findFirst({
+      where: {
+        role: "ADMIN",
+      },
+    });
+
+    if (!firstAdmin) {
+      throw new AppError("No admin user on platform.");
+    }
+
     // Log the action
     await logRewardAction(
       schedule.programId,
@@ -646,7 +656,7 @@ async function processRewardSchedule(schedule: any) {
         rewardsIssued: distributions.length,
         nextRun,
       },
-      "SYSTEM" // System-initiated action
+      firstAdmin.id // System-initiated action
     );
 
     return {

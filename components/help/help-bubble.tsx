@@ -115,7 +115,7 @@ export function HelpBubble() {
       icon: <Phone className="h-5 w-5" />,
       description: "Speak with support",
       action: () => {
-        window.location.href = "tel:+1234567890";
+        window.location.href = "tel:+2349158891600";
       },
       color: "bg-yellow-500 hover:bg-yellow-600",
     },

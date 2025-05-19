@@ -1,83 +1,211 @@
-import type React from "react";
+"use client";
+
+import { useRef } from "react";
+import { motion, useInView } from "framer-motion";
 import { FadeIn } from "@/components/animations/fade-in";
 
 export function Features() {
+  const ref = useRef(null);
+  const isInView = useInView(ref, { once: false, amount: 0.2 });
+
+  const containerVariants = {
+    hidden: { opacity: 0 },
+    visible: {
+      opacity: 1,
+      transition: {
+        staggerChildren: 0.1,
+        delayChildren: 0.3,
+      },
+    },
+  };
+
+  const itemVariants = {
+    hidden: { y: 20, opacity: 0 },
+    visible: {
+      y: 0,
+      opacity: 1,
+      transition: {
+        type: "spring",
+        stiffness: 100,
+        damping: 10,
+      },
+    },
+  };
+
+  const featureCardVariants = {
+    hidden: { y: 50, opacity: 0 },
+    visible: (i) => ({
+      y: 0,
+      opacity: 1,
+      transition: {
+        type: "spring",
+        stiffness: 100,
+        damping: 10,
+        delay: i * 0.1,
+      },
+    }),
+    hover: {
+      y: -10,
+      boxShadow:
+        "0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)",
+      transition: {
+        type: "spring",
+        stiffness: 400,
+        damping: 10,
+      },
+    },
+  };
+
+  const iconContainerVariants = {
+    hidden: { scale: 0, rotate: -180 },
+    visible: {
+      scale: 1,
+      rotate: 0,
+      transition: {
+        type: "spring",
+        stiffness: 260,
+        damping: 20,
+      },
+    },
+    hover: {
+      scale: 1.2,
+      rotate: 15,
+      transition: {
+        type: "spring",
+        stiffness: 260,
+        damping: 20,
+      },
+    },
+  };
+
+  const features = [
+    {
+      title: "Secure Escrow",
+      description:
+        "Funds are held securely until both parties are satisfied with the transaction.",
+      icon: ShieldIcon,
+    },
+    {
+      title: "Flat 2.5% Fee",
+      description:
+        "Simple and transparent pricing with a flat 2.5% fee on all transactions.",
+      icon: PercentIcon,
+    },
+    {
+      title: "Integrated Wallet",
+      description: "Manage your funds easily with our built-in wallet system.",
+      icon: WalletIcon,
+    },
+    {
+      title: "Real-time Notifications",
+      description:
+        "Stay updated with real-time notifications on transaction status changes.",
+      icon: BellIcon,
+    },
+    {
+      title: "Transaction History",
+      description: "Access your complete transaction history at any time.",
+      icon: HistoryIcon,
+    },
+    {
+      title: "24/7 Support",
+      description:
+        "Our support team is available around the clock to assist you.",
+      icon: HeadphonesIcon,
+    },
+  ];
+
   return (
     <FadeIn>
-      <section className="w-full py-12 md:py-24 lg:py-32 bg-muted">
-        <div className=" px-4 md:px-6">
-          <div className="flex flex-col items-center justify-center space-y-4 text-center">
+      <section
+        ref={ref}
+        className="w-full py-12 md:py-24 lg:py-32 bg-muted relative overflow-hidden"
+      >
+        {/* Animated background elements */}
+        <motion.div
+          className="absolute top-0 left-0 w-full h-full pointer-events-none"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 1 }}
+        >
+          {[...Array(20)].map((_, i) => (
+            <motion.div
+              key={i}
+              className="absolute rounded-full bg-primary/5"
+              style={{
+                width: Math.random() * 100 + 50,
+                height: Math.random() * 100 + 50,
+                top: `${Math.random() * 100}%`,
+                left: `${Math.random() * 100}%`,
+              }}
+              animate={{
+                y: [0, Math.random() * 100 - 50],
+                opacity: [0.1, 0.3, 0.1],
+              }}
+              transition={{
+                duration: Math.random() * 10 + 10,
+                repeat: Number.POSITIVE_INFINITY,
+                ease: "easeInOut",
+                delay: Math.random() * 5,
+              }}
+            />
+          ))}
+        </motion.div>
+
+        <div className="container px-4 md:px-6 relative z-10">
+          <motion.div
+            className="flex flex-col items-center justify-center space-y-4 text-center"
+            variants={containerVariants}
+            initial="hidden"
+            animate={isInView ? "visible" : "hidden"}
+          >
             <div className="space-y-2">
-              <div className="inline-block rounded-lg bg-muted-foreground/20 px-3 py-1 text-sm">
+              <motion.div
+                className="inline-block rounded-lg bg-muted-foreground/20 px-3 py-1 text-sm"
+                variants={itemVariants}
+              >
                 Features
-              </div>
-              <h2 className="text-3xl font-bold tracking-tighter sm:text-5xl">
+              </motion.div>
+              <motion.h2
+                className="text-3xl font-bold tracking-tighter sm:text-5xl"
+                variants={itemVariants}
+              >
                 Everything You Need
-              </h2>
-              <p className="max-w-[900px] text-muted-foreground md:text-xl/relaxed lg:text-base/relaxed xl:text-xl/relaxed">
+              </motion.h2>
+              <motion.p
+                className="max-w-[900px] text-muted-foreground md:text-xl/relaxed lg:text-base/relaxed xl:text-xl/relaxed"
+                variants={itemVariants}
+              >
                 Our platform provides all the tools you need to conduct secure
                 transactions with confidence.
-              </p>
+              </motion.p>
             </div>
-          </div>
+          </motion.div>
+
           <div className="mx-auto grid max-w-5xl grid-cols-1 gap-6 py-12 md:grid-cols-2 lg:grid-cols-3">
-            <div className="flex flex-col items-center space-y-2 rounded-lg border p-6">
-              <div className="rounded-full bg-primary p-2 text-white">
-                <ShieldIcon className="h-6 w-6" />
-              </div>
-              <h3 className="text-xl font-bold">Secure Escrow</h3>
-              <p className="text-center text-muted-foreground">
-                Funds are held securely until both parties are satisfied with
-                the transaction.
-              </p>
-            </div>
-            <div className="flex flex-col items-center space-y-2 rounded-lg border p-6">
-              <div className="rounded-full bg-primary p-2 text-white">
-                <PercentIcon className="h-6 w-6" />
-              </div>
-              <h3 className="text-xl font-bold">Flat 2.5% Fee</h3>
-              <p className="text-center text-muted-foreground">
-                Simple and transparent pricing with a flat 2.5% fee on all
-                transactions.
-              </p>
-            </div>
-            <div className="flex flex-col items-center space-y-2 rounded-lg border p-6">
-              <div className="rounded-full bg-primary p-2 text-white">
-                <WalletIcon className="h-6 w-6" />
-              </div>
-              <h3 className="text-xl font-bold">Integrated Wallet</h3>
-              <p className="text-center text-muted-foreground">
-                Manage your funds easily with our built-in wallet system.
-              </p>
-            </div>
-            <div className="flex flex-col items-center space-y-2 rounded-lg border p-6">
-              <div className="rounded-full bg-primary p-2 text-white">
-                <BellIcon className="h-6 w-6" />
-              </div>
-              <h3 className="text-xl font-bold">Real-time Notifications</h3>
-              <p className="text-center text-muted-foreground">
-                Stay updated with real-time notifications on transaction status
-                changes.
-              </p>
-            </div>
-            <div className="flex flex-col items-center space-y-2 rounded-lg border p-6">
-              <div className="rounded-full bg-primary p-2 text-white">
-                <HistoryIcon className="h-6 w-6" />
-              </div>
-              <h3 className="text-xl font-bold">Transaction History</h3>
-              <p className="text-center text-muted-foreground">
-                Access your complete transaction history at any time.
-              </p>
-            </div>
-            <div className="flex flex-col items-center space-y-2 rounded-lg border p-6">
-              <div className="rounded-full bg-primary p-2 text-white">
-                <HeadphonesIcon className="h-6 w-6" />
-              </div>
-              <h3 className="text-xl font-bold">24/7 Support</h3>
-              <p className="text-center text-muted-foreground">
-                Our support team is available around the clock to assist you.
-              </p>
-            </div>
+            {features.map((feature, i) => (
+              <motion.div
+                key={i}
+                className="flex flex-col items-center space-y-2 rounded-lg border p-6 bg-background/80 backdrop-blur-sm"
+                custom={i}
+                variants={featureCardVariants}
+                initial="hidden"
+                animate={isInView ? "visible" : "hidden"}
+                whileHover="hover"
+              >
+                <motion.div
+                  className="rounded-full bg-primary p-2 text-white"
+                  variants={iconContainerVariants}
+                  whileHover="hover"
+                >
+                  <feature.icon className="h-6 w-6" />
+                </motion.div>
+                <h3 className="text-xl font-bold">{feature.title}</h3>
+                <p className="text-center text-muted-foreground">
+                  {feature.description}
+                </p>
+              </motion.div>
+            ))}
           </div>
         </div>
       </section>
@@ -85,7 +213,7 @@ export function Features() {
   );
 }
 
-function ShieldIcon(props: React.SVGProps<SVGSVGElement>) {
+function ShieldIcon(props) {
   return (
     <svg
       {...props}
@@ -104,7 +232,7 @@ function ShieldIcon(props: React.SVGProps<SVGSVGElement>) {
   );
 }
 
-function PercentIcon(props: React.SVGProps<SVGSVGElement>) {
+function PercentIcon(props) {
   return (
     <svg
       {...props}
@@ -125,7 +253,7 @@ function PercentIcon(props: React.SVGProps<SVGSVGElement>) {
   );
 }
 
-function WalletIcon(props: React.SVGProps<SVGSVGElement>) {
+function WalletIcon(props) {
   return (
     <svg
       {...props}
@@ -146,7 +274,7 @@ function WalletIcon(props: React.SVGProps<SVGSVGElement>) {
   );
 }
 
-function BellIcon(props: React.SVGProps<SVGSVGElement>) {
+function BellIcon(props) {
   return (
     <svg
       {...props}
@@ -166,7 +294,7 @@ function BellIcon(props: React.SVGProps<SVGSVGElement>) {
   );
 }
 
-function HistoryIcon(props: React.SVGProps<SVGSVGElement>) {
+function HistoryIcon(props) {
   return (
     <svg
       {...props}
@@ -187,7 +315,7 @@ function HistoryIcon(props: React.SVGProps<SVGSVGElement>) {
   );
 }
 
-function HeadphonesIcon(props: React.SVGProps<SVGSVGElement>) {
+function HeadphonesIcon(props) {
   return (
     <svg
       {...props}

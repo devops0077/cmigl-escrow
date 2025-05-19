@@ -78,6 +78,9 @@ model User {
   rewardDistributions   RewardDistribution[] @relation("UserRewards")
   createdRewardPrograms RewardProgram[]      @relation("RewardProgramCreator")
   rewardAuditLogs       RewardAuditLog[]     @relation("RewardAuditor")
+  createdAds            Advertisement[]      @relation("AdCreator")
+  adImpressions         AdImpression[]       @relation("AdImpressions")
+  adClicks              AdClick[]            @relation("AdClicks")
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -465,6 +468,7 @@ model RewardProgram {
   schedules     RewardSchedule[]
   distributions RewardDistribution[]
   auditLogs     RewardAuditLog[]
+  linkedAds     Advertisement[]      @relation("AdRewardProgram")
 }
 
 model RewardCriteria {
@@ -571,4 +575,117 @@ enum RewardAction {
   SCHEDULE_REMOVED
   REWARDS_DISTRIBUTED
   MANUAL_REWARD_ISSUED
+}
+
+enum AdvertisementType {
+  BANNER
+  POPUP
+  FLASH
+  TEXT
+  REWARD_PROMO
+}
+
+enum AdStatus {
+  DRAFT
+  ACTIVE
+  PAUSED
+  COMPLETED
+  SCHEDULED
+}
+
+enum TargetingType {
+  USER_ROLE
+  TRANSACTION_HISTORY
+  ACCOUNT_AGE
+  REWARD_ELIGIBILITY
+  LOCATION
+  CUSTOM
+}
+
+enum AdPlacement {
+  HOMEPAGE
+  DASHBOARD
+  SIDEBAR
+  TRANSACTION_PAGE
+  WALLET_PAGE
+  PROFILE_PAGE
+  GLOBAL
+}
+
+enum AdFrequency {
+  EVERY_TIME
+  ONCE_PER_SESSION
+  ONCE_PER_DAY
+  ONCE_PER_WEEK
+  CUSTOM
+}
+
+model Advertisement {
+  id             String            @id @default(cuid())
+  name           String
+  description    String?
+  type           AdvertisementType
+  content        Json // Flexible content structure based on ad type
+  status         AdStatus          @default(DRAFT)
+  priority       Int               @default(1) // Higher priority ads shown first
+  maxImpressions Int? // Maximum number of times to display (null = unlimited)
+  maxClicks      Int? // Maximum number of clicks (null = unlimited) 
+  startDate      DateTime
+  endDate        DateTime?
+  createdById    String
+  createdBy      User              @relation("AdCreator", fields: [createdById], references: [id])
+  createdAt      DateTime          @default(now())
+  updatedAt      DateTime          @updatedAt
+  targetingRules TargetingRule[]
+  displayRules   DisplayRule[]
+  impressions    AdImpression[]
+  clicks         AdClick[]
+  linkedRewardId String? // Optional link to a reward program
+  linkedReward   RewardProgram?    @relation("AdRewardProgram", fields: [linkedRewardId], references: [id])
+}
+
+model TargetingRule {
+  id              String        @id @default(cuid())
+  advertisementId String
+  advertisement   Advertisement @relation(fields: [advertisementId], references: [id], onDelete: Cascade)
+  ruleType        TargetingType
+  conditions      Json // Flexible conditions structure based on rule type
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+}
+
+model DisplayRule {
+  id              String        @id @default(cuid())
+  advertisementId String
+  advertisement   Advertisement @relation(fields: [advertisementId], references: [id], onDelete: Cascade)
+  placement       AdPlacement
+  frequency       AdFrequency   @default(EVERY_TIME)
+  displayLimit    Int? // Limit per user per time period (null = unlimited)
+  timeFrame       Int? // Time frame in hours for display limit (null = all time)
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+}
+
+model AdImpression {
+  id              String        @id @default(cuid())
+  advertisementId String
+  advertisement   Advertisement @relation(fields: [advertisementId], references: [id], onDelete: Cascade)
+  userId          String? // Optional - can track anonymous impressions too
+  user            User?         @relation("AdImpressions", fields: [userId], references: [id])
+  timestamp       DateTime      @default(now())
+  placement       AdPlacement
+  sessionId       String? // Browser session ID
+  deviceInfo      String? // Device information
+}
+
+model AdClick {
+  id              String        @id @default(cuid())
+  advertisementId String
+  advertisement   Advertisement @relation(fields: [advertisementId], references: [id], onDelete: Cascade)
+  userId          String? // Optional - can track anonymous clicks too
+  user            User?         @relation("AdClicks", fields: [userId], references: [id])
+  timestamp       DateTime      @default(now())
+  placement       AdPlacement
+  sessionId       String? // Browser session ID
+  deviceInfo      String? // Device information
 }

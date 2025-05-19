@@ -17,6 +17,7 @@ import {
   Award,
   Clock,
   PenTool,
+  TvMinimalPlayIcon,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -82,6 +83,11 @@ export function DashboardSidebar() {
   ];
 
   const adminToolsItems = [
+    {
+      name: "Ads Tool",
+      href: "/admin/advertisements",
+      icon: TvMinimalPlayIcon,
+    },
     { name: "CEB Tool", href: "/admin/cron-builder", icon: PenTool },
   ];
 

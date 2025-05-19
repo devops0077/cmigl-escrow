@@ -48,3 +48,14 @@ export function slugify(text: string): string {
     .replace(/--+/g, "-")
     .replace(/^-+|-+$/g, "");
 }
+
+export function getUserDeviceType(userAgent: string): string {
+  const ua = userAgent.toLowerCase();
+  if (ua.includes("mobile")) {
+    return "mobile";
+  } else if (ua.includes("tablet")) {
+    return "tablet";
+  } else {
+    return "desktop";
+  }
+}

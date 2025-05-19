@@ -69,7 +69,7 @@ export function Footer() {
         </svg>
       </div>
 
-      <div className="container px-5 flex flex-col items-center justify-between gap-4 md:flex-row relative z-10">
+      <div className="container mx-auto px-5 flex flex-col items-center justify-between gap-4 md:flex-row relative z-10">
         <motion.div
           className="flex flex-col items-center gap-4 md:items-start md:gap-2"
           variants={itemVariants}

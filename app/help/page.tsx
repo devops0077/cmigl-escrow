@@ -73,7 +73,7 @@ export default function HelpPage() {
                   asChild
                 >
                   <a
-                    href="https://wa.me/1234567890?text=Hello%20from%20CMIGL%20Escrow"
+                    href="https://chat.whatsapp.com/JjD7zLq6BQr3mAcWqMP9Si"
                     target="_blank"
                     rel="noopener noreferrer"
                   >
@@ -126,7 +126,7 @@ export default function HelpPage() {
                   className="w-full bg-yellow-500 hover:bg-yellow-600 text-black"
                   asChild
                 >
-                  <a href="tel:+1234567890">Call Support</a>
+                  <a href="tel:+2349158891600">Call Support</a>
                 </Button>
               </CardFooter>
             </Card>

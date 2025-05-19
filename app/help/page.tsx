@@ -239,10 +239,10 @@ export default function HelpPage() {
                     For urgent matters outside of these hours, please email us
                     at{" "}
                     <a
-                      href="mailto:urgent@cmiglescrow.com"
+                      href="mailto:support@cmigl.org"
                       className="text-primary underline"
                     >
-                      urgent@cmiglescrow.com
+                      support@cmigl.org
                     </a>{" "}
                     and we'll respond as soon as possible.
                   </p>

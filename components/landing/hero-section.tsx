@@ -9,134 +9,163 @@ import {
   useInView,
   AnimatePresence,
 } from "framer-motion";
-import { Canvas, useFrame, useThree } from "@react-three/fiber";
-import {
-  useGLTF,
-  Environment,
-  Float,
-  Text3D,
-  OrbitControls,
-} from "@react-three/drei";
 import { Button } from "@/components/ui/button";
 
-// 3D Transaction Model Component
-function TransactionModel({ isAnimating }: { isAnimating: boolean }) {
-  const { nodes, materials } = useGLTF("/assets/3d/transaction.glb") || {};
-  const { viewport } = useThree();
-  const group = useRef(null);
+// Typewriter component
+function Typewriter({
+  text,
+  speed = 70,
+  className = "",
+  onComplete,
+}: {
+  text: string;
+  speed: number;
+  className: string;
+  onComplete: () => void;
+}) {
+  const [displayText, setDisplayText] = useState("");
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const [isComplete, setIsComplete] = useState(false);
 
-  // Fallback if model isn't available
-  const BoxModel = () => {
-    const buyerBox = useRef(null);
-    const sellerBox = useRef(null);
-    const escrowBox = useRef(null);
+  useEffect(() => {
+    if (currentIndex < text.length) {
+      const timeout = setTimeout(() => {
+        setDisplayText((prev) => prev + text[currentIndex]);
+        setCurrentIndex((prevIndex) => prevIndex + 1);
+      }, speed);
 
-    useFrame(({ clock }) => {
-      const t = clock.getElapsedTime();
-
-      if (isAnimating) {
-        // Animate the boxes to simulate a transaction
-        buyerBox.current.position.y = Math.sin(t * 0.5) * 0.2;
-        sellerBox.current.position.y = Math.sin(t * 0.5 + 2) * 0.2;
-        escrowBox.current.position.y = Math.sin(t * 0.5 + 1) * 0.1;
-        escrowBox.current.rotation.y += 0.01;
-      }
-    });
-
-    return (
-      <group>
-        {/* Buyer */}
-        <group ref={buyerBox} position={[-2, 0, 0]}>
-          <mesh castShadow>
-            <boxGeometry args={[0.8, 0.8, 0.8]} />
-            <meshStandardMaterial color="#4f46e5" />
-          </mesh>
-          <Text3D
-            font="/fonts/Inter_Bold.json"
-            position={[0, -1.2, 0]}
-            size={0.3}
-            height={0.1}
-            bevelEnabled
-            bevelSize={0.01}
-          >
-            Buyer
-            <meshStandardMaterial color="#ffffff" />
-          </Text3D>
-        </group>
-
-        {/* Escrow */}
-        <group ref={escrowBox} position={[0, 0, 0]}>
-          <mesh castShadow receiveShadow>
-            <boxGeometry args={[1.2, 1.2, 1.2]} />
-            <meshStandardMaterial color="#10b981" />
-          </mesh>
-          <Text3D
-            font="/fonts/Inter_Bold.json"
-            position={[-0.8, -1.5, 0]}
-            size={0.3}
-            height={0.1}
-            bevelEnabled
-            bevelSize={0.01}
-          >
-            CMIGL Escrow
-            <meshStandardMaterial color="#ffffff" />
-          </Text3D>
-        </group>
-
-        {/* Seller */}
-        <group ref={sellerBox} position={[2, 0, 0]}>
-          <mesh castShadow>
-            <boxGeometry args={[0.8, 0.8, 0.8]} />
-            <meshStandardMaterial color="#f59e0b" />
-          </mesh>
-          <Text3D
-            font="/fonts/Inter_Bold.json"
-            position={[0, -1.2, 0]}
-            size={0.3}
-            height={0.1}
-            bevelEnabled
-            bevelSize={0.01}
-          >
-            Seller
-            <meshStandardMaterial color="#ffffff" />
-          </Text3D>
-        </group>
-
-        {/* Transaction Lines */}
-        {isAnimating && (
-          <>
-            <mesh position={[-1, 0, 0]}>
-              <boxGeometry args={[1, 0.05, 0.05]} />
-              <meshStandardMaterial color="#ffffff" />
-            </mesh>
-            <mesh position={[1, 0, 0]}>
-              <boxGeometry args={[1, 0.05, 0.05]} />
-              <meshStandardMaterial color="#ffffff" />
-            </mesh>
-          </>
-        )}
-      </group>
-    );
-  };
-
-  useFrame(({ clock }) => {
-    if (group.current && isAnimating) {
-      group.current.rotation.y = Math.sin(clock.getElapsedTime() * 0.3) * 0.2;
+      return () => clearTimeout(timeout);
+    } else if (!isComplete) {
+      setIsComplete(true);
+      onComplete && onComplete();
     }
-  });
+  }, [currentIndex, speed, text, isComplete, onComplete]);
+
+  return <span className={className}>{displayText}</span>;
+}
+
+// Process step animation component
+function ProcessSteps() {
+  const [currentStep, setCurrentStep] = useState(0);
+  const steps = [
+    {
+      title: "Step 1: Buyer Creates Transaction",
+      description:
+        "Buyer initiates a secure transaction and deposits funds into escrow.",
+    },
+    {
+      title: "Step 2: Seller Delivers",
+      description:
+        "Seller delivers the product or service to the buyer with confidence.",
+    },
+    {
+      title: "Step 3: Buyer Approves",
+      description:
+        "Buyer verifies and approves the delivery, releasing funds to the seller.",
+    },
+  ];
+
+  useEffect(() => {
+    if (currentStep < steps.length - 1) {
+      const timeout = setTimeout(() => {
+        setCurrentStep((prev) => prev + 1);
+      }, 4000); // Change step every 4 seconds
+
+      return () => clearTimeout(timeout);
+    } else {
+      // Reset to first step after a pause
+      const timeout = setTimeout(() => {
+        setCurrentStep(0);
+      }, 5000);
+
+      return () => clearTimeout(timeout);
+    }
+  }, [currentStep, steps.length]);
 
   return (
-    <Float speed={2} rotationIntensity={0.2} floatIntensity={0.5}>
-      <group ref={group} dispose={null} scale={viewport.width > 5 ? 1 : 0.7}>
-        {nodes ? (
-          // Use the actual model if available
-          <primitive object={nodes.Scene} />
-        ) : (
-          // Use the fallback model
-          <BoxModel />
-        )}
-      </group>
-    </Float>
+    <div className="relative h-full w-full flex items-center justify-center">
+      <div className="bg-card/90 backdrop-blur-sm p-6 rounded-xl shadow-xl w-full max-w-md">
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={currentStep}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            transition={{ duration: 0.5 }}
+            className="space-y-4"
+          >
+            <h3 className="text-xl font-bold text-primary">
+              {steps[currentStep].title}
+            </h3>
+            <div className="h-20">
+              <Typewriter
+                text={steps[currentStep].description}
+                speed={100}
+                className="text-muted-foreground"
+                onComplete={() => {}}
+              />
+            </div>
+
+            {/* Progress indicator */}
+            <div className="flex gap-2 justify-center mt-4">
+              {steps.map((_, index) => (
+                <motion.div
+                  key={index}
+                  className={`h-2 rounded-full ${index === currentStep ? "bg-primary w-8" : "bg-muted w-2"}`}
+                  initial={{ opacity: 0.5 }}
+                  animate={{
+                    opacity: index === currentStep ? 1 : 0.5,
+                    width: index === currentStep ? 32 : 8,
+                  }}
+                  transition={{ duration: 0.3 }}
+                />
+              ))}
+            </div>
+          </motion.div>
+        </AnimatePresence>
+      </div>
+
+      {/* Animated arrows showing the flow */}
+      <div className="absolute inset-0 -z-10 flex items-center justify-center opacity-20 pointer-events-none">
+        <motion.div
+          className="absolute top-1/4 left-1/4 w-16 h-16 border-t-4 border-r-4 border-primary transform rotate-45"
+          animate={{
+            x: [0, 20, 0],
+            opacity: [0.2, 1, 0.2],
+          }}
+          transition={{
+            duration: 2,
+            repeat: Number.POSITIVE_INFINITY,
+            repeatType: "reverse",
+          }}
+        />
+        <motion.div
+          className="absolute w-24 h-24 rounded-full border-4 border-dashed border-primary"
+          animate={{
+            rotate: 360,
+            scale: [0.8, 1, 0.8],
+          }}
+          transition={{
+            duration: 8,
+            repeat: Number.POSITIVE_INFINITY,
+            ease: "linear",
+          }}
+        />
+        <motion.div
+          className="absolute bottom-1/4 right-1/4 w-16 h-16 border-b-4 border-l-4 border-primary transform -rotate-45"
+          animate={{
+            x: [0, -20, 0],
+            opacity: [0.2, 1, 0.2],
+          }}
+          transition={{
+            duration: 2,
+            repeat: Number.POSITIVE_INFINITY,
+            repeatType: "reverse",
+            delay: 1,
+          }}
+        />
+      </div>
+    </div>
   );
 }
 
@@ -182,7 +211,6 @@ function MouseFollower() {
 export function HeroSection() {
   const ref = useRef(null);
   const isInView = useInView(ref, { once: false, amount: 0.3 });
-  const [isAnimating, setIsAnimating] = useState(false);
   const { scrollYProgress } = useScroll({
     target: ref,
     offset: ["start start", "end start"],
@@ -190,12 +218,6 @@ export function HeroSection() {
 
   const y = useTransform(scrollYProgress, [0, 1], ["0%", "30%"]);
   const opacity = useTransform(scrollYProgress, [0, 0.8], [1, 0]);
-
-  useEffect(() => {
-    if (isInView) {
-      setIsAnimating(true);
-    }
-  }, [isInView]);
 
   const containerVariants = {
     hidden: { opacity: 0 },
@@ -333,56 +355,37 @@ export function HeroSection() {
               transition={{ delay: 0.5, duration: 0.5 }}
             >
               <div className="relative w-full aspect-video overflow-hidden rounded-xl bg-gradient-to-br from-primary/10 to-primary/5 shadow-xl">
-                <div className="absolute inset-0">
-                  <Canvas shadows camera={{ position: [0, 0, 5], fov: 50 }}>
-                    <ambientLight intensity={0.5} />
-                    <spotLight
-                      position={[10, 10, 10]}
-                      angle={0.15}
-                      penumbra={1}
-                      intensity={1}
-                      castShadow
-                    />
-                    <TransactionModel isAnimating={isAnimating} />
-                    <Environment preset="city" />
-                    <OrbitControls
-                      enableZoom={false}
-                      enablePan={false}
-                      minPolarAngle={Math.PI / 3}
-                      maxPolarAngle={Math.PI / 2}
-                    />
-                  </Canvas>
-                </div>
+                {/* Animated Process Steps with Typewriter Effect */}
+                <ProcessSteps />
 
-                <AnimatePresence>
-                  {!isAnimating && (
-                    <motion.div
-                      className="absolute inset-0 flex items-center justify-center bg-black/50"
-                      initial={{ opacity: 1 }}
-                      exit={{ opacity: 0 }}
-                      transition={{ duration: 0.5 }}
-                    >
-                      <motion.div
-                        initial={{ scale: 0.8, opacity: 0 }}
-                        animate={{ scale: 1, opacity: 1 }}
-                        exit={{ scale: 1.2, opacity: 0 }}
-                        transition={{
-                          type: "spring",
-                          stiffness: 200,
-                          damping: 10,
-                        }}
-                      >
-                        <Button
-                          size="lg"
-                          onClick={() => setIsAnimating(true)}
-                          className="bg-primary/80 backdrop-blur-sm hover:bg-primary/90"
-                        >
-                          See How It Works
-                        </Button>
-                      </motion.div>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
+                {/* Decorative elements */}
+                <motion.div
+                  className="absolute -z-10 top-0 left-0 h-20 w-20 rounded-full bg-primary/10 blur-xl"
+                  animate={{
+                    x: [0, 10, 0],
+                    y: [0, 15, 0],
+                    scale: [1, 1.1, 1],
+                  }}
+                  transition={{
+                    duration: 5,
+                    repeat: Number.POSITIVE_INFINITY,
+                    ease: "easeInOut",
+                  }}
+                />
+                <motion.div
+                  className="absolute -z-10 bottom-0 right-0 h-24 w-24 rounded-full bg-primary/10 blur-xl"
+                  animate={{
+                    x: [0, -15, 0],
+                    y: [0, -10, 0],
+                    scale: [1, 1.2, 1],
+                  }}
+                  transition={{
+                    duration: 6,
+                    repeat: Number.POSITIVE_INFINITY,
+                    ease: "easeInOut",
+                    delay: 1,
+                  }}
+                />
               </div>
             </motion.div>
           </div>

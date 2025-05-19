@@ -1,12 +1,39 @@
 "use client";
 
-import { useRef } from "react";
-import { motion, useInView } from "framer-motion";
-import { FadeIn } from "@/components/animations/fade-in";
+import { useRef, useState, useEffect } from "react";
+import {
+  motion,
+  useInView,
+  useAnimation,
+  useMotionValue,
+  useTransform,
+} from "framer-motion";
+import { useTheme } from "next-themes";
 
 export function Features() {
   const ref = useRef(null);
   const isInView = useInView(ref, { once: false, amount: 0.2 });
+  const controls = useAnimation();
+  const { theme } = useTheme();
+  const [mounted, setMounted] = useState(false);
+  const [prefersReducedMotion, setPrefersReducedMotion] = useState(false);
+
+  // Check for reduced motion preference
+  useEffect(() => {
+    setMounted(true);
+    const mediaQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
+    setPrefersReducedMotion(mediaQuery.matches);
+
+    const handleChange = () => setPrefersReducedMotion(mediaQuery.matches);
+    mediaQuery.addEventListener("change", handleChange);
+    return () => mediaQuery.removeEventListener("change", handleChange);
+  }, []);
+
+  useEffect(() => {
+    if (isInView) {
+      controls.start("visible");
+    }
+  }, [isInView, controls]);
 
   const containerVariants = {
     hidden: { opacity: 0 },
@@ -46,6 +73,7 @@ export function Features() {
     }),
     hover: {
       y: -10,
+      scale: 1.03,
       boxShadow:
         "0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)",
       transition: {
@@ -78,138 +106,238 @@ export function Features() {
     },
   };
 
+  // 3D floating elements configuration
+  const floatingElements = [
+    { size: 80, initialX: "10%", initialY: "20%", speed: 20 },
+    { size: 120, initialX: "85%", initialY: "15%", speed: 25 },
+    { size: 60, initialX: "75%", initialY: "60%", speed: 15 },
+    { size: 100, initialX: "20%", initialY: "70%", speed: 30 },
+    { size: 70, initialX: "50%", initialY: "30%", speed: 22 },
+    { size: 90, initialX: "30%", initialY: "40%", speed: 18 },
+  ];
+
   const features = [
     {
       title: "Secure Escrow",
       description:
         "Funds are held securely until both parties are satisfied with the transaction.",
       icon: ShieldIcon,
+      gradient: "from-blue-500 to-purple-600",
     },
     {
       title: "Flat 2.5% Fee",
       description:
         "Simple and transparent pricing with a flat 2.5% fee on all transactions.",
       icon: PercentIcon,
+      gradient: "from-purple-500 to-pink-600",
     },
     {
       title: "Integrated Wallet",
       description: "Manage your funds easily with our built-in wallet system.",
       icon: WalletIcon,
+      gradient: "from-pink-500 to-orange-600",
     },
     {
       title: "Real-time Notifications",
       description:
         "Stay updated with real-time notifications on transaction status changes.",
       icon: BellIcon,
+      gradient: "from-orange-500 to-amber-600",
     },
     {
       title: "Transaction History",
       description: "Access your complete transaction history at any time.",
       icon: HistoryIcon,
+      gradient: "from-amber-500 to-green-600",
     },
     {
       title: "24/7 Support",
       description:
         "Our support team is available around the clock to assist you.",
       icon: HeadphonesIcon,
+      gradient: "from-green-500 to-blue-600",
     },
   ];
 
+  // Determine gradient based on theme
+  const gradientClasses =
+    mounted && theme === "dark"
+      ? "bg-gradient-to-br from-zinc-900 via-green-900 to-zinc-900"
+      : "bg-gradient-to-br from-slate-100 via-purple-100 to-blue-100";
+
   return (
-    <FadeIn>
-      <section
-        ref={ref}
-        className="w-full py-12 md:py-24 lg:py-32 bg-muted relative overflow-hidden"
-      >
-        {/* Animated background elements */}
+    <section
+      ref={ref}
+      className={`w-full py-12 md:py-24 lg:py-32 relative overflow-hidden ${gradientClasses}`}
+      style={{
+        backgroundSize: "200% 200%",
+        animation: "gradientAnimation 15s ease infinite",
+      }}
+    >
+      {/* 3D Floating Elements */}
+      {mounted &&
+        !prefersReducedMotion &&
+        floatingElements.map((element, i) => (
+          <FloatingElement
+            key={i}
+            size={element.size}
+            initialX={element.initialX}
+            initialY={element.initialY}
+            speed={element.speed}
+            isDarkTheme={theme === "dark"}
+          />
+        ))}
+
+      <div className="container mx-auto px-4 md:px-6 relative z-10">
         <motion.div
-          className="absolute top-0 left-0 w-full h-full pointer-events-none"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 1 }}
+          className="flex flex-col items-center justify-center space-y-4 text-center"
+          variants={containerVariants}
+          initial="hidden"
+          animate={controls}
         >
-          {[...Array(20)].map((_, i) => (
+          <div className="space-y-2">
             <motion.div
-              key={i}
-              className="absolute rounded-full bg-primary/5"
-              style={{
-                width: Math.random() * 100 + 50,
-                height: Math.random() * 100 + 50,
-                top: `${Math.random() * 100}%`,
-                left: `${Math.random() * 100}%`,
-              }}
-              animate={{
-                y: [0, Math.random() * 100 - 50],
-                opacity: [0.1, 0.3, 0.1],
-              }}
-              transition={{
-                duration: Math.random() * 10 + 10,
-                repeat: Number.POSITIVE_INFINITY,
-                ease: "easeInOut",
-                delay: Math.random() * 5,
-              }}
-            />
-          ))}
+              className="inline-block rounded-lg bg-primary/20 px-3 py-1 text-sm font-medium text-primary"
+              variants={itemVariants}
+            >
+              Features
+            </motion.div>
+            <motion.h2
+              className="text-3xl font-bold tracking-tighter sm:text-5xl md:text-6xl"
+              variants={itemVariants}
+            >
+              Everything You Need
+            </motion.h2>
+            <motion.p
+              className="max-w-[900px] text-muted-foreground md:text-xl/relaxed lg:text-base/relaxed xl:text-xl/relaxed"
+              variants={itemVariants}
+            >
+              Our platform provides all the tools you need to conduct secure
+              transactions with confidence.
+            </motion.p>
+          </div>
         </motion.div>
 
-        <div className="container px-4 md:px-6 relative z-10">
-          <motion.div
-            className="flex flex-col items-center justify-center space-y-4 text-center"
-            variants={containerVariants}
-            initial="hidden"
-            animate={isInView ? "visible" : "hidden"}
-          >
-            <div className="space-y-2">
+        <div className="mx-auto grid max-w-5xl grid-cols-1 gap-6 py-12 md:grid-cols-2 lg:grid-cols-3">
+          {features.map((feature, i) => (
+            <motion.div
+              key={i}
+              className="group flex flex-col items-center space-y-4 rounded-xl border bg-background/80 backdrop-blur-sm p-6 shadow-sm transition-all"
+              custom={i}
+              variants={featureCardVariants}
+              initial="hidden"
+              animate={controls}
+              whileHover={prefersReducedMotion ? {} : "hover"}
+            >
               <motion.div
-                className="inline-block rounded-lg bg-muted-foreground/20 px-3 py-1 text-sm"
-                variants={itemVariants}
+                className={`rounded-full bg-gradient-to-r ${feature.gradient} p-3 text-white shadow-lg`}
+                variants={iconContainerVariants}
+                whileHover={prefersReducedMotion ? {} : "hover"}
               >
-                Features
+                <feature.icon className="h-6 w-6" />
               </motion.div>
-              <motion.h2
-                className="text-3xl font-bold tracking-tighter sm:text-5xl"
-                variants={itemVariants}
-              >
-                Everything You Need
-              </motion.h2>
-              <motion.p
-                className="max-w-[900px] text-muted-foreground md:text-xl/relaxed lg:text-base/relaxed xl:text-xl/relaxed"
-                variants={itemVariants}
-              >
-                Our platform provides all the tools you need to conduct secure
-                transactions with confidence.
-              </motion.p>
-            </div>
-          </motion.div>
+              <h3 className="text-xl font-bold">{feature.title}</h3>
+              <p className="text-center text-muted-foreground">
+                {feature.description}
+              </p>
 
-          <div className="mx-auto grid max-w-5xl grid-cols-1 gap-6 py-12 md:grid-cols-2 lg:grid-cols-3">
-            {features.map((feature, i) => (
-              <motion.div
-                key={i}
-                className="flex flex-col items-center space-y-2 rounded-lg border p-6 bg-background/80 backdrop-blur-sm"
-                custom={i}
-                variants={featureCardVariants}
-                initial="hidden"
-                animate={isInView ? "visible" : "hidden"}
-                whileHover="hover"
-              >
-                <motion.div
-                  className="rounded-full bg-primary p-2 text-white"
-                  variants={iconContainerVariants}
-                  whileHover="hover"
-                >
-                  <feature.icon className="h-6 w-6" />
-                </motion.div>
-                <h3 className="text-xl font-bold">{feature.title}</h3>
-                <p className="text-center text-muted-foreground">
-                  {feature.description}
-                </p>
-              </motion.div>
-            ))}
-          </div>
+              {/* Card background gradient */}
+              <div className="absolute inset-0 -z-10 rounded-xl bg-gradient-to-br from-primary/5 via-transparent to-primary/5 opacity-0 transition-opacity group-hover:opacity-100" />
+            </motion.div>
+          ))}
         </div>
-      </section>
-    </FadeIn>
+      </div>
+
+      {/* CSS for gradient animation */}
+      <style jsx global>{`
+        @keyframes gradientAnimation {
+          0% {
+            background-position: 0% 50%;
+          }
+          50% {
+            background-position: 100% 50%;
+          }
+          100% {
+            background-position: 0% 50%;
+          }
+        }
+      `}</style>
+    </section>
+  );
+}
+
+// 3D Floating Element Component
+function FloatingElement({ size, initialX, initialY, speed, isDarkTheme }) {
+  const x = useMotionValue(0);
+  const y = useMotionValue(0);
+
+  // Random rotation for each element
+  const rotate = useMotionValue(Math.random() * 360);
+
+  // Transform the motion values for parallax effect
+  const translateX = useTransform(x, [-100, 100], [-15, 15]);
+  const translateY = useTransform(y, [-100, 100], [-15, 15]);
+
+  // Handle mouse movement for parallax effect
+  const handleMouseMove = (event) => {
+    const { clientX, clientY } = event;
+    const { innerWidth, innerHeight } = window;
+
+    const mouseX = clientX / innerWidth - 0.5;
+    const mouseY = clientY / innerHeight - 0.5;
+
+    x.set(mouseX * 200);
+    y.set(mouseY * 200);
+  };
+
+  useEffect(() => {
+    window.addEventListener("mousemove", handleMouseMove);
+    return () => window.removeEventListener("mousemove", handleMouseMove);
+  }, []);
+
+  // Determine element style based on theme
+  const elementStyle = isDarkTheme
+    ? {
+        background:
+          "radial-gradient(circle, rgba(139, 92, 246, 0.15) 0%, rgba(30, 64, 175, 0.05) 100%)",
+        border: "1px solid rgba(139, 92, 246, 0.2)",
+      }
+    : {
+        background:
+          "radial-gradient(circle, rgba(139, 92, 246, 0.1) 0%, rgba(59, 130, 246, 0.05) 100%)",
+        border: "1px solid rgba(139, 92, 246, 0.15)",
+      };
+
+  return (
+    <motion.div
+      className="absolute rounded-full backdrop-blur-md"
+      style={{
+        width: size,
+        height: size,
+        left: initialX,
+        top: initialY,
+        x: translateX,
+        y: translateY,
+        rotate,
+        ...elementStyle,
+      }}
+      animate={{
+        y: [0, -speed, 0],
+        rotate: [0, 360],
+      }}
+      transition={{
+        y: {
+          repeat: Number.POSITIVE_INFINITY,
+          duration: 10 + Math.random() * 10,
+          ease: "easeInOut",
+        },
+        rotate: {
+          repeat: Number.POSITIVE_INFINITY,
+          duration: 20 + Math.random() * 10,
+          ease: "linear",
+        },
+      }}
+    />
   );
 }
 

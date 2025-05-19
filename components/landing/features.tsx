@@ -61,7 +61,7 @@ export function Features() {
 
   const featureCardVariants = {
     hidden: { y: 50, opacity: 0 },
-    visible: (i) => ({
+    visible: (i: any) => ({
       y: 0,
       opacity: 1,
       transition: {
@@ -267,6 +267,7 @@ export function Features() {
 }
 
 // 3D Floating Element Component
+// @ts-ignore
 function FloatingElement({ size, initialX, initialY, speed, isDarkTheme }) {
   const x = useMotionValue(0);
   const y = useMotionValue(0);
@@ -279,7 +280,7 @@ function FloatingElement({ size, initialX, initialY, speed, isDarkTheme }) {
   const translateY = useTransform(y, [-100, 100], [-15, 15]);
 
   // Handle mouse movement for parallax effect
-  const handleMouseMove = (event) => {
+  const handleMouseMove = (event: any) => {
     const { clientX, clientY } = event;
     const { innerWidth, innerHeight } = window;
 
@@ -341,7 +342,7 @@ function FloatingElement({ size, initialX, initialY, speed, isDarkTheme }) {
   );
 }
 
-function ShieldIcon(props) {
+function ShieldIcon(props: any) {
   return (
     <svg
       {...props}
@@ -360,7 +361,7 @@ function ShieldIcon(props) {
   );
 }
 
-function PercentIcon(props) {
+function PercentIcon(props: any) {
   return (
     <svg
       {...props}
@@ -381,7 +382,7 @@ function PercentIcon(props) {
   );
 }
 
-function WalletIcon(props) {
+function WalletIcon(props: any) {
   return (
     <svg
       {...props}
@@ -402,7 +403,7 @@ function WalletIcon(props) {
   );
 }
 
-function BellIcon(props) {
+function BellIcon(props: any) {
   return (
     <svg
       {...props}
@@ -422,7 +423,7 @@ function BellIcon(props) {
   );
 }
 
-function HistoryIcon(props) {
+function HistoryIcon(props: any) {
   return (
     <svg
       {...props}
@@ -443,7 +444,7 @@ function HistoryIcon(props) {
   );
 }
 
-function HeadphonesIcon(props) {
+function HeadphonesIcon(props: any) {
   return (
     <svg
       {...props}

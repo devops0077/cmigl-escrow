@@ -77,12 +77,12 @@ export function DashboardSidebar() {
     { name: "Admin Panel", href: "/admin", icon: Shield },
     { name: "Disputes", href: "/admin/disputes", icon: AlertCircleIcon },
     { name: "Content", href: "/admin/content", icon: BookOpen },
-    { name: "Rewards", href: "/admin/rewards", icon: Award },
-    { name: "Cron Jobs", href: "/admin/cron-jobs", icon: Clock },
     { name: "Feedback", href: "/admin/feedback", icon: Users },
   ];
 
   const adminToolsItems = [
+    { name: "Rewards Tool", href: "/admin/rewards", icon: Award },
+    { name: "Cron Jobs", href: "/admin/cron-jobs", icon: Clock },
     {
       name: "Ads Tool",
       href: "/admin/advertisements",

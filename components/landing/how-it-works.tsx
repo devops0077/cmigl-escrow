@@ -40,7 +40,7 @@ export function HowItWorks() {
 
   const stepVariants = {
     hidden: { opacity: 0, y: 50 },
-    visible: (i) => ({
+    visible: (i: any) => ({
       opacity: 1,
       y: 0,
       transition: {

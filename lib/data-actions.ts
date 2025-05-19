@@ -14,10 +14,16 @@ export async function updateUserProfile({
   name,
   username,
   email,
+  bio,
+  address,
+  phone,
 }: Partial<{
   name: string;
   username: string;
   email: string;
+  phone: string;
+  bio: string;
+  address: string;
 }>) {
   const session = await auth();
 
@@ -39,6 +45,9 @@ export async function updateUserProfile({
       name,
       username,
       email,
+      bio,
+      phone,
+      address,
     },
   });
 

@@ -50,6 +50,8 @@ model User {
   isActive              Boolean              @default(false)
   registrationFee       RegistrationFee?
   image                 String?
+  bio                   String?
+  address               String?
   passportImage         String? // Added passport image field
   password              String?
   role                  UserRole             @default(USER)

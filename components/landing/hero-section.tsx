@@ -69,7 +69,7 @@ function ProcessSteps() {
     if (currentStep < steps.length - 1) {
       const timeout = setTimeout(() => {
         setCurrentStep((prev) => prev + 1);
-      }, 4000); // Change step every 4 seconds
+      }, 7000); // Change step every 7 seconds
 
       return () => clearTimeout(timeout);
     } else {
@@ -100,7 +100,7 @@ function ProcessSteps() {
             <div className="h-20">
               <Typewriter
                 text={steps[currentStep].description}
-                speed={100}
+                speed={10}
                 className="text-muted-foreground"
                 onComplete={() => {}}
               />

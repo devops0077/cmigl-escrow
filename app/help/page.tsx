@@ -102,7 +102,7 @@ export default function HelpPage() {
                   className="w-full bg-blue-500 hover:bg-blue-600"
                   asChild
                 >
-                  <a href="mailto:support@cmiglescrow.com">Email Support</a>
+                  <a href="mailto:support@cmigl.org">Email Support</a>
                 </Button>
               </CardFooter>
             </Card>
@@ -286,7 +286,7 @@ export default function HelpPage() {
               Can't find what you need? Our support team is ready to assist you.
             </p>
             <Button asChild>
-              <Link href="mailto:support@cmiglescrow.com">
+              <Link href="mailto:support@cmigl.org">
                 Contact Support
                 <ChevronRight className="ml-1 h-4 w-4" />
               </Link>

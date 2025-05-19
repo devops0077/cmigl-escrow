@@ -45,7 +45,7 @@ function Typewriter({
 }
 
 // Process step animation component
-function ProcessSteps() {
+export function ProcessSteps() {
   const [currentStep, setCurrentStep] = useState(0);
   const steps = [
     {

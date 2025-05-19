@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import Image from "next/image";
 import { FadeIn } from "@/components/animations/fade-in";
+import { ProcessSteps } from "@/components/landing/hero-section";
 
 export default function AuthLayout({ children }: { children: ReactNode }) {
   return (
@@ -22,15 +23,10 @@ export default function AuthLayout({ children }: { children: ReactNode }) {
             </div>
 
             <div className="relative h-64 w-full rounded-lg overflow-hidden mb-8">
-              <Image
-                src="/dashboard.png?height=720&width=1280"
-                alt="Secure transactions"
-                fill
-                className="object-cover"
-              />
+              <ProcessSteps />
             </div>
 
-            <div className="bg-background rounded-lg p-6 shadow-sm">
+            {/* <div className="bg-background rounded-lg p-6 shadow-sm">
               <p className="italic mb-4">
                 "CMIGL Escrow has transformed how I conduct online business. The
                 security and peace of mind are worth every penny."
@@ -44,7 +40,7 @@ export default function AuthLayout({ children }: { children: ReactNode }) {
                   <p className="text-sm text-muted-foreground">Buyer</p>
                 </div>
               </div>
-            </div>
+            </div> */}
           </div>
         </div>
       </div>

@@ -83,6 +83,7 @@ model User {
   createdAds            Advertisement[]      @relation("AdCreator")
   adImpressions         AdImpression[]       @relation("AdImpressions")
   adClicks              AdClick[]            @relation("AdClicks")
+  revenue               Revenue[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -165,6 +166,7 @@ model Transaction {
   payment         Payment?          @relation(fields: [paymentId], references: [id])
   dispute         Dispute? // Added relation to dispute
   hasDispute      Boolean           @default(false) // Flag to indicate if transaction has a dispute
+  revenue         Revenue[]
 }
 
 model Feedback {
@@ -690,4 +692,37 @@ model AdClick {
   placement       AdPlacement
   sessionId       String? // Browser session ID
   deviceInfo      String? // Device information
+}
+
+enum RevenueType {
+  ESCROW_FEE
+  REGISTRATION_FEE
+  OTHER
+}
+
+enum RevenueStatus {
+  COLLECTED
+  PENDING
+  REFUNDED
+}
+
+model Revenue {
+  id            String        @id @default(cuid())
+  amount        Float
+  type          RevenueType
+  status        RevenueStatus @default(COLLECTED)
+  description   String?
+  metadata      Json?
+  transactionId String?
+  transaction   Transaction?  @relation(fields: [transactionId], references: [id])
+  userId        String?
+  user          User?         @relation(fields: [userId], references: [id])
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+
+  @@index([transactionId])
+  @@index([userId])
+  @@index([type])
+  @@index([status])
+  @@index([createdAt])
 }

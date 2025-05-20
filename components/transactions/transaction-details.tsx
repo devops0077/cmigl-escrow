@@ -426,7 +426,7 @@ export function TransactionDetails({ id }: { id: string }) {
                   <Button
                     className="w-full bg-orange-500 hover:bg-orange-600"
                     onClick={() =>
-                      router.push(`/admin/disputes/${transaction.id}`)
+                      router.push(`/admin/disputes/${transaction.dispute.id}`)
                     }
                   >
                     Resolve Dispute (Admin)

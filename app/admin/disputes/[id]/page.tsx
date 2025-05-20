@@ -13,6 +13,7 @@ import { Separator } from "@/components/ui/separator";
 import { formatCurrency, formatDate } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 import { DashboardHeader } from "@/components/dashboard/dashboard-header";
+import { getTransactionById } from "@/lib/data-actions";
 
 interface AdminDisputePageProps {
   params: Promise<{
@@ -24,7 +25,12 @@ export async function generateMetadata({
   params,
 }: AdminDisputePageProps): Promise<Metadata> {
   try {
-    const dispute = await getDisputeById((await params).id);
+    let dispute;
+    dispute = await getDisputeById((await params).id);
+    if (!dispute) {
+      const trx = await getTransactionById((await params).id);
+      dispute = await getDisputeById(trx.dispute?.id as string);
+    }
     return {
       title: `Dispute #${dispute.id.slice(0, 8)} | Admin | CMIGL Escrow`,
       description: `Resolve dispute for transaction #${dispute.transaction.id.slice(0, 8)}`,
@@ -44,7 +50,12 @@ export default async function AdminDisputePage({
 
   try {
     dispute = await getDisputeById((await params).id);
+    if (!dispute) {
+      const trx = await getTransactionById((await params).id);
+      dispute = await getDisputeById(trx.dispute?.id as string);
+    }
   } catch (error) {
+    console.log("Dispute LOG: ", error);
     notFound();
   }
 
@@ -82,7 +93,7 @@ export default async function AdminDisputePage({
           {transaction.status}
         </Badge>
       </DashboardHeader>
-{/*  */}
+      {/*  */}
       <div className="px-4 md:px-6 gap-4 flex flex-col">
         <div className="grid gap-6 md:grid-cols-2">
           <Card>

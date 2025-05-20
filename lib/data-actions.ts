@@ -246,6 +246,7 @@ export async function getTransactionById(id: string) {
           email: true,
         },
       },
+      dispute: true,
     },
   });
 
@@ -422,6 +423,17 @@ export async function createTransaction({
     console.error("Failed to send transaction emails:", error);
     // Continue even if emails fail
   }
+
+  // Immediately add fee to revenue - fee becomes non-refundable (new functionality)
+  await prisma.revenue.create({
+    data: {
+      transactionId: transaction.id,
+      amount: escrowFee,
+      type: "ESCROW_FEE",
+      status: "COLLECTED",
+      description: `Escrow fee for transaction ${transaction.id}`,
+    },
+  });
 
   revalidatePath("/dashboard");
   revalidatePath("/transactions");

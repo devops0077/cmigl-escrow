@@ -18,6 +18,7 @@ import {
   Clock,
   PenTool,
   TvMinimalPlayIcon,
+  TrendingUp,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -75,6 +76,7 @@ export function DashboardSidebar() {
 
   const adminNavItems = [
     { name: "Admin Panel", href: "/admin", icon: Shield },
+    { name: "Revenue", href: "/admin/revenue", icon: TrendingUp },
     { name: "Disputes", href: "/admin/disputes", icon: AlertCircleIcon },
     { name: "Content", href: "/admin/content", icon: BookOpen },
     { name: "Feedback", href: "/admin/feedback", icon: Users },

@@ -1,8 +1,13 @@
 import NextAuth from "next-auth";
 
-import { UserRole, UserStatus } from "./lib/generated/prisma";
+import {
+  SecurityEventType,
+  UserRole,
+  UserStatus,
+} from "./lib/generated/prisma";
 import { verifyCredentials } from "./lib/auth-actions";
 import Credentials from "next-auth/providers/credentials";
+import axios from "axios";
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
   providers: [
@@ -42,6 +47,8 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         token.phone = user.phone;
         token.username = user.username;
         token.emailVerified = user.emailVerified;
+        token.bio = user.bio;
+        token.address = user.address;
       }
       if (trigger === "update") {
         if (session.user) {
@@ -53,6 +60,8 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
             email: session.user.email,
             name: session.user.name,
             image: session.user.image,
+            address: session.user.address,
+            bio: session.user.bio,
           };
         }
       }
@@ -71,6 +80,8 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         session.user.restricted = token.restricted as boolean;
         session.user.emailVerified = token.emailVerified as Date | null;
         session.user.phone = token.phone as string;
+        session.user.address = token.address as string;
+        session.user.bio = token.bio as string;
         session.user.createdAt = token.createdAt as Date;
         session.user.updatedAt = token.updatedAt as Date;
       }

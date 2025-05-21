@@ -28,6 +28,7 @@ export const publicRoutes = [
   "/api/users/(.*)",
   "/api/cron/(.*)",
   "/api/advertisements/(.*)",
+  "/api/user/security-log",
 ];
 
 /**

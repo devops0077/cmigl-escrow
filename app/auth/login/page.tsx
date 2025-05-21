@@ -31,6 +31,8 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { CheckCircle2, Info } from "lucide-react";
 import { InActiveAccountError } from "@/lib/error-class";
 import { AuthError } from "next-auth";
+import { SecurityEventType } from "@/lib/generated/prisma";
+import apiClient from "@/lib/api-client";
 
 const formSchema = z.object({
   email: z.string().email({
@@ -84,11 +86,23 @@ function LoginPage() {
           }
         } else if (result.error.includes("CredentialsSignin")) {
           setError("Invalid email or password.");
+          await apiClient.post("/user/security-log", {
+            type: SecurityEventType.LOGIN_FAILED,
+            email: values.email,
+            reason: "Invalid email or password.",
+          });
         }
         return;
       }
       toast.success("Login successful", {
         description: "You have been logged in successfully.",
+      });
+      await fetch(process.env.NEXT_PUBLIC_APP_URL + "/api/user/security-log", {
+        body: JSON.stringify({
+          type: SecurityEventType.LOGIN_SUCCESS,
+          email: values.email,
+        }),
+        method: "POST",
       });
 
       router.push(callbackUrl);

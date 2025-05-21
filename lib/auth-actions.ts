@@ -13,6 +13,8 @@ import {
 } from "./error-class";
 import { auth } from "@/auth";
 import { _escrowConfig } from "@/config";
+import { authHelpers } from "./auth-helpers";
+import { NextRequest } from "next/server";
 
 export async function registerUser({
   name,
@@ -219,22 +221,7 @@ export async function verifyCredentials(email: string, password: string) {
   //   );
   // }
 
-  return {
-    id: user.id,
-    name: user.name,
-    email: user.email,
-    username: user.username,
-    role: user.role,
-    image: user.image,
-    passportImage: user.passportImage,
-    isActive: user.isActive,
-    status: user.status,
-    restricted: user.restricted,
-    emailVerified: user.emailVerified,
-    phone: user.phone,
-    createdAt: user.createdAt,
-    updatedAt: user.updatedAt,
-  };
+  return user;
 }
 
 export async function resendVerificationEmail(email: string) {

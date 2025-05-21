@@ -2,13 +2,217 @@
 
 import { revalidatePath } from "next/cache";
 import { prisma } from "./prisma";
-import type { TransactionStatus } from "./generated/prisma";
+import { SecurityEventType, type TransactionStatus } from "./generated/prisma";
 import { auth } from "@/auth";
 import { compare } from "bcryptjs";
 import { createNotification } from "./notification-service";
 import { emailService } from "./email-service";
 import { _escrowConfig } from "@/config";
 import { formatCurrency } from "./utils";
+import { SettingsService } from "./settings-service";
+import { authHelpers } from "./auth-helpers";
+import { headers } from "next/headers";
+import { SecurityService } from "./security-service";
+
+/**
+ * Update notification settings
+ */
+export async function updateNotificationSettings(formData: FormData) {
+  try {
+    const session = await auth();
+    if (!session?.user?.id) {
+      return { success: false, error: "Not authenticated" };
+    }
+
+    // Extract form data
+    const emailNotifications = formData.get("emailNotifications") === "on";
+    const smsNotifications = formData.get("smsNotifications") === "on";
+    const marketingEmails = formData.get("marketingEmails") === "on";
+    const securityAlerts = formData.get("securityAlerts") === "on";
+    const transactionUpdates = formData.get("transactionUpdates") === "on";
+    const promotionalOffers = formData.get("promotionalOffers") === "on";
+
+    // Update notification settings
+    await SettingsService.updateNotificationSettings(session.user.id, {
+      emailNotifications,
+      smsNotifications,
+      marketingEmails,
+      securityAlerts,
+      transactionUpdates,
+      promotionalOffers,
+    });
+
+    // Log the settings change
+    const headersList = headers();
+    const userAgent = (await headersList).get("user-agent");
+
+    await authHelpers.logSettingsChange(
+      session.user.id,
+      ["notification settings"],
+      {
+        headers: { "user-agent": userAgent || "" },
+      } as any
+    );
+
+    // Revalidate the settings page
+    revalidatePath("/dashboard/settings");
+
+    return { success: true };
+  } catch (error) {
+    console.error("Error updating notification settings:", error);
+    return { success: false, error: "Failed to update notification settings" };
+  }
+}
+
+/**
+ * Update appearance settings
+ */
+export async function updateAppearanceSettings(formData: FormData) {
+  try {
+    const session = await auth();
+    if (!session?.user?.id) {
+      return { success: false, error: "Not authenticated" };
+    }
+
+    // Extract form data
+    const theme = formData.get("theme") as string;
+    const reducedMotion = formData.get("reducedMotion") === "on";
+
+    // Update appearance settings
+    await SettingsService.updateAppearanceSettings(session.user.id, {
+      theme,
+      reducedMotion,
+    });
+
+    // Log the settings change
+    const headersList = headers();
+    const userAgent = (await headersList).get("user-agent");
+
+    await authHelpers.logSettingsChange(
+      session.user.id,
+      ["appearance settings"],
+      {
+        headers: { "user-agent": userAgent || "" },
+      } as any
+    );
+
+    // Revalidate the settings page
+    revalidatePath("/dashboard/settings");
+
+    return { success: true };
+  } catch (error) {
+    console.error("Error updating appearance settings:", error);
+    return { success: false, error: "Failed to update appearance settings" };
+  }
+}
+
+/**
+ * Update locale settings
+ */
+export async function updateLocaleSettings(formData: FormData) {
+  try {
+    const session = await auth();
+    if (!session?.user?.id) {
+      return { success: false, error: "Not authenticated" };
+    }
+
+    // Extract form data
+    const language = formData.get("language") as string;
+    const timezone = formData.get("timezone") as string;
+    const currency = formData.get("currency") as string;
+
+    // Update locale settings
+    await SettingsService.updateLocaleSettings(session.user.id, {
+      language,
+      timezone,
+      currency,
+    });
+
+    // Log the settings change
+    const headersList = headers();
+    const userAgent = (await headersList).get("user-agent");
+
+    await authHelpers.logSettingsChange(session.user.id, ["locale settings"], {
+      headers: { "user-agent": userAgent || "" },
+    } as any);
+
+    // Revalidate the settings page
+    revalidatePath("/dashboard/settings");
+
+    return { success: true };
+  } catch (error) {
+    console.error("Error updating locale settings:", error);
+    return { success: false, error: "Failed to update locale settings" };
+  }
+}
+
+/**
+ * Request account deletion
+ */
+export async function requestAccountDeletion(formData: FormData) {
+  try {
+    const session = await auth();
+    if (!session?.user?.id) {
+      return { success: false, error: "Not authenticated" };
+    }
+
+    // Extract form data
+    const reason = formData.get("reason") as string;
+    const confirmation = formData.get("confirmation") as string;
+
+    // Validate confirmation
+    if (confirmation !== "DELETE") {
+      return { success: false, error: "Please type DELETE to confirm" };
+    }
+
+    // In a real app, you would mark the account for deletion or schedule it
+    // For this example, we'll just log the request
+
+    // Log the account deletion request
+    const headersList = headers();
+    const userAgent = (await headersList).get("user-agent");
+
+    await authHelpers.logAccountDeletionRequest(session.user.id, reason, {
+      headers: { "user-agent": userAgent || "" },
+    } as any);
+
+    return { success: true };
+  } catch (error) {
+    console.error("Error requesting account deletion:", error);
+    return { success: false, error: "Failed to request account deletion" };
+  }
+}
+
+/**
+ * Export user data
+ */
+export async function exportUserData() {
+  try {
+    const session = await auth();
+    if (!session?.user?.id) {
+      return { success: false, error: "Not authenticated" };
+    }
+
+    // In a real app, you would generate and return the user's data
+    // For this example, we'll just simulate a successful export
+
+    // Log the data export
+    const headersList = headers();
+    const userAgent = (await headersList).get("user-agent");
+
+    await SecurityService.logSecurityEvent({
+      userId: session.user.id,
+      eventType: SecurityEventType.SETTINGS_CHANGED,
+      metadata: { action: "data_export" },
+      userAgent: userAgent || undefined,
+    });
+
+    return { success: true };
+  } catch (error) {
+    console.error("Error exporting user data:", error);
+    return { success: false, error: "Failed to export user data" };
+  }
+}
 
 export async function updateUserProfile({
   name,
@@ -51,6 +255,18 @@ export async function updateUserProfile({
     },
   });
 
+  // Log the profile update
+  const headersList = headers();
+  const userAgent = (await headersList).get("user-agent");
+
+  await authHelpers.logProfileUpdate(
+    session.user.id as string,
+    ["name", "email", "bio"],
+    {
+      headers: { "user-agent": userAgent || "" },
+    } as any
+  );
+
   revalidatePath("/dashboard");
   revalidatePath("/profile");
 
@@ -91,6 +307,14 @@ export async function updateUserPassword({
       password: newPassword,
     },
   });
+
+  const headersList = headers();
+  const userAgent = (await headersList).get("user-agent");
+
+  await authHelpers.logPasswordChange(
+    session?.user.id as string,
+    { headers: { "user-agent": userAgent || "" } } as any
+  );
 
   revalidatePath("/dashboard");
   revalidatePath("/profile");

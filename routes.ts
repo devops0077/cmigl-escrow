@@ -8,6 +8,7 @@ export const publicRoutes = [
   "/help",
   "/terms",
   "/privacy",
+  "/offline",
   "/knowledge-base",
   "/knowledge-base/(.*)",
   "/tutorials",

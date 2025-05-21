@@ -159,9 +159,6 @@ export function Features() {
     },
   ];
 
-  // Determine gradient based on theme
-  const gradientClasses = mounted && theme === "dark" ? "" : "";
-
   return (
     <section
       ref={ref}

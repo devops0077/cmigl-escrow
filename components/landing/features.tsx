@@ -160,15 +160,12 @@ export function Features() {
   ];
 
   // Determine gradient based on theme
-  const gradientClasses =
-    mounted && theme === "dark"
-      ? "bg-gradient-to-br from-zinc-900 via-green-900 to-zinc-900"
-      : "bg-gradient-to-br from-slate-100 via-purple-100 to-blue-100";
+  const gradientClasses = mounted && theme === "dark" ? "" : "";
 
   return (
     <section
       ref={ref}
-      className={`w-full py-12 md:py-24 lg:py-32 relative overflow-hidden ${gradientClasses}`}
+      className={`w-full py-12 md:py-24 lg:py-32 relative overflow-hidden dark:bg-gradient-to-br dark:from-zinc-900 dark:via-green-900 dark:to-zinc-900 bg-gradient-to-br from-slate-100 via-purple-100 to-blue-100`}
       style={{
         backgroundSize: "200% 200%",
         animation: "gradientAnimation 15s ease infinite",

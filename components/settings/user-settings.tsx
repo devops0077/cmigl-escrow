@@ -278,12 +278,13 @@ export function UserSettings() {
       profileForm.setValue("email", session?.user?.email as string);
       profileForm.setValue(
         "bio",
-        session?.user.bio ?? "I'm a user of the CMIGL Escrow platform."
+        session?.user.bio ??
+          "We'd like to know more about you, please update your bio."
       );
       profileForm.setValue("phone", session?.user.phone);
       profileForm.setValue(
         "address",
-        session?.user.address ?? "123 Main St, City, Country"
+        session?.user.address ?? "And oh, do remember to update your address."
       );
     }, 500);
 

@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { TransactionStatus } from "@/lib/generated/prisma";
 import { createNotification } from "@/lib/notification-service";
 import { formatCurrency } from "@/lib/utils";
+import { createNotificationWithPush } from "@/lib/api-utils";
 
 export async function PATCH(
   request: NextRequest,
@@ -82,6 +83,18 @@ export async function PATCH(
       data: { status: status as TransactionStatus },
     });
 
+    if (status === TransactionStatus.SHIPPED) {
+      createNotificationWithPush({
+        userId: transaction.buyerId,
+        title: "Item Shipped",
+        type: "TRANSACTION_STATUS_CHANGED",
+        message: `Seller has shipped the item for transaction ${transaction.id}`,
+        url:
+          process.env.NEXT_PUBLIC_APP_URL +
+          `/dashboard/transactions/${transaction.id}`,
+      });
+    }
+
     //  if status is confirmed by buyer, release funds to seller
     if (status === TransactionStatus.CONFIRMED) {
       // const amountToSeller = transaction.amount - transaction.escrowFee;
@@ -104,16 +117,19 @@ export async function PATCH(
         },
       });
 
-      createNotification({
+      createNotificationWithPush({
         userId: transaction.sellerId,
         title: "Transaction Completed",
         type: "SYSTEM_NOTIFICATION",
         message: `Transaction ${transaction.id} has been completed. Funds released.`,
+        url:
+          process.env.NEXT_PUBLIC_APP_URL +
+          `/dashboard/transactions/${transaction.id}`,
       });
     }
 
     // If transaction is completed, release funds to seller
-    if (status === "COMPLETED") {
+    if (status === TransactionStatus.COMPLETED) {
       // const amountToSeller = transaction.amount - transaction.escrowFee;
       const amountToSeller = transaction.amount;
 
@@ -134,11 +150,14 @@ export async function PATCH(
         },
       });
 
-      createNotification({
+      createNotificationWithPush({
         userId: transaction.sellerId,
         title: "Transaction Completed",
         type: "ADMIN_NOTIFICATION",
         message: `Transaction ${transaction.id} has been completed. Funds released.`,
+        url:
+          process.env.NEXT_PUBLIC_APP_URL +
+          `/dashboard/transactions/${transaction.id}`,
       });
     }
 
@@ -161,7 +180,7 @@ export async function PATCH(
         },
       });
 
-      createNotification({
+      createNotificationWithPush({
         userId: transaction.buyerId,
         title: "Transaction Failed",
         type: "TRANSACTION_STATUS_CHANGED",
@@ -169,6 +188,9 @@ export async function PATCH(
         data: {
           trxId: transaction.id,
         },
+        url:
+          process.env.NEXT_PUBLIC_APP_URL +
+          `/dashboard/transactions/${transaction.id}`,
       });
     }
 

@@ -86,6 +86,7 @@ model User {
   revenue               Revenue[]
   userSettings          UserSettings?
   securityLogs          SecurityLog[]        @relation("UserSecurityLogs")
+  pushSubscriptions     PushSubscription[]   @relation("UserPushSubscriptions")
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -116,6 +117,8 @@ model UserSettings {
   transactionUpdates Boolean  @default(true)
   promotionalOffers  Boolean  @default(false)
   reducedMotion      Boolean  @default(false)
+  notificationSound  String   @default("default")
+  pushNotifications  Boolean  @default(true) // Added for push notification preferences
   createdAt          DateTime @default(now())
   updatedAt          DateTime @updatedAt
 
@@ -233,15 +236,17 @@ enum TransactionType {
 }
 
 model Notification {
-  id        String           @id @default(cuid())
-  userId    String
-  title     String
-  message   String
-  type      NotificationType @default(SYSTEM_NOTIFICATION)
-  read      Boolean          @default(false)
-  data      Json?
-  createdAt DateTime         @default(now())
-  user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id                 String            @id @default(cuid())
+  userId             String
+  title              String
+  message            String
+  type               NotificationType  @default(SYSTEM_NOTIFICATION)
+  read               Boolean           @default(false)
+  data               Json?
+  createdAt          DateTime          @default(now())
+  pushNotificationId String?           @unique
+  pushNotification   PushNotification? @relation(fields: [pushNotificationId], references: [id])
+  user               User              @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 enum NotificationType {
@@ -254,6 +259,59 @@ enum NotificationType {
   DISPUTE_CREATED // Added dispute notification types
   DISPUTE_UPDATED
   DISPUTE_RESOLVED
+}
+
+// New model for push subscriptions
+model PushSubscription {
+  id             String    @id @default(cuid())
+  userId         String
+  endpoint       String    @unique
+  p256dh         String // Public key
+  auth           String // Auth secret
+  userAgent      String? // Browser/device info
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+  lastUsed       DateTime?
+  expirationTime DateTime?
+  isActive       Boolean   @default(true)
+
+  // Relations
+  user User @relation("UserPushSubscriptions", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([isActive])
+}
+
+// New model for tracking push notifications
+model PushNotification {
+  id           String                 @id @default(cuid())
+  title        String
+  body         String
+  icon         String?
+  badge        String?
+  image        String?
+  tag          String?
+  data         Json?
+  url          String?
+  sound        String?
+  status       PushNotificationStatus @default(PENDING)
+  sentAt       DateTime?
+  deliveredAt  DateTime?
+  clickedAt    DateTime?
+  errorMessage String?
+  createdAt    DateTime               @default(now())
+  notification Notification?
+
+  @@index([status])
+  @@index([createdAt])
+}
+
+enum PushNotificationStatus {
+  PENDING
+  SENT
+  DELIVERED
+  FAILED
+  CLICKED
 }
 
 model Payment {

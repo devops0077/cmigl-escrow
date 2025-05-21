@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/auth";
+import { createNotificationWithPush } from "@/lib/api-utils";
 
 export async function GET(request: Request) {
   try {
@@ -39,6 +40,9 @@ export async function GET(request: Request) {
         },
         skip,
         take: limit,
+        include: {
+          pushNotification: true,
+        },
       }),
       prisma.notification.count({ where }),
     ]);
@@ -134,6 +138,58 @@ export async function PATCH(request: Request) {
     console.error("Error updating notifications:", error);
     return NextResponse.json(
       { error: "Failed to update notifications" },
+      { status: 500 }
+    );
+  }
+}
+
+export async function POST(request: Request) {
+  try {
+    const session = await auth();
+
+    if (!session?.user?.email) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const user = await prisma.user.findUnique({
+      where: { email: session.user.email },
+    });
+
+    if (!user) {
+      return NextResponse.json({ error: "User not found" }, { status: 404 });
+    }
+
+    // Only allow admins to create notifications for other users
+    if (user.role !== "ADMIN") {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
+    }
+
+    const { userId, title, message, type, data, url } = await request.json();
+
+    if (!userId || !title || !message) {
+      return NextResponse.json(
+        { error: "userId, title, and message are required" },
+        { status: 400 }
+      );
+    }
+
+    const notification = await createNotificationWithPush({
+      userId,
+      title,
+      message,
+      type,
+      data,
+      url,
+    });
+
+    return NextResponse.json({
+      success: true,
+      notification,
+    });
+  } catch (error) {
+    console.error("Error creating notification:", error);
+    return NextResponse.json(
+      { error: "Failed to create notification" },
       { status: 500 }
     );
   }

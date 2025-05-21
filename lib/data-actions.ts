@@ -13,6 +13,7 @@ import { SettingsService } from "./settings-service";
 import { authHelpers } from "./auth-helpers";
 import { headers } from "next/headers";
 import { SecurityService } from "./security-service";
+import { createNotificationWithPush } from "./api-utils";
 
 /**
  * Update notification settings
@@ -598,21 +599,27 @@ export async function createTransaction({
   });
 
   // Create notification for buyer
-  await createNotification({
+  await createNotificationWithPush({
     userId: buyer.id,
     type: "TRANSACTION_CREATED",
     title: "Transaction Created",
     message: `You have created a new transaction for ${formatCurrency(amount)} with a fee of ${formatCurrency(escrowFee)}`,
     data: { transactionId: transaction.id },
+    url:
+      process.env.NEXT_PUBLIC_APP_URL +
+      `/dashboard/transactions/${transaction.id}`,
   });
 
   // Create notification for seller
-  await createNotification({
+  await createNotificationWithPush({
     userId: sellerId,
     type: "TRANSACTION_CREATED",
     title: "New Transaction",
     message: `${buyer.name || buyer.username} has created a new transaction with you for ${formatCurrency(amount)}`,
     data: { transactionId: transaction.id },
+    url:
+      process.env.NEXT_PUBLIC_APP_URL +
+      `/dashboard/transactions/${transaction.id}`,
   });
 
   // Send email notifications

@@ -13,6 +13,7 @@ import { toast } from "sonner";
 import type { UserRestriction } from "@/lib/generated/prisma";
 import type { RestrictionContextType } from "@/types/restrictions";
 import { isPublicRouteFn } from "@/routes";
+import { registerServiceWorker } from "@/lib/register-service-worker";
 
 // Cooldown interval in milliseconds (5 minutes)
 const RESTRICTION_CHECK_COOLDOWN = 5 * 60 * 1000;
@@ -160,6 +161,12 @@ export function RestrictionProvider({ children }: { children: ReactNode }) {
       router.push("/account-restricted");
     }
   }, [isRestricted, pathname, session, router]);
+
+  useEffect(() => {
+    registerServiceWorker().then((value) =>
+      console.log("Provider Service Worker - instansciated", value?.active)
+    );
+  }, []);
 
   return (
     <RestrictionContext.Provider

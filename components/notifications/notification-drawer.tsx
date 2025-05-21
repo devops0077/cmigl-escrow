@@ -3,7 +3,15 @@
 import { useState } from "react";
 import { formatDistanceToNow } from "date-fns";
 import { motion, AnimatePresence } from "framer-motion";
-import { Bell, Check, CheckCheck, ChevronRight, Wallet, X } from "lucide-react";
+import {
+  Bell,
+  Check,
+  CheckCheck,
+  ChevronRight,
+  Wallet,
+  BellOff,
+  Volume2,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Sheet,
@@ -12,7 +20,6 @@ import {
   SheetTitle,
   SheetTrigger,
   SheetFooter,
-  SheetClose,
 } from "@/components/ui/sheet";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
@@ -25,7 +32,13 @@ import {
 } from "@/hooks/use-notifications";
 import { cn } from "@/lib/utils";
 import { ScrollArea } from "../ui/scroll-area";
-import { NotificationType } from "@/lib/generated/prisma";
+import type { NotificationType } from "@/lib/generated/prisma";
+import { PushNotificationButton } from "./push-notification-button";
+import { usePushNotifications } from "@/hooks/use-push-notifications";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import type { NotificationSound } from "@/lib/push-notification";
 
 interface NotificationDrawerProps {
   className?: string;
@@ -48,12 +61,31 @@ export function NotificationDrawer({ className }: NotificationDrawerProps) {
   const markAsRead = useMarkNotificationsAsRead();
   const markAllAsRead = useMarkAllNotificationsAsRead();
 
+  const {
+    isSupported,
+    isSubscribed,
+    isEnabled,
+    currentSound,
+    updateSettings,
+    updateSound,
+    playTestSound,
+    getAvailableSounds,
+  } = usePushNotifications();
+
   const handleMarkAsRead = (id: string) => {
     markAsRead.mutate({ ids: [id] });
   };
 
   const handleMarkAllAsRead = () => {
     markAllAsRead.mutate();
+  };
+
+  const handleTogglePushSettings = async (enabled: boolean) => {
+    await updateSettings(enabled);
+  };
+
+  const handleSoundChange = async (sound: NotificationSound) => {
+    await updateSound(sound);
   };
 
   const getNotificationIcon = (type: NotificationType) => {
@@ -132,6 +164,7 @@ export function NotificationDrawer({ className }: NotificationDrawerProps) {
               <TabsTrigger value="unread" disabled={unreadCount === 0}>
                 Unread {unreadCount > 0 && `(${unreadCount})`}
               </TabsTrigger>
+              <TabsTrigger value="settings">Settings</TabsTrigger>
             </TabsList>
           </div>
 
@@ -273,6 +306,132 @@ export function NotificationDrawer({ className }: NotificationDrawerProps) {
                         </motion.div>
                       ))}
                     </AnimatePresence>
+                  )}
+                </div>
+              </TabsContent>
+
+              <TabsContent value="settings" className="m-0 p-4">
+                <div className="space-y-6">
+                  <div>
+                    <div className="text-lg font-medium mb-2 w-full flex items-center justify-between">
+                      Notification Settings
+                      <div className="flex items-center  ml-5">
+                        {isSupported && <PushNotificationButton />}
+                      </div>
+                    </div>
+                    <p className="text-sm text-muted-foreground mb-4">
+                      Manage how you receive notifications
+                    </p>
+                  </div>
+
+                  {isSupported ? (
+                    <div className="space-y-6">
+                      <div className="flex items-center justify-between">
+                        <div className="space-y-0.5">
+                          <Label htmlFor="push-notifications">
+                            Push Notifications
+                          </Label>
+                          <p className="text-xs text-muted-foreground">
+                            Receive notifications even when you're not using the
+                            app
+                          </p>
+                        </div>
+                        <Switch
+                          id="push-notifications"
+                          checked={isEnabled}
+                          onCheckedChange={handleTogglePushSettings}
+                        />
+                      </div>
+
+                      {isEnabled && (
+                        <>
+                          <div className="rounded-md bg-muted p-4">
+                            <div className="flex items-start">
+                              <div className="mr-3 mt-0.5">
+                                <Bell className="h-5 w-5 text-muted-foreground" />
+                              </div>
+                              <div>
+                                <p className="text-sm font-medium">
+                                  {isSubscribed
+                                    ? "Push notifications are enabled"
+                                    : "Push notifications are not enabled for this device"}
+                                </p>
+                                <p className="text-xs text-muted-foreground mt-1">
+                                  {isSubscribed
+                                    ? "You will receive notifications on this device"
+                                    : "Click the bell icon in the top right to enable push notifications on this device"}
+                                </p>
+                              </div>
+                            </div>
+                          </div>
+
+                          <div className="space-y-3">
+                            <Label>Notification Sound</Label>
+                            <RadioGroup
+                              value={currentSound}
+                              onValueChange={(value) =>
+                                handleSoundChange(value as NotificationSound)
+                              }
+                              className="space-y-2"
+                            >
+                              {getAvailableSounds().map((sound) => (
+                                <div
+                                  key={sound.id}
+                                  className="flex items-center justify-between space-x-2"
+                                >
+                                  <div className="flex items-center space-x-2">
+                                    <RadioGroupItem
+                                      value={sound.id}
+                                      id={`sound-${sound.id}`}
+                                    />
+                                    <Label
+                                      htmlFor={`sound-${sound.id}`}
+                                      className="cursor-pointer"
+                                    >
+                                      {sound.name}
+                                    </Label>
+                                  </div>
+                                  {sound.id !== "none" && (
+                                    <Button
+                                      type="button"
+                                      variant="ghost"
+                                      size="icon"
+                                      className="h-8 w-8"
+                                      onClick={() =>
+                                        playTestSound(
+                                          sound.id as NotificationSound
+                                        )
+                                      }
+                                    >
+                                      <Volume2 className="h-4 w-4" />
+                                      <span className="sr-only">
+                                        Test sound
+                                      </span>
+                                    </Button>
+                                  )}
+                                </div>
+                              ))}
+                            </RadioGroup>
+                          </div>
+                        </>
+                      )}
+                    </div>
+                  ) : (
+                    <div className="rounded-md bg-muted p-4">
+                      <div className="flex items-start">
+                        <div className="mr-3 mt-0.5">
+                          <BellOff className="h-5 w-5 text-muted-foreground" />
+                        </div>
+                        <div>
+                          <p className="text-sm font-medium">
+                            Push notifications are not supported
+                          </p>
+                          <p className="text-xs text-muted-foreground mt-1">
+                            Your browser does not support push notifications
+                          </p>
+                        </div>
+                      </div>
+                    </div>
                   )}
                 </div>
               </TabsContent>

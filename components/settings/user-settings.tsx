@@ -295,7 +295,7 @@ export function UserSettings() {
   useEffect(() => {
     if (showTwoFactorSetup) {
       setTwoFactorQrCode(
-        "https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=otpauth://totp/CMIGLEscrow:user@example.com?secret=JBSWY3DPEHPK3PXP&issuer=VokunEscrow"
+        `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=otpauth://totp/CMIGLEscrow:${session?.user.email}?secret=JBSWY3DPEHPK3PXP&issuer=CMIGLEscrow`
       );
       setTwoFactorCode("JBSWY3DPEHPK3PXP");
     }

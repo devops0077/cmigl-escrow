@@ -112,6 +112,7 @@ export async function POST(
           balance: {
             increment: parsedSellerAmount,
           },
+
           transactions: {
             create: {
               amount: parsedSellerAmount,

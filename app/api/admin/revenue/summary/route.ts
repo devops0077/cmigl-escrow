@@ -41,7 +41,7 @@ export async function GET(request: NextRequest) {
         const endDate = new Date(year, month + 1, 0, 23, 59, 59, 999);
 
         // Get escrow fees for the month
-        const transactions = await prisma.revenue.findMany({
+        const escrowfees = await prisma.revenue.aggregate({
           where: {
             createdAt: {
               gte: startDate,
@@ -50,15 +50,12 @@ export async function GET(request: NextRequest) {
             status: "COLLECTED",
             type: "ESCROW_FEE",
           },
-          select: {
+          _sum: {
             amount: true,
           },
         });
 
-        const escrowFees = transactions.reduce(
-          (sum, transaction) => sum + transaction.amount,
-          0
-        );
+        const escrowFees = escrowfees._sum.amount || 0;
 
         // Get registration fees for the month
         const registrationFees = await prisma.registrationFee.aggregate({

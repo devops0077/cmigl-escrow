@@ -38,7 +38,7 @@ export async function GET(
       // Process based on payment type
       if (metadata?.type === "wallet_funding") {
         // Get the amount in Naira (convert from kobo)
-        const amountInNaira = verificationResult.data.amount / 100;
+        const amountInNaira = metadata.originalAmount / 100;
 
         // Ensure we have a valid user ID
         if (!session.user.id) {

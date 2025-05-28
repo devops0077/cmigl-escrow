@@ -581,6 +581,9 @@ export async function createTransaction({
       balance: {
         decrement: amount + escrowFee,
       },
+      escrowBalance: {
+        increment: amount,
+      },
       transactions: {
         create: {
           amount: -amount - escrowFee,
@@ -596,6 +599,17 @@ export async function createTransaction({
   const seller = await prisma.user.findUnique({
     where: { id: sellerId },
     select: { email: true, name: true, username: true },
+  });
+
+  const sellerWallet = await prisma.wallet.update({
+    where: {
+      userId: sellerId,
+    },
+    data: {
+      escrowBalance: {
+        increment: amount,
+      },
+    },
   });
 
   // Create notification for buyer

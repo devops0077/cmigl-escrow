@@ -106,6 +106,9 @@ export async function PATCH(
           balance: {
             increment: amountToSeller,
           },
+          escrowBalance: {
+            decrement: amountToSeller,
+          },
           transactions: {
             create: {
               amount: amountToSeller,
@@ -113,6 +116,17 @@ export async function PATCH(
               status: "COMPLETED",
               description: `Funds released for transaction ${transaction.id}`,
             },
+          },
+        },
+      });
+
+      await prisma.wallet.update({
+        where: {
+          userId: transaction.buyerId,
+        },
+        data: {
+          escrowBalance: {
+            decrement: amountToSeller,
           },
         },
       });
@@ -139,6 +153,9 @@ export async function PATCH(
           balance: {
             increment: amountToSeller,
           },
+          escrowBalance: {
+            decrement: amountToSeller,
+          },
           transactions: {
             create: {
               amount: amountToSeller,
@@ -146,6 +163,17 @@ export async function PATCH(
               status: "COMPLETED",
               description: `Funds released for transaction ${transaction.id}`,
             },
+          },
+        },
+      });
+
+      await prisma.wallet.update({
+        where: {
+          userId: transaction.buyerId,
+        },
+        data: {
+          escrowBalance: {
+            decrement: amountToSeller,
           },
         },
       });
@@ -169,6 +197,9 @@ export async function PATCH(
           balance: {
             increment: transaction.amount,
           },
+          escrowBalance: {
+            decrement: transaction.amount,
+          },
           transactions: {
             create: {
               amount: transaction.amount,
@@ -176,6 +207,17 @@ export async function PATCH(
               status: "COMPLETED",
               description: `Refund for failed transaction ${transaction.id}`,
             },
+          },
+        },
+      });
+
+      await prisma.wallet.update({
+        where: {
+          userId: transaction.sellerId,
+        },
+        data: {
+          escrowBalance: {
+            decrement: transaction.amount,
           },
         },
       });

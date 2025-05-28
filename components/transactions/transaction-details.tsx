@@ -379,7 +379,7 @@ export function TransactionDetails({ id }: { id: string }) {
                     {isUpdating ? "Updating..." : "Confirm Receipt"}
                   </Button>
                 )}
-                {canCompleteTransaction && (
+                {/* {canCompleteTransaction && (
                   <Button
                     className="w-full"
                     onClick={() => handleStatusUpdate("COMPLETED")}
@@ -389,7 +389,7 @@ export function TransactionDetails({ id }: { id: string }) {
                       ? "Updating..."
                       : "Release Funds to Seller (Admin Only)"}
                   </Button>
-                )}
+                )} */}
                 {canMarkAsFailed && (
                   <Button
                     variant="destructive"

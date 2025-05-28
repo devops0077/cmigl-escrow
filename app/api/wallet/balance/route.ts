@@ -17,36 +17,37 @@ export async function GET() {
       where: { userId },
       select: {
         balance: true,
+        escrowBalance: true,
       },
     });
 
     // Get total amount in escrow (transactions where user is buyer or seller and status is not completed)
-    const escrowTransactions = await prisma.transaction.findMany({
-      where: {
-        OR: [{ buyerId: userId }, { sellerId: userId }],
-        NOT: {
-          status: {
-            in: ["COMPLETED", "FAILED", "CANCELLED"],
-          },
-        },
-      },
-      select: {
-        amount: true,
-        buyerId: true,
-      },
-    });
+    // const escrowTransactions = await prisma.transaction.findMany({
+    //   where: {
+    //     OR: [{ buyerId: userId }, { sellerId: userId }],
+    //     NOT: {
+    //       status: {
+    //         in: ["COMPLETED", "FAILED", "CANCELLED"],
+    //       },
+    //     },
+    //   },
+    //   select: {
+    //     amount: true,
+    //     buyerId: true,
+    //   },
+    // });
 
     // Calculate escrow amount (only count transactions where user is buyer)
-    const escrowAmount = escrowTransactions.reduce((total, transaction) => {
-      if (transaction.buyerId === userId) {
-        return total + transaction.amount;
-      }
-      return total;
-    }, 0);
+    // const escrowAmount = escrowTransactions.reduce((total, transaction) => {
+    //   if (transaction.buyerId === userId) {
+    //     return total + transaction.amount;
+    //   }
+    //   return total;
+    // }, 0);
 
     return NextResponse.json({
       balance: wallet?.balance || 0,
-      escrowAmount,
+      escrowAmount: wallet?.escrowBalance || 0,
     });
   } catch (error) {
     console.error("Error fetching wallet balance:", error);

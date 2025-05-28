@@ -1,4 +1,5 @@
 import { AppError } from "./error-class";
+import { calculateTotalWithAllFees } from "./fee-calculator";
 import { PaymentStatus } from "./generated/prisma";
 import { logger } from "./logger";
 
@@ -7,6 +8,7 @@ export type PaystackTransactionInitializeParams = {
   amount: number; // amount in kobo (multiply by 100 for Naira)
   reference?: string;
   callback_url?: string;
+  includeFees?: boolean;
   metadata?: Record<string, any>;
   currency?: string;
   channels?: string[];
@@ -128,14 +130,37 @@ export class PaystackService {
   }
 
   /**
-   * Initialize a transaction
-   * @param params Transaction parameters
-   * @returns Promise with transaction initialization data
+   * Initialize a transaction with Paystack
+   *
+   * @param params - Transaction initialization parameters
+   * @param includeFees - Whether to include Paystack fees in the amount
+   * @returns The Paystack initialization response
    */
   async initializeTransaction(
     params: PaystackTransactionInitializeParams
   ): Promise<PaystackTransactionInitializeResponse> {
     try {
+      // If includeFees is true, calculate the amount with Paystack fees included
+      let amount = params.amount;
+
+      if (params.includeFees) {
+        const isInternational = params.currency !== "NGN";
+        const feeCalculation = calculateTotalWithAllFees(
+          amount,
+          isInternational
+        );
+        amount = feeCalculation.totalAmount;
+
+        // Add fee breakdown to metadata
+        if (!params.metadata) params.metadata = {};
+        params.metadata.feeBreakdown = {
+          baseAmount: feeCalculation.baseAmount,
+          escrowFee: feeCalculation.escrowFee,
+          paystackFee: feeCalculation.paystackFee,
+          totalAmount: feeCalculation.totalAmount,
+        };
+      }
+
       // Convert amount to kobo (smallest currency unit)
       const amountInKobo = Math.round(params.amount * 100);
 

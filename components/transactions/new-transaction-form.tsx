@@ -1,5 +1,7 @@
 "use client";
 
+import { Label } from "@/components/ui/label";
+
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -24,13 +26,6 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { UserSearch } from "@/components/transactions/user-search";
 import { createTransaction } from "@/lib/data-actions";
@@ -41,6 +36,8 @@ import { PaystackButton } from "@/components/payments/paystack-button";
 import { useSession } from "next-auth/react";
 import { _escrowConfig } from "@/config";
 import { formatCurrency, generateTransactionReference } from "@/lib/utils";
+import { Checkbox } from "@/components/ui/checkbox";
+import { calculateTotalWithAllFees } from "@/lib/fee-calculator";
 
 const formSchema = z.object({
   sellerId: z.string().min(1, {
@@ -60,6 +57,8 @@ export function NewTransactionForm() {
   const [isLoading, setIsLoading] = useState(false);
   const [calculatedFee, setCalculatedFee] = useState(0);
   const [paymentStep, setPaymentStep] = useState<"form" | "payment">("form");
+  const [includeFees, setIncludeFees] = useState(false);
+  const [feeBreakdown, setFeeBreakdown] = useState<any>(null);
   const [paymentData, setPaymentData] = useState<{
     reference: string;
     amount: number;
@@ -80,11 +79,22 @@ export function NewTransactionForm() {
   const amount = form.watch("amount");
   useEffect(() => {
     if (amount > 0) {
-      setCalculatedFee(amount * _escrowConfig.escrowFee);
+      // Calculate escrow fee
+      const escrowFee = amount * _escrowConfig.escrowFee;
+      setCalculatedFee(escrowFee);
+
+      // Calculate total with Paystack fees if needed
+      if (includeFees) {
+        const calculation = calculateTotalWithAllFees(amount, false);
+        setFeeBreakdown(calculation);
+      } else {
+        setFeeBreakdown(null);
+      }
     } else {
       setCalculatedFee(0);
+      setFeeBreakdown(null);
     }
-  }, [amount]);
+  }, [amount, includeFees]);
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
     setIsLoading(true);
@@ -117,13 +127,38 @@ export function NewTransactionForm() {
         // Generate reference
         const reference = generateTransactionReference();
 
+        // Calculate final amount including Paystack fees if needed
+        let finalAmount = totalAmount;
+        if (includeFees && feeBreakdown) {
+          finalAmount = feeBreakdown.totalAmount;
+        }
+
         setPaymentData({
           reference,
-          amount: Math.round(totalAmount * 100), // Convert to kobo
+          amount: Math.round(finalAmount * 100), // Convert to kobo
           email: session.user.email,
-          transactionData: values,
+          transactionData: {
+            ...values,
+            includeFees,
+            feeBreakdown,
+            escrowFee: calculatedFee,
+            totalBeforeFees: totalAmount,
+          },
         });
 
+        setIncludeFees(true);
+        if (paymentData) {
+          setPaymentData({
+            ...paymentData,
+            transactionData: {
+              ...paymentData.transactionData,
+              includeFees: true,
+              feeBreakdown,
+               escrowFee: calculatedFee,
+            totalBeforeFees: totalAmount,
+            },
+          });
+        }
         setPaymentStep("payment");
       }
     } catch (error) {
@@ -181,6 +216,7 @@ export function NewTransactionForm() {
 
   const handlePaymentClose = () => {
     setPaymentStep("form");
+    setIncludeFees(false);
     setPaymentData(null);
   };
 
@@ -237,47 +273,14 @@ export function NewTransactionForm() {
                           />
                         </FormControl>
                         <FormDescription>
-                          Enter the amount to be held in escrow. A 2.5% fee (
+                          Enter the amount to be held in escrow. A{" "}
+                          {_escrowConfig.escrowFee * 100}% fee (
                           {formatCurrency(calculatedFee)}) will be applied.
                         </FormDescription>
                         <FormMessage />
                       </FormItem>
                     )}
                   />
-                  {/* <FormField
-                    control={form.control}
-                    name="productCategory"
-                    render={({ field }) => (
-                      <FormItem className="w-full">
-                        <FormLabel>Product Category</FormLabel>
-                        <Select
-                          onValueChange={field.onChange}
-                          defaultValue={field.value}
-                        >
-                          <FormControl>
-                            <SelectTrigger className="w-full">
-                              <SelectValue placeholder="Select a category" />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent className="w-full">
-                            {productCategories.map((category) => (
-                              <SelectItem
-                                key={category.id}
-                                value={category.name}
-                              >
-                                {category.name}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                        <FormDescription>
-                          Select the category that best describes the product or
-                          service.
-                        </FormDescription>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  /> */}
                   <FormField
                     control={form.control}
                     name="productDetails"
@@ -299,6 +302,53 @@ export function NewTransactionForm() {
                       </FormItem>
                     )}
                   />
+
+                  {/* Paystack fee option */}
+                  <div className="flex items-center space-x-2">
+                    <Checkbox
+                      id="includeFees"
+                      checked={includeFees}
+                      onCheckedChange={(checked) =>
+                        setIncludeFees(checked as boolean)
+                      }
+                      hidden
+                    />
+                    <Label htmlFor="includeFees" hidden className="text-sm">
+                      Include Paystack transaction fees
+                    </Label>
+                  </div>
+
+                  {/* Fee breakdown */}
+                  {amount > 0 && (
+                    <div className="bg-muted p-3 rounded-md text-sm">
+                      <p className="font-medium mb-1">Fee Breakdown:</p>
+                      <p>Base Amount: {formatCurrency(amount)}</p>
+                      <p>
+                        Escrow Fee ({_escrowConfig.escrowFee * 100}%):{" "}
+                        {formatCurrency(calculatedFee)}
+                      </p>
+
+                      {includeFees && feeBreakdown && (
+                        <>
+                          <p>
+                            Paystack Fee:{" "}
+                            {formatCurrency(feeBreakdown.paystackFee)}
+                          </p>
+                          <p className="font-medium mt-1">
+                            Total: {formatCurrency(feeBreakdown.totalAmount)}
+                          </p>
+                        </>
+                      )}
+
+                      {!includeFees && (
+                        <p className="font-medium mt-1">
+                          Total:{" "}
+                          {formatCurrency(Number(amount) + calculatedFee)}
+                        </p>
+                      )}
+                    </div>
+                  )}
+
                   <Button type="submit" className="w-full" disabled={isLoading}>
                     {isLoading
                       ? "Creating transaction..."
@@ -321,9 +371,18 @@ export function NewTransactionForm() {
                       "₦0.00"}{" "}
                     + Fee:
                     {formatCurrency(
-                      paymentData?.transactionData.amount *
-                        _escrowConfig.escrowFee
+                      paymentData?.transactionData.escrowFee || 0
                     ) || "₦0.00"}
+                    {paymentData?.transactionData.includeFees && (
+                      <>
+                        {" "}
+                        + Paystack Fee:
+                        {formatCurrency(
+                          paymentData?.transactionData.feeBreakdown
+                            ?.paystackFee || 0
+                        ) || "₦0.00"}
+                      </>
+                    )}
                   </p>
                 </div>
                 <div className="flex justify-center">
@@ -394,7 +453,8 @@ export function NewTransactionForm() {
             </CardContent>
             <CardFooter>
               <p className="text-sm text-muted-foreground">
-                A flat 2.5% fee will be deducted from the transaction amount.
+                A flat {_escrowConfig.escrowFee * 100}% fee will be deducted
+                from the transaction amount.
               </p>
             </CardFooter>
           </Card>

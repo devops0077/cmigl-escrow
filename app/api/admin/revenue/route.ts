@@ -135,7 +135,7 @@ export async function GET(request: NextRequest) {
         transactionId: transaction.id,
         amount: transaction.amount,
         feeAmount: transaction.escrowFee,
-        status: transaction.status === "COMPLETED" ? "PAID" : "PENDING",
+        status: "PAID",
         createdAt: transaction.createdAt,
         buyerName:
           transaction.buyer.name ||

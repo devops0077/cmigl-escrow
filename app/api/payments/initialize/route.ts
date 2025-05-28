@@ -3,6 +3,7 @@ import { paystackService } from "@/lib/paystack-service";
 import { logger } from "@/lib/logger";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
+import { calculateTotalWithAllFees } from "@/lib/fee-calculator";
 
 export async function POST(req: NextRequest) {
   try {
@@ -14,7 +15,13 @@ export async function POST(req: NextRequest) {
 
     // Parse request body
     const body = await req.json();
-    const { amount, callbackUrl, metadata, currency = "NGN" } = body;
+    const {
+      amount,
+      callbackUrl,
+      metadata,
+      currency = "NGN",
+      includeFees = false,
+    } = body;
 
     if (!amount || amount <= 0) {
       return NextResponse.json({ error: "Invalid amount" }, { status: 400 });
@@ -32,6 +39,22 @@ export async function POST(req: NextRequest) {
     // Generate a unique reference
     const reference = `pay_${Date.now()}_${Math.floor(Math.random() * 1000000)}`;
 
+    // Calculate fees if needed
+    let finalAmount = amount;
+    let feeBreakdown = null;
+
+    if (includeFees) {
+      const isInternational = currency !== "NGN";
+      const calculation = calculateTotalWithAllFees(amount, isInternational);
+      finalAmount = calculation.totalAmount;
+      feeBreakdown = {
+        baseAmount: calculation.baseAmount,
+        escrowFee: calculation.escrowFee,
+        paystackFee: calculation.paystackFee,
+        totalAmount: calculation.totalAmount,
+      };
+    }
+
     // Create payment record in database
     const payment = await prisma.payment.create({
       data: {
@@ -40,7 +63,11 @@ export async function POST(req: NextRequest) {
         reference,
         status: "PENDING",
         paymentMethod: "CARD", // Default, will be updated after payment
-        metadata: metadata || {},
+        metadata: {
+          originalAmount: amount,
+          feeBreakdown,
+          ...(metadata || {}),
+        },
       },
     });
 
@@ -54,13 +81,19 @@ export async function POST(req: NextRequest) {
       metadata: {
         payment_id: payment.id,
         user_id: user.id,
+        feeBreakdown,
         ...metadata,
       },
       currency,
     });
 
-    logger.info("Payment initialized", { paymentId: payment.id, reference });
-
+    logger.info("Payment initialized", {
+      paymentId: payment.id,
+      reference,
+      amount: finalAmount,
+      includeFees,
+      feeBreakdown,
+    });
     return NextResponse.json({
       success: true,
       data: {

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
@@ -111,6 +111,8 @@ export function NewTransactionForm() {
     email: string;
     transactionData: any;
   } | null>(null);
+  const searchParams = useSearchParams();
+  const fromWalletFunding = searchParams.get("from") === "wallet-funding";
 
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
@@ -138,6 +140,31 @@ export function NewTransactionForm() {
       setFeeBreakdown(null);
     }
   }, [amount]);
+
+  useEffect(() => {
+    if (fromWalletFunding) {
+      try {
+        const savedData = localStorage.getItem("pendingTransaction");
+        if (savedData) {
+          const parsedData = JSON.parse(savedData);
+          form.setValue("sellerId", parsedData.sellerId);
+          form.setValue("amount", parsedData.amount);
+          form.setValue("productDetails", parsedData.productDetails);
+          setSelectedUser(parsedData.selectedUser);
+          setCurrentStep(4); // Go directly to review step
+
+          // Clear the saved data after restoring
+          localStorage.removeItem("pendingTransaction");
+
+          toast.info("Transaction details restored", {
+            description: "You can now complete your transaction.",
+          });
+        }
+      } catch (error) {
+        console.error("Error restoring transaction data:", error);
+      }
+    }
+  }, [fromWalletFunding, form]);
 
   const totalRequired = Number(amount) + calculatedFee;
   const hasInsufficientFunds = walletData && totalRequired > walletData.balance;
@@ -673,11 +700,24 @@ export function NewTransactionForm() {
         <InsufficientFundsModal
           isOpen={showInsufficientFunds}
           onClose={() => setShowInsufficientFunds(false)}
-          requiredAmount={totalRequired}
+          requiredAmount={Math.round(totalRequired)}
           currentBalance={walletData?.balance || 0}
-          onFundWallet={() =>
-            router.push(`/dashboard/wallet/?amount=${totalRequired}&modal=true`)
-          }
+          onFundWallet={(shortfall) => {
+            // Save current transaction data to localStorage
+            const transactionData = {
+              sellerId: form.getValues("sellerId"),
+              amount: form.getValues("amount"),
+              productDetails: form.getValues("productDetails"),
+              selectedUser: selectedUser,
+            };
+            localStorage.setItem(
+              "pendingTransaction",
+              JSON.stringify(transactionData)
+            );
+            router.push(
+              `/dashboard/wallet/?amount=${shortfall}&modal=true&returnUrl=/dashboard/transactions/new?from=wallet-funding`
+            );
+          }}
         />
       </div>
     </FadeIn>

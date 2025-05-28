@@ -24,7 +24,7 @@ import {
   calculateTotalWithAllFees,
   calculateAmountWithPaystackFee,
 } from "@/lib/fee-calculator";
-import { useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 
 interface FundWalletModalProps {
   onSuccess?: () => void;
@@ -41,6 +41,8 @@ export function FundWalletModal({ onSuccess, trigger }: FundWalletModalProps) {
   const searchParams = useSearchParams();
   const amountParam = searchParams.get("amount");
   const modalOpen = searchParams.get("modal");
+  const returnUrl = searchParams.get("returnUrl");
+  const router = useRouter();
 
   // Calculate total amount with fees when amount changes
   useEffect(() => {
@@ -72,8 +74,14 @@ export function FundWalletModal({ onSuccess, trigger }: FundWalletModalProps) {
     setIsOpen(false);
     if (onSuccess) onSuccess();
     toast.success("Wallet Funded", {
-      description: `Your wallet has been funded with ₦${amount.toFixed(2)}.`,
+      description: `Your wallet has been funded with ${formatCurrency(amount)}.`,
     });
+
+    if (returnUrl) {
+      setTimeout(() => {
+        router.push(returnUrl);
+      }, 1500); // Short delay to allow the toast to be seen
+    }
   };
 
   const handleError = (error: any) => {
@@ -145,7 +153,7 @@ export function FundWalletModal({ onSuccess, trigger }: FundWalletModalProps) {
           </Button>
           {includeFees && feeBreakdown && (
             <PaystackButton
-              amount={Number(totalAmount).toFixed(0)}
+              amount={Math.round(Number(totalAmount))}
               email={session?.user?.email || ""}
               metadata={{
                 type: "wallet_funding",

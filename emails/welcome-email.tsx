@@ -1,3 +1,4 @@
+import { _escrowConfig } from "@/config";
 import {
   Body,
   Button,
@@ -51,11 +52,11 @@ export default function WelcomeEmail({ name }: WelcomeEmailProps) {
           <Text style={footer}>
             &copy; {new Date().getFullYear()} CMIGL Escrow. All rights reserved.
             <br />
-            <Link href="https://vokunescrow.com/terms" style={link}>
+            <Link href={`${_escrowConfig.publicUrl}/terms`} style={link}>
               Terms of Service
             </Link>{" "}
             •{" "}
-            <Link href="https://vokunescrow.com/privacy" style={link}>
+            <Link href={`${_escrowConfig.publicUrl}/privacy`} style={link}>
               Privacy Policy
             </Link>
           </Text>

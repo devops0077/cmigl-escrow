@@ -14,6 +14,7 @@ import { authHelpers } from "./auth-helpers";
 import { headers } from "next/headers";
 import { SecurityService } from "./security-service";
 import { createNotificationWithPush } from "./api-utils";
+import { PrismaClientValidationError } from "./generated/prisma/runtime/library";
 
 /**
  * Update notification settings
@@ -538,153 +539,161 @@ export async function createTransaction({
   amount: number;
   productDetails: string;
 }) {
-  const session = await auth();
+  try {
+    const session = await auth();
 
-  if (!session?.user?.email) {
-    throw new Error("Unauthorized");
-  }
+    if (!session?.user?.email) {
+      throw new Error("Unauthorized");
+    }
 
-  const buyer = await prisma.user.findUnique({
-    where: { email: session.user.email },
-    include: {
-      wallet: true,
-    },
-  });
-
-  if (!buyer) {
-    throw new Error("User not found");
-  }
-
-  // Check if buyer has enough balance
-  if (!buyer.wallet || buyer.wallet.balance < amount) {
-    throw new Error("Insufficient funds");
-  }
-
-  const escrowFee = amount * _escrowConfig.escrowFee;
-
-  // Create transaction
-  const transaction = await prisma.transaction.create({
-    data: {
-      buyerId: buyer.id,
-      sellerId,
-      amount,
-      escrowFee,
-      productDetails,
-      status: "PENDING",
-    },
-  });
-
-  // Deduct amount from buyer's wallet
-  await prisma.wallet.update({
-    where: { userId: buyer.id },
-    data: {
-      balance: {
-        decrement: amount + escrowFee,
+    const buyer = await prisma.user.findUnique({
+      where: { email: session.user.email },
+      include: {
+        wallet: true,
       },
-      escrowBalance: {
-        increment: amount,
+    });
+
+    if (!buyer) {
+      throw new Error("User not found");
+    }
+
+    // Check if buyer has enough balance
+    if (!buyer.wallet || buyer.wallet.balance < amount) {
+      throw new Error("Insufficient funds");
+    }
+
+    const escrowFee = amount * _escrowConfig.escrowFee;
+
+    // Create transaction
+    const transaction = await prisma.transaction.create({
+      data: {
+        buyerId: buyer.id,
+        sellerId,
+        amount,
+        escrowFee,
+        productDetails,
+        status: "PENDING",
       },
-      transactions: {
-        create: {
-          amount: -amount - escrowFee,
-          type: "ESCROW_PAYMENT",
-          status: "COMPLETED",
-          description: `Escrow payment for transaction ${transaction.id}`,
+    });
+
+    // Deduct amount from buyer's wallet
+    await prisma.wallet.update({
+      where: { userId: buyer.id },
+      data: {
+        balance: {
+          decrement: amount + escrowFee,
+        },
+        escrowBalance: {
+          increment: amount,
+        },
+        transactions: {
+          create: {
+            amount: -amount - escrowFee,
+            type: "ESCROW_PAYMENT",
+            status: "COMPLETED",
+            description: `Escrow payment for transaction ${transaction.id}`,
+          },
         },
       },
-    },
-  });
+    });
 
-  // Get seller details for notification
-  const seller = await prisma.user.findUnique({
-    where: { id: sellerId },
-    select: { email: true, name: true, username: true },
-  });
+    // Get seller details for notification
+    const seller = await prisma.user.findUnique({
+      where: { id: sellerId },
+      select: { email: true, name: true, username: true },
+    });
 
-  const sellerWallet = await prisma.wallet.update({
-    where: {
-      userId: sellerId,
-    },
-    data: {
-      escrowBalance: {
-        increment: amount,
+    const sellerWallet = await prisma.wallet.update({
+      where: {
+        userId: sellerId,
       },
-    },
-  });
+      data: {
+        escrowBalance: {
+          increment: amount,
+        },
+      },
+    });
 
-  // Create notification for buyer
-  await createNotificationWithPush({
-    userId: buyer.id,
-    type: "TRANSACTION_CREATED",
-    title: "Transaction Created",
-    message: `You have created a new transaction for ${formatCurrency(amount)} with a fee of ${formatCurrency(escrowFee)}`,
-    data: { transactionId: transaction.id },
-    url:
-      process.env.NEXT_PUBLIC_APP_URL +
-      `/dashboard/transactions/${transaction.id}`,
-  });
+    // Create notification for buyer
+    await createNotificationWithPush({
+      userId: buyer.id,
+      type: "TRANSACTION_CREATED",
+      title: "Transaction Created",
+      message: `You have created a new transaction for ${formatCurrency(amount)} with a fee of ${formatCurrency(escrowFee)}`,
+      data: { transactionId: transaction.id },
+      url:
+        process.env.NEXT_PUBLIC_APP_URL +
+        `/dashboard/transactions/${transaction.id}`,
+    });
 
-  // Create notification for seller
-  await createNotificationWithPush({
-    userId: sellerId,
-    type: "TRANSACTION_CREATED",
-    title: "New Transaction",
-    message: `${buyer.name || buyer.username} has created a new transaction with you for ${formatCurrency(amount)}`,
-    data: { transactionId: transaction.id },
-    url:
-      process.env.NEXT_PUBLIC_APP_URL +
-      `/dashboard/transactions/${transaction.id}`,
-  });
+    // Create notification for seller
+    await createNotificationWithPush({
+      userId: sellerId,
+      type: "TRANSACTION_CREATED",
+      title: "New Transaction",
+      message: `${buyer.name || buyer.username} has created a new transaction with you for ${formatCurrency(amount)}`,
+      data: { transactionId: transaction.id },
+      url:
+        process.env.NEXT_PUBLIC_APP_URL +
+        `/dashboard/transactions/${transaction.id}`,
+    });
 
-  // Send email notifications
-  try {
-    // Email to buyer
-    await emailService.sendTransactionNotificationEmail(
-      buyer.email!,
-      transaction.id,
-      "created",
-      {
-        amount: formatCurrency(amount),
-        fee: formatCurrency(escrowFee),
-        productDetails,
-      }
-    );
-
-    // Email to seller
-    if (seller?.email) {
+    // Send email notifications
+    try {
+      // Email to buyer
       await emailService.sendTransactionNotificationEmail(
-        seller.email,
+        buyer.email!,
         transaction.id,
         "created",
         {
           amount: formatCurrency(amount),
           fee: formatCurrency(escrowFee),
           productDetails,
-          buyerName: buyer.name || buyer.username,
         }
       );
+
+      // Email to seller
+      if (seller?.email) {
+        await emailService.sendTransactionNotificationEmail(
+          seller.email,
+          transaction.id,
+          "created",
+          {
+            amount: formatCurrency(amount),
+            fee: formatCurrency(escrowFee),
+            productDetails,
+            buyerName: buyer.name || buyer.username,
+          }
+        );
+      }
+    } catch (error) {
+      console.error("Failed to send transaction emails:", error);
+      // Continue even if emails fail
     }
-  } catch (error) {
-    console.error("Failed to send transaction emails:", error);
-    // Continue even if emails fail
+
+    // Immediately add fee to revenue - fee becomes non-refundable (new functionality)
+    await prisma.revenue.create({
+      data: {
+        transactionId: transaction.id,
+        amount: escrowFee,
+        type: "ESCROW_FEE",
+        status: "COLLECTED",
+        description: `Escrow fee for transaction ${transaction.id}`,
+      },
+    });
+
+    revalidatePath("/dashboard");
+    revalidatePath("/transactions");
+    revalidatePath("/wallet");
+
+    return transaction;
+  } catch (error: any) {
+    if (error instanceof PrismaClientValidationError) {
+      throw new Error("Database validation failed");
+    } else {
+      throw error;
+    }
   }
-
-  // Immediately add fee to revenue - fee becomes non-refundable (new functionality)
-  await prisma.revenue.create({
-    data: {
-      transactionId: transaction.id,
-      amount: escrowFee,
-      type: "ESCROW_FEE",
-      status: "COLLECTED",
-      description: `Escrow fee for transaction ${transaction.id}`,
-    },
-  });
-
-  revalidatePath("/dashboard");
-  revalidatePath("/transactions");
-  revalidatePath("/wallet");
-
-  return transaction;
 }
 
 export async function updateTransactionStatus({

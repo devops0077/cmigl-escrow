@@ -1,7 +1,5 @@
 "use client";
 
-import { Label } from "@/components/ui/label";
-
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -12,7 +10,6 @@ import {
   Card,
   CardContent,
   CardDescription,
-  CardFooter,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
@@ -36,8 +33,25 @@ import { PaystackButton } from "@/components/payments/paystack-button";
 import { useSession } from "next-auth/react";
 import { _escrowConfig } from "@/config";
 import { formatCurrency, generateTransactionReference } from "@/lib/utils";
-import { Checkbox } from "@/components/ui/checkbox";
 import { calculateTotalWithAllFees } from "@/lib/fee-calculator";
+import { useWalletBalance } from "@/hooks/use-wallet-balance";
+import { InsufficientFundsModal } from "@/components/transactions/insufficient-funds-modal";
+import { Progress } from "@/components/ui/progress";
+import { Badge } from "@/components/ui/badge";
+import { Separator } from "@/components/ui/separator";
+import {
+  CheckCircle,
+  CreditCard,
+  DollarSign,
+  FileText,
+  Shield,
+  User,
+  AlertCircle,
+  ArrowRight,
+  ArrowLeft,
+  CreditCardIcon,
+} from "lucide-react";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 const formSchema = z.object({
   sellerId: z.string().min(1, {
@@ -51,14 +65,46 @@ const formSchema = z.object({
   }),
 });
 
+type FormData = z.infer<typeof formSchema>;
+
+const steps = [
+  {
+    id: 1,
+    title: "Select Seller",
+    description: "Choose who you're transacting with",
+    icon: User,
+  },
+  {
+    id: 2,
+    title: "Transaction Details",
+    description: "Set amount and describe the transaction",
+    icon: CreditCardIcon,
+  },
+  {
+    id: 3,
+    title: "Product Information",
+    description: "Provide details about what you're purchasing",
+    icon: FileText,
+  },
+  {
+    id: 4,
+    title: "Review & Confirm",
+    description: "Review all details before creating",
+    icon: CheckCircle,
+  },
+];
+
 export function NewTransactionForm() {
   const router = useRouter();
   const { data: session } = useSession();
+  const { data: walletData, isLoading: walletLoading } = useWalletBalance();
+
+  const [currentStep, setCurrentStep] = useState(1);
   const [isLoading, setIsLoading] = useState(false);
   const [calculatedFee, setCalculatedFee] = useState(0);
-  const [paymentStep, setPaymentStep] = useState<"form" | "payment">("form");
-  const [includeFees, setIncludeFees] = useState(false);
   const [feeBreakdown, setFeeBreakdown] = useState<any>(null);
+  const [showInsufficientFunds, setShowInsufficientFunds] = useState(false);
+  const [selectedUser, setSelectedUser] = useState<any>(null);
   const [paymentData, setPaymentData] = useState<{
     reference: string;
     amount: number;
@@ -66,7 +112,7 @@ export function NewTransactionForm() {
     transactionData: any;
   } | null>(null);
 
-  const form = useForm<z.infer<typeof formSchema>>({
+  const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       sellerId: "",
@@ -75,42 +121,77 @@ export function NewTransactionForm() {
     },
   });
 
-  // Calculate fee whenever amount changes
   const amount = form.watch("amount");
+  const sellerId = form.watch("sellerId");
+  const productDetails = form.watch("productDetails");
+
+  // Calculate fees when amount changes
   useEffect(() => {
     if (amount > 0) {
-      // Calculate escrow fee
       const escrowFee = amount * _escrowConfig.escrowFee;
       setCalculatedFee(escrowFee);
 
-      // Calculate total with Paystack fees if needed
-      if (includeFees) {
-        const calculation = calculateTotalWithAllFees(amount, false);
-        setFeeBreakdown(calculation);
-      } else {
-        setFeeBreakdown(null);
-      }
+      const calculation = calculateTotalWithAllFees(amount, false);
+      setFeeBreakdown(calculation);
     } else {
       setCalculatedFee(0);
       setFeeBreakdown(null);
     }
-  }, [amount, includeFees]);
+  }, [amount]);
 
-  async function onSubmit(values: z.infer<typeof formSchema>) {
+  const totalRequired = Number(amount) + calculatedFee;
+  const hasInsufficientFunds = walletData && totalRequired > walletData.balance;
+
+  const handleNext = () => {
+    if (currentStep < steps.length) {
+      // Validate current step
+      if (currentStep === 1 && !sellerId) {
+        form.setError("sellerId", { message: "Please select a seller" });
+        return;
+      }
+      if (currentStep === 2 && (!amount || amount <= 0)) {
+        form.setError("amount", { message: "Please enter a valid amount" });
+        return;
+      }
+      if (
+        currentStep === 3 &&
+        (!productDetails || productDetails.length < 10)
+      ) {
+        form.setError("productDetails", {
+          message: "Please provide more details",
+        });
+        return;
+      }
+
+      setCurrentStep(currentStep + 1);
+    }
+  };
+
+  const handlePrevious = () => {
+    if (currentStep > 1) {
+      setCurrentStep(currentStep - 1);
+    }
+  };
+
+  const checkBalanceAndProceed = () => {
+    if (hasInsufficientFunds) {
+      setShowInsufficientFunds(true);
+      return;
+    }
+    handleSubmit();
+  };
+
+  const handleSubmit = async () => {
     setIsLoading(true);
     try {
-      // Check if user has sufficient wallet balance
-      const walletResponse = await fetch("/api/wallet/balance");
-      const walletData = await walletResponse.json();
+      const values = form.getValues();
 
-      const totalAmount = values.amount + calculatedFee;
-
-      if (walletData.balance >= totalAmount) {
+      if (walletData && totalRequired <= walletData.balance) {
         // User has sufficient balance, create transaction directly
         const transaction = await createTransaction({
           sellerId: values.sellerId,
-          amount: values.amount,
-          productDetails: values.productDetails,
+          amount: Number(values.amount),
+          productDetails: values.productDetails.trim(),
         });
 
         toast.success("Transaction created", {
@@ -119,19 +200,15 @@ export function NewTransactionForm() {
 
         router.push(`/dashboard/transactions/${transaction.id}`);
       } else {
-        // User needs to pay, initialize Paystack payment
+        // User needs to pay via Paystack
         if (!session?.user?.email) {
           throw new Error("User email not available");
         }
 
-        // Generate reference
         const reference = generateTransactionReference();
-
-        // Calculate final amount including Paystack fees if needed
-        let finalAmount = totalAmount;
-        if (includeFees && feeBreakdown) {
-          finalAmount = feeBreakdown.totalAmount;
-        }
+        const finalAmount = feeBreakdown
+          ? feeBreakdown.totalAmount
+          : totalRequired;
 
         setPaymentData({
           reference,
@@ -139,47 +216,29 @@ export function NewTransactionForm() {
           email: session.user.email,
           transactionData: {
             ...values,
-            includeFees,
             feeBreakdown,
             escrowFee: calculatedFee,
-            totalBeforeFees: totalAmount,
+            totalBeforeFees: totalRequired,
           },
         });
-
-        setIncludeFees(true);
-        if (paymentData) {
-          setPaymentData({
-            ...paymentData,
-            transactionData: {
-              ...paymentData.transactionData,
-              includeFees: true,
-              feeBreakdown,
-               escrowFee: calculatedFee,
-            totalBeforeFees: totalAmount,
-            },
-          });
-        }
-        setPaymentStep("payment");
       }
     } catch (error) {
       console.error("Transaction creation error:", error);
+
       toast.error("Transaction failed", {
         description:
-          error instanceof Error
-            ? error.message
-            : "There was a problem creating your transaction. Please try again.",
+          error instanceof Error ? error.message : "Please try again.",
       });
     } finally {
       setIsLoading(false);
     }
-  }
+  };
 
   const handlePaymentSuccess = async (reference: string) => {
     if (!paymentData?.transactionData) return;
 
     setIsLoading(true);
     try {
-      // Verify the payment
       const verificationResponse = await fetch(
         `/api/payments/verify/${reference}`
       );
@@ -189,7 +248,6 @@ export function NewTransactionForm() {
         throw new Error("Payment verification failed");
       }
 
-      // Create the transaction
       const transaction = await createTransaction({
         sellerId: paymentData.transactionData.sellerId,
         amount: paymentData.transactionData.amount,
@@ -205,260 +263,422 @@ export function NewTransactionForm() {
       console.error("Transaction creation error after payment:", error);
       toast.error("Transaction failed", {
         description:
-          error instanceof Error
-            ? error.message
-            : "There was a problem creating your transaction. Please try again.",
+          error instanceof Error ? error.message : "Please try again.",
       });
     } finally {
       setIsLoading(false);
     }
   };
 
-  const handlePaymentClose = () => {
-    setPaymentStep("form");
-    setIncludeFees(false);
-    setPaymentData(null);
-  };
+  if (paymentData) {
+    return (
+      <FadeIn>
+        <PaystackScript />
+        <Card className="max-w-md mx-auto">
+          <CardHeader className="text-center">
+            <CreditCard className="h-12 w-12 mx-auto text-primary mb-2" />
+            <CardTitle>Complete Payment</CardTitle>
+            <CardDescription>
+              Total Amount: {formatCurrency(paymentData.amount / 100)}
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="text-center">
+              <PaystackButton
+                amount={paymentData.amount / 100}
+                email={paymentData.email}
+                metadata={{
+                  type: "transaction",
+                  values: paymentData.transactionData,
+                  ref: paymentData.reference,
+                }}
+                reference={paymentData.reference}
+                onSuccess={handlePaymentSuccess}
+                onClose={() => setPaymentData(null)}
+              />
+            </div>
+            <Button
+              variant="outline"
+              className="w-full"
+              onClick={() => setPaymentData(null)}
+            >
+              Cancel Payment
+            </Button>
+          </CardContent>
+        </Card>
+      </FadeIn>
+    );
+  }
 
   return (
     <FadeIn>
-      <PaystackScript />
-      <div className="grid w-full gap-4 md:grid-cols-2 lg:grid-cols-3">
-        <Card className="col-span-2">
-          <CardHeader>
-            <CardTitle>Transaction Details</CardTitle>
-            <CardDescription>
-              Enter the details of your transaction to create an escrow.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            {paymentStep === "form" ? (
-              <Form {...form}>
-                <form
-                  onSubmit={form.handleSubmit(onSubmit)}
-                  className="space-y-6"
-                >
-                  <FormField
-                    control={form.control}
-                    name="sellerId"
-                    render={({ field }) => (
-                      <FormItem className="flex flex-col w-full">
-                        <FormLabel>Seller</FormLabel>
-                        <UserSearch
-                          onSelect={(user) => {
-                            field.onChange(!user ? "" : user.id);
-                          }}
-                          selectedUser={field.value}
-                        />
-                        <FormDescription>
-                          Search for a seller by email or username.
-                        </FormDescription>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name="amount"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Amount (₦)</FormLabel>
-                        <FormControl>
-                          <Input
-                            type="number"
-                            min="0"
-                            step="0.01"
-                            placeholder="0.00"
-                            {...field}
-                          />
-                        </FormControl>
-                        <FormDescription>
-                          Enter the amount to be held in escrow. A{" "}
-                          {_escrowConfig.escrowFee * 100}% fee (
-                          {formatCurrency(calculatedFee)}) will be applied.
-                        </FormDescription>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name="productDetails"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Product Details</FormLabel>
-                        <FormControl>
-                          <Textarea
-                            placeholder="Describe the product or service you're purchasing..."
-                            className="min-h-[100px]"
-                            {...field}
-                          />
-                        </FormControl>
-                        <FormDescription>
-                          Provide details about what you're purchasing for
-                          reference.
-                        </FormDescription>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  {/* Paystack fee option */}
-                  <div className="flex items-center space-x-2">
-                    <Checkbox
-                      id="includeFees"
-                      checked={includeFees}
-                      onCheckedChange={(checked) =>
-                        setIncludeFees(checked as boolean)
-                      }
-                      hidden
-                    />
-                    <Label htmlFor="includeFees" hidden className="text-sm">
-                      Include Paystack transaction fees
-                    </Label>
-                  </div>
-
-                  {/* Fee breakdown */}
-                  {amount > 0 && (
-                    <div className="bg-muted p-3 rounded-md text-sm">
-                      <p className="font-medium mb-1">Fee Breakdown:</p>
-                      <p>Base Amount: {formatCurrency(amount)}</p>
-                      <p>
-                        Escrow Fee ({_escrowConfig.escrowFee * 100}%):{" "}
-                        {formatCurrency(calculatedFee)}
-                      </p>
-
-                      {includeFees && feeBreakdown && (
-                        <>
-                          <p>
-                            Paystack Fee:{" "}
-                            {formatCurrency(feeBreakdown.paystackFee)}
-                          </p>
-                          <p className="font-medium mt-1">
-                            Total: {formatCurrency(feeBreakdown.totalAmount)}
-                          </p>
-                        </>
-                      )}
-
-                      {!includeFees && (
-                        <p className="font-medium mt-1">
-                          Total:{" "}
-                          {formatCurrency(Number(amount) + calculatedFee)}
-                        </p>
-                      )}
-                    </div>
-                  )}
-
-                  <Button type="submit" className="w-full" disabled={isLoading}>
-                    {isLoading
-                      ? "Creating transaction..."
-                      : "Create Transaction"}
-                  </Button>
-                </form>
-              </Form>
-            ) : (
-              <div className="space-y-6">
-                <div className="text-center py-4">
-                  <p className="text-lg font-medium">
-                    Total Amount:
-                    {paymentData
-                      ? formatCurrency(paymentData.amount / 100)
-                      : "₦0.00"}
-                  </p>
-                  <p className="text-sm text-muted-foreground">
-                    Transaction Amount:
-                    {formatCurrency(paymentData?.transactionData.amount) ||
-                      "₦0.00"}{" "}
-                    + Fee:
-                    {formatCurrency(
-                      paymentData?.transactionData.escrowFee || 0
-                    ) || "₦0.00"}
-                    {paymentData?.transactionData.includeFees && (
-                      <>
-                        {" "}
-                        + Paystack Fee:
-                        {formatCurrency(
-                          paymentData?.transactionData.feeBreakdown
-                            ?.paystackFee || 0
-                        ) || "₦0.00"}
-                      </>
-                    )}
-                  </p>
-                </div>
-                <div className="flex justify-center">
-                  {paymentData && (
-                    <PaystackButton
-                      amount={paymentData.amount / 100}
-                      email={paymentData.email}
-                      metadata={{
-                        type: "transaction",
-                        values: paymentData.transactionData,
-                        ref: paymentData.reference,
-                      }}
-                      reference={paymentData.reference}
-                      onSuccess={handlePaymentSuccess}
-                      onClose={handlePaymentClose}
-                    />
-                  )}
-                </div>
-                <div className="flex justify-center mt-4">
-                  <Button variant="outline" onClick={handlePaymentClose}>
-                    Cancel Payment
-                  </Button>
-                </div>
+      <div className="max-w-2xl mx-auto space-y-6">
+        {/* Progress Indicator */}
+        <Card>
+          <CardContent className="pt-6">
+            <div className="space-y-4">
+              <div className="flex justify-between text-sm">
+                <span>
+                  Step {currentStep} of {steps.length}
+                </span>
+                <span>
+                  {Math.round((currentStep / steps.length) * 100)}% Complete
+                </span>
               </div>
-            )}
+              <Progress
+                value={(currentStep / steps.length) * 100}
+                className="h-2"
+              />
+
+              <div className="flex justify-between">
+                {steps.map((step) => {
+                  const Icon = step.icon;
+                  const isActive = step.id === currentStep;
+                  const isCompleted = step.id < currentStep;
+
+                  return (
+                    <div
+                      key={step.id}
+                      className="flex flex-col items-center space-y-1"
+                    >
+                      <div
+                        className={`
+                        w-8 h-8 rounded-full flex items-center justify-center text-xs
+                        ${
+                          isActive
+                            ? "bg-primary text-primary-foreground"
+                            : isCompleted
+                              ? "bg-green-500 text-white"
+                              : "bg-muted text-muted-foreground"
+                        }
+                      `}
+                      >
+                        <Icon className="h-4 w-4" />
+                      </div>
+                      <span
+                        className={`text-xs text-center max-w-16 ${
+                          isActive
+                            ? "text-primary font-medium"
+                            : "text-muted-foreground"
+                        }`}
+                      >
+                        {step.title}
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
           </CardContent>
         </Card>
-        <div className="col-span-2 lg:col-span-1">
-          <Card>
-            <CardHeader>
-              <CardTitle>How It Works</CardTitle>
-              <CardDescription>
-                The escrow process protects both buyers and sellers.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="space-y-2">
-                <h3 className="font-medium">1. Create Transaction</h3>
-                <p className="text-sm text-muted-foreground">
-                  Fill out this form to create a new escrow transaction.
-                </p>
-              </div>
-              <div className="space-y-2">
-                <h3 className="font-medium">2. Funds Held in Escrow</h3>
-                <p className="text-sm text-muted-foreground">
-                  The amount will be deducted from your wallet and held in
-                  escrow.
-                </p>
-              </div>
-              <div className="space-y-2">
-                <h3 className="font-medium">3. Seller Ships Product</h3>
-                <p className="text-sm text-muted-foreground">
-                  The seller will be notified and can ship the product to you.
-                </p>
-              </div>
-              <div className="space-y-2">
-                <h3 className="font-medium">4. Confirm Receipt</h3>
-                <p className="text-sm text-muted-foreground">
-                  Once you receive the product, confirm receipt in the system.
-                </p>
-              </div>
-              <div className="space-y-2">
-                <h3 className="font-medium">5. Funds Released</h3>
-                <p className="text-sm text-muted-foreground">
-                  After admin approval, funds are released to the seller.
-                </p>
-              </div>
-            </CardContent>
-            <CardFooter>
-              <p className="text-sm text-muted-foreground">
-                A flat {_escrowConfig.escrowFee * 100}% fee will be deducted
-                from the transaction amount.
-              </p>
-            </CardFooter>
-          </Card>
+
+        {/* Main Form */}
+        <Card>
+          <CardContent className="pt-6">
+            <Form {...form}>
+              <form className="space-y-6">
+                {/* Step 1: Select Seller */}
+                {currentStep === 1 && (
+                  <div className="space-y-6">
+                    <div className="text-center space-y-2">
+                      <User className="h-12 w-12 mx-auto text-primary" />
+                      <h3 className="text-lg font-semibold">Select Seller</h3>
+                      <p className="text-muted-foreground">
+                        Choose the person you want to create an escrow
+                        transaction with
+                      </p>
+                    </div>
+                    <FormField
+                      control={form.control}
+                      name="sellerId"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Search for Seller</FormLabel>
+                          <UserSearch
+                            onSelect={(user) => {
+                              field.onChange(user ? user.id : null);
+                              setSelectedUser(user ?? null);
+                            }}
+                            selectedUser={field.value ?? null}
+                          />
+                          <FormDescription>
+                            Search by email or username to find the seller
+                          </FormDescription>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+                )}
+
+                {/* Step 2: Transaction Details */}
+                {currentStep === 2 && (
+                  <div className="space-y-6">
+                    <div className="text-center space-y-2">
+                      <DollarSign className="h-12 w-12 mx-auto text-primary" />
+                      <h3 className="text-lg font-semibold">
+                        Transaction Amount
+                      </h3>
+                      <p className="text-muted-foreground">
+                        Enter the amount to be held in escrow
+                      </p>
+                    </div>
+
+                    <FormField
+                      control={form.control}
+                      name="amount"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Amount (₦)</FormLabel>
+                          <FormControl>
+                            <div className="relative">
+                              <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground">
+                                ₦
+                              </span>
+                              <Input
+                                type="number"
+                                min="100"
+                                step="100"
+                                placeholder="0.00"
+                                className="pl-8 text-lg"
+                                {...field}
+                              />
+                            </div>
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    {/* Balance Check Alert */}
+                    {!walletLoading && walletData && (
+                      <Alert
+                        className={
+                          hasInsufficientFunds
+                            ? "border-destructive"
+                            : "border-green-500"
+                        }
+                      >
+                        <AlertCircle
+                          className={`h-4 w-4 ${hasInsufficientFunds ? "text-destructive" : "text-green-500"}`}
+                        />
+                        <AlertDescription>
+                          <div className="flex justify-between items-center">
+                            <span>
+                              Wallet Balance:{" "}
+                              <strong>
+                                {formatCurrency(walletData.balance)}
+                              </strong>
+                            </span>
+                            {hasInsufficientFunds && (
+                              <Badge variant="destructive" className="ml-2">
+                                Insufficient Funds
+                              </Badge>
+                            )}
+                          </div>
+                        </AlertDescription>
+                      </Alert>
+                    )}
+
+                    {/* Fee Breakdown */}
+                    {amount > 0 && (
+                      <Card className="bg-muted/50">
+                        <CardHeader className="pb-3">
+                          <CardTitle className="text-sm flex items-center gap-2">
+                            <Shield className="h-4 w-4" />
+                            Fee Breakdown
+                          </CardTitle>
+                        </CardHeader>
+                        <CardContent className="space-y-2">
+                          <div className="flex justify-between text-sm">
+                            <span>Transaction Amount:</span>
+                            <span>{formatCurrency(amount)}</span>
+                          </div>
+                          <div className="flex justify-between text-sm">
+                            <span>
+                              Escrow Fee ({_escrowConfig.escrowFee * 100}%):
+                            </span>
+                            <span>{formatCurrency(calculatedFee)}</span>
+                          </div>
+                          <Separator />
+                          <div className="flex justify-between font-medium">
+                            <span>Total Required:</span>
+                            <span>{formatCurrency(totalRequired)}</span>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    )}
+                  </div>
+                )}
+
+                {/* Step 3: Product Information */}
+                {currentStep === 3 && (
+                  <div className="space-y-6">
+                    <div className="text-center space-y-2">
+                      <FileText className="h-12 w-12 mx-auto text-primary" />
+                      <h3 className="text-lg font-semibold">Product Details</h3>
+                      <p className="text-muted-foreground">
+                        Describe what you're purchasing for reference
+                      </p>
+                    </div>
+
+                    <FormField
+                      control={form.control}
+                      name="productDetails"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Product/Service Description</FormLabel>
+                          <FormControl>
+                            <Textarea
+                              placeholder="Describe the product or service you're purchasing..."
+                              className="min-h-[120px] resize-none"
+                              {...field}
+                            />
+                          </FormControl>
+                          <FormDescription>
+                            Minimum 10 characters. Be specific to avoid
+                            disputes.
+                          </FormDescription>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+                )}
+
+                {/* Step 4: Review & Confirm */}
+                {currentStep === 4 && (
+                  <div className="space-y-6">
+                    <div className="text-center space-y-2">
+                      <CheckCircle className="h-12 w-12 mx-auto text-primary" />
+                      <h3 className="text-lg font-semibold">
+                        Review Transaction
+                      </h3>
+                      <p className="text-muted-foreground">
+                        Please review all details before creating the
+                        transaction
+                      </p>
+                    </div>
+
+                    <Card>
+                      <CardHeader>
+                        <CardTitle className="text-base">
+                          Transaction Summary
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent className="space-y-4">
+                        <div className="grid grid-cols-2 gap-4 text-sm">
+                          <div>
+                            <span className="text-muted-foreground">
+                              Seller:
+                            </span>
+                            <p className="font-medium">
+                              {selectedUser?.name ||
+                                selectedUser?.email ||
+                                "Selected"}
+                            </p>
+                          </div>
+                          <div>
+                            <span className="text-muted-foreground">
+                              Amount:
+                            </span>
+                            <p className="font-medium">
+                              {formatCurrency(amount)}
+                            </p>
+                          </div>
+                        </div>
+
+                        <Separator />
+
+                        <div>
+                          <span className="text-muted-foreground text-sm">
+                            Product Details:
+                          </span>
+                          <p className="text-sm mt-1 p-2 bg-muted rounded">
+                            {productDetails}
+                          </p>
+                        </div>
+
+                        <Separator />
+
+                        <div className="space-y-2">
+                          <div className="flex justify-between text-sm">
+                            <span>Transaction Amount:</span>
+                            <span>{formatCurrency(amount)}</span>
+                          </div>
+                          <div className="flex justify-between text-sm">
+                            <span>Escrow Fee:</span>
+                            <span>{formatCurrency(calculatedFee)}</span>
+                          </div>
+                          <div className="flex justify-between font-medium border-t pt-2">
+                            <span>Total:</span>
+                            <span>{formatCurrency(totalRequired)}</span>
+                          </div>
+                        </div>
+
+                        {hasInsufficientFunds && (
+                          <Alert className="border-destructive">
+                            <AlertCircle className="h-4 w-4 text-destructive" />
+                            <AlertDescription>
+                              Insufficient wallet balance. You'll be redirected
+                              to payment.
+                            </AlertDescription>
+                          </Alert>
+                        )}
+                      </CardContent>
+                    </Card>
+                  </div>
+                )}
+              </form>
+            </Form>
+          </CardContent>
+        </Card>
+
+        {/* Navigation */}
+        <div className="flex justify-between">
+          <Button
+            type="button"
+            variant="outline"
+            onClick={handlePrevious}
+            disabled={currentStep === 1}
+            className="flex items-center gap-2"
+          >
+            <ArrowLeft className="h-4 w-4" />
+            Previous
+          </Button>
+
+          {currentStep < steps.length ? (
+            <Button
+              type="button"
+              onClick={handleNext}
+              className="flex items-center gap-2"
+            >
+              Next
+              <ArrowRight className="h-4 w-4" />
+            </Button>
+          ) : (
+            <Button
+              type="button"
+              onClick={checkBalanceAndProceed}
+              disabled={isLoading}
+              className="flex items-center gap-2"
+            >
+              {isLoading ? "Creating..." : "Create Transaction"}
+              <CheckCircle className="h-4 w-4" />
+            </Button>
+          )}
         </div>
+
+        {/* Insufficient Funds Modal */}
+        <InsufficientFundsModal
+          isOpen={showInsufficientFunds}
+          onClose={() => setShowInsufficientFunds(false)}
+          requiredAmount={totalRequired}
+          currentBalance={walletData?.balance || 0}
+          onFundWallet={() =>
+            router.push(`/dashboard/wallet/?amount=${totalRequired}&modal=true`)
+          }
+        />
       </div>
     </FadeIn>
   );

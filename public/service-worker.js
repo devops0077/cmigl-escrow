@@ -6,7 +6,6 @@ const OFFLINE_CACHE = `offline-cache-${VERSION}`;
 
 // Only cache essential offline assets - not API routes or dynamic content
 const OFFLINE_ESSENTIALS = [
-  "/",
   "/offline",
   "/icon1.png",
   "/apple-icon.png",

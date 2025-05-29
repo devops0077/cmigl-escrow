@@ -19,10 +19,6 @@ export default function AdminDashboardPage() {
     );
   }
 
-  if (status === "unauthenticated" || session?.user?.role !== "ADMIN") {
-    redirect("/auth/login?callbackUrl=/admin");
-  }
-
   return (
     <>
       <DashboardHeader

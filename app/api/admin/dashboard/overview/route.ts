@@ -80,17 +80,17 @@ export async function GET(request: NextRequest) {
 
     const completedTransactions = await prisma.transaction.count({
       where: {
-        status: "COMPLETED",
+        status: { in: ["COMPLETED", "CONFIRMED"] },
       },
     });
 
     // Calculate total escrow fees
-    const escrowFees = await prisma.transaction.aggregate({
+    const escrowFees = await prisma.revenue.aggregate({
       where: {
-        status: "COMPLETED",
+        type: "ESCROW_FEE",
       },
       _sum: {
-        escrowFee: true,
+        amount: true,
       },
     });
     // Calculate total escrow fees
@@ -121,7 +121,7 @@ export async function GET(request: NextRequest) {
       totalTransactions,
       pendingTransactions,
       completedTransactions,
-      totalEscrowFees: escrowFees._sum.escrowFee || 0,
+      totalEscrowFees: escrowFees._sum.amount || 0,
       totalRegistrationFees: totalRegistrationFees._sum.amount || 0,
       newUsers,
     });

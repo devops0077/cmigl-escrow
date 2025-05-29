@@ -6,6 +6,7 @@ import { auth } from "@/auth";
 import { AppError } from "./error-class";
 import { logger } from "./logger";
 import { z } from "zod";
+import { AdPlacement } from "./generated/prisma";
 
 // Validation schemas
 const adContentSchema = z.object({
@@ -569,7 +570,7 @@ export async function recordAdClick(adId: string, placement: string) {
 }
 
 // Get ads for public display (filtered by targeting and display rules)
-export async function getAdsForDisplay(placement: string) {
+export async function getAdsForDisplay(placement: AdPlacement) {
   try {
     const session = await auth();
     const userId = session?.user?.id;
@@ -580,12 +581,12 @@ export async function getAdsForDisplay(placement: string) {
       where: {
         status: "ACTIVE",
         startDate: { lte: now },
-        endDate: { gte: now },
-        displayRules: {
-          some: {
-            OR: [{ placement: placement as any }, { placement: "GLOBAL" }],
-          },
-        },
+        // endDate: { gte: now },
+        // displayRules: {
+        //   some: {
+        //     OR: [{ placement: placement as any }, { placement: "GLOBAL" }],
+        //   },
+        // },
       },
       include: {
         targetingRules: true,

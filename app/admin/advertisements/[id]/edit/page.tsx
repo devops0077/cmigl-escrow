@@ -3,9 +3,9 @@ import { DashboardHeader } from "@/components/dashboard/dashboard-header";
 import { AdvertisementForm } from "@/components/admin/advertisement-form";
 
 interface PageProps {
-  params: {
+  params: Promise<{
     id: string;
-  };
+  }>;
 }
 
 export const metadata: Metadata = {
@@ -13,7 +13,7 @@ export const metadata: Metadata = {
   description: "Update an existing advertisement",
 };
 
-export default function EditAdvertisementPage({ params }: PageProps) {
+export default async function EditAdvertisementPage({ params }: PageProps) {
   return (
     <>
       <DashboardHeader
@@ -21,7 +21,7 @@ export default function EditAdvertisementPage({ params }: PageProps) {
         text="Update an existing advertisement"
       />
       <div className="px-4 md:px-8 py-6">
-        <AdvertisementForm id={params.id} isEditing />
+        <AdvertisementForm id={(await params).id} isEditing />
       </div>
     </>
   );

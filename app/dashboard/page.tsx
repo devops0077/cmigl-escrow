@@ -19,10 +19,6 @@ export default function DashboardPage() {
     );
   }
 
-  if (status === "unauthenticated") {
-    redirect("/auth/login?callbackUrl=/dashboard");
-  }
-
   return (
     <PageTransition>
       <DashboardHeader

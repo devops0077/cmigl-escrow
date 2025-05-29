@@ -24,5 +24,6 @@ export function useAdminDashboardOverview() {
       const response = await apiClient.get("/admin/dashboard/overview");
       return response.data;
     },
+    refetchOnWindowFocus: true,
   });
 }

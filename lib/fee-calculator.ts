@@ -126,7 +126,8 @@ export function calculateTotalWithAllFees(
     const escrowFeePercentage = _escrowConfig.escrowFee * 100;
 
     // Amount after escrow fee is deducted
-    const amountAfterEscrowFee = baseAmount + escrowFee;
+    // const amountAfterEscrowFee = baseAmount + escrowFee;
+    const amountAfterEscrowFee = baseAmount;
 
     // Calculate the total amount needed to receive the amount after escrow fee
     const totalAmount = calculateAmountWithPaystackFee(

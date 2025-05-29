@@ -11,7 +11,14 @@ import { AdvertisementBanner } from "./advertisement-banner";
 import { AdvertisementPopup } from "./advertisement-popup";
 
 interface AdvertisementDisplayProps {
-  placement: string;
+  placement:
+    | "HOMEPAGE"
+    | "DASHBOARD"
+    | "SIDEBAR"
+    | "TRANSACTION_PAGE"
+    | "WALLET_PAGE"
+    | "PROFILE_PAGE"
+    | "GLOBAL";
   maxAds?: number;
   className?: string;
 }
@@ -35,7 +42,7 @@ export function AdvertisementDisplay({
 
         // Record impressions
         data.slice(0, maxAds).forEach((ad) => {
-          recordAdImpression(ad.id, placement);
+          recordAdImpression(ad?.id, placement);
         });
       } catch (error) {
         console.error("Error fetching advertisements:", error);

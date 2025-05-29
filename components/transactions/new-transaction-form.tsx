@@ -442,7 +442,7 @@ export function NewTransactionForm() {
                 {currentStep === 2 && (
                   <div className="space-y-6">
                     <div className="text-center space-y-2">
-                      <DollarSign className="h-12 w-12 mx-auto text-primary" />
+                      <span className="text-5xl mx-auto text-primary">₦</span>
                       <h3 className="text-lg font-semibold">
                         Transaction Amount
                       </h3>

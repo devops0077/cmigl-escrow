@@ -49,7 +49,7 @@ export default async function AdminFeedbackPage() {
         heading="Feedback Management"
         text="Review and manage user feedback, suggestions, and bug reports."
       />
-      <div className="container py-10 px-4 sm:px-6">
+      <div className="container mx-auto py-10 px-4 sm:px-6">
         <div className="space-y-3">
           <div className="grid grid-cols-4 gap-4">
             <div className="bg-background border rounded-lg p-4 text-center">

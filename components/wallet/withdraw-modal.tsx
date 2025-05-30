@@ -37,6 +37,7 @@ import { logger } from "@/lib/logger";
 import { Loader2, AlertCircle, CheckCircle2, RefreshCw } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { useWallet } from "@/hooks/use-wallet";
+import { formatCurrency } from "@/lib/utils";
 
 // Bank type definition
 type Bank = {
@@ -129,7 +130,7 @@ export function WithdrawModal() {
     ) {
       form.setError("amount", {
         type: "manual",
-        message: `Amount exceeds your wallet balance of ₦${walletData.balance.toLocaleString()}`,
+        message: `Amount exceeds your wallet balance of ${formatCurrency(walletData.balance)}`,
       });
     } else {
       form.clearErrors("amount");

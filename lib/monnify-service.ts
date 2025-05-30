@@ -2,6 +2,7 @@ import { _escrowConfig } from "@/config";
 import { MonnifyGetTransactionStatusResponse } from "@/types/monnify";
 import axios, { AxiosInstance } from "axios";
 import { logger } from "./logger";
+import Redis from "ioredis";
 
 // Interface for Monnify API credentials
 interface MonnifyCredentials {
@@ -51,12 +52,45 @@ interface TransactionVerification {
   customerEmail: string;
 }
 
+// Interface for disbursement request
+interface DisbursementRequest {
+  amount: number;
+  reference: string;
+  bankCode: string;
+  bankAccountNumber: string;
+  narration: string;
+  currencyCode: string;
+}
+
+// Interface for disbursement response
+interface DisbursementResponse {
+  transactionReference: string;
+  paymentReference: string;
+  status: string;
+  amount: number;
+  destinationAccountNumber: string;
+  bankCode: string;
+}
+
+// Interface for disbursement status response
+interface DisbursementStatus {
+  transactionReference: string;
+  status: string;
+  amount: number;
+  destinationAccountNumber: string;
+  bankCode: string;
+  completedOn: string;
+}
+
 export class MonnifyService {
   private axiosInstance: AxiosInstance;
   private credentials: MonnifyCredentials;
+  private redis: Redis;
+  private readonly ACCESS_TOKEN_KEY = "monnify:access_token";
 
-  constructor(credentials: MonnifyCredentials) {
+  constructor(credentials: MonnifyCredentials, redisClient: Redis) {
     this.credentials = credentials;
+    this.redis = redisClient;
 
     // Initialize Axios instance with base configuration
     this.axiosInstance = axios.create({
@@ -73,13 +107,28 @@ export class MonnifyService {
       // Automatically add access token to headers for requests that require it
       if (
         config.url?.startsWith("/api/v1/merchant") ||
-        config.url?.startsWith("/api/v2/transactions")
+        config.url?.startsWith("/api/v2/transactions") ||
+        config.url?.startsWith("/api/v1/disbursements")
       ) {
-        const accessToken = await this.getAccessToken();
+        const accessToken = await this.getCachedAccessToken();
         config.headers.Authorization = `Bearer ${accessToken}`;
       }
       return config;
     });
+
+    this.axiosInstance.interceptors.response.use(
+      (response) => response,
+      async (error) => {
+        if (error.response?.status === 401) {
+          // Clear cached token and retry the request
+          await this.redis.del(this.ACCESS_TOKEN_KEY);
+          const accessToken = await this.getAccessToken();
+          error.config.headers.Authorization = `Bearer ${accessToken}`;
+          return this.axiosInstance(error.config);
+        }
+        throw error;
+      }
+    );
   }
 
   // Method to initiate a payment
@@ -100,6 +149,7 @@ export class MonnifyService {
         status: response.data.status,
       };
     } catch (error: any) {
+      logger.error("Error initiating payment", { error, paymentData });
       throw new Error(`Failed to initiate payment: ${error.message}`);
     }
   }
@@ -145,7 +195,63 @@ export class MonnifyService {
     }
   }
 
-  // Method to get access token (for operations requiring OAuth)
+  // Method to initiate a disbursement
+  async initiateDisbursement(
+    disbursementData: DisbursementRequest
+  ): Promise<DisbursementResponse> {
+    try {
+      const response = await this.axiosInstance.post(
+        "/api/v1/disbursements/single",
+        {
+          ...disbursementData,
+          sourceAccountNumber: _escrowConfig.monnifySourceAccountNumber,
+        }
+      );
+
+      return {
+        transactionReference: response.data.transactionReference,
+        paymentReference: response.data.paymentReference,
+        status: response.data.status,
+        amount: response.data.amount,
+        destinationAccountNumber: response.data.destinationAccountNumber,
+        bankCode: response.data.bankCode,
+      };
+    } catch (error: any) {
+      logger.error("Error initiating disbursement", {
+        error,
+        disbursementData,
+      });
+      throw new Error(`Failed to initiate disbursement: ${error.message}`);
+    }
+  }
+
+  // Method to check disbursement status
+  async getDisbursementStatus(
+    transactionReference: string
+  ): Promise<DisbursementStatus> {
+    try {
+      const response = await this.axiosInstance.get(
+        `/api/v1/disbursements/single?transactionReference=${encodeURIComponent(transactionReference)}`
+      );
+
+      return {
+        transactionReference: response.data.transactionReference,
+        status: response.data.status,
+        amount: response.data.amount,
+        destinationAccountNumber: response.data.destinationAccountNumber,
+        bankCode: response.data.bankCode,
+        completedOn: response.data.completedOn,
+      };
+    } catch (error: any) {
+      logger.error("Error getting disbursement status", {
+        error,
+        transactionReference,
+      });
+      throw new Error(`Failed to get disbursement status: ${error.message}`);
+    }
+  }
+
+  // Method to get or refresh access token
   private async getAccessToken(): Promise<string> {
     try {
       const response = await this.axiosInstance.post<MonnifyAuthLoginResponse>(
@@ -156,7 +262,15 @@ export class MonnifyService {
         }
       );
 
-      return response.data.responseBody.accessToken;
+      const { accessToken, expiresIn } = response.data.responseBody;
+      // Cache the token with expiry (subtracting 60 seconds to account for clock skew)
+      await this.redis.set(
+        this.ACCESS_TOKEN_KEY,
+        accessToken,
+        "EX",
+        expiresIn - 60
+      );
+      return accessToken;
     } catch (error: any) {
       logger.error("Error getting access token", {
         error,
@@ -165,10 +279,29 @@ export class MonnifyService {
       throw new Error(`Failed to get access token: ${error.message}`);
     }
   }
+
+  // Method to get cached access token or fetch a new one
+  private async getCachedAccessToken(): Promise<string> {
+    const cachedToken = await this.redis.get(this.ACCESS_TOKEN_KEY);
+    if (cachedToken) {
+      logger.info("Using cached Monnify access token");
+      return cachedToken;
+    }
+    logger.info("Cached Monnify access token not found, fetching new one");
+    return this.getAccessToken();
+  }
 }
 
-export const monnifyService = new MonnifyService({
-  baseUrl: _escrowConfig.monnifyBaseUrl,
-  apiKey: _escrowConfig.monnifyApiKey,
-  clientSecret: _escrowConfig.monnifySecretKey,
-});
+export const monnifyService = new MonnifyService(
+  {
+    baseUrl: _escrowConfig.monnifyBaseUrl,
+    apiKey: _escrowConfig.monnifyApiKey,
+    clientSecret: _escrowConfig.monnifySecretKey,
+  },
+  new Redis({
+    host: _escrowConfig.redisHost,
+    port: _escrowConfig.redisPort,
+    password: _escrowConfig.redisPassword,
+    db: _escrowConfig.redisDb,
+  })
+);

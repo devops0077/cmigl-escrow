@@ -18,4 +18,12 @@ export const _escrowConfig = {
     process.env.NEXT_PUBLIC_MONNIFY_BASE_URL ||
     "https://sandbox.monnify.com/api/v1",
   monnifyContractCode: process.env.NEXT_PUBLIC_MONNIFY_CONTRACT_CODE || "",
+  monnifySourceAccountNumber:
+    process.env.NEXT_PUBLIC_MONNIFY_SOURCE_ACCOUNT_NUMBER || "",
+
+  redisUrl: process.env.REDIS_URL || "redis://localhost:6379",
+  redisPassword: process.env.REDIS_PASSWORD || "",
+  redisDb: process.env.REDIS_DB ? parseInt(process.env.REDIS_DB) : 0,
+  redisHost: process.env.REDIS_HOST || "localhost",
+  redisPort: process.env.REDIS_PORT ? parseInt(process.env.REDIS_PORT) : 6379,
 };

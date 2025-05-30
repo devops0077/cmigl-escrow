@@ -25,6 +25,8 @@ import {
   calculateAmountWithPaystackFee,
 } from "@/lib/fee-calculator";
 import { useRouter, useSearchParams } from "next/navigation";
+import { MonnifyButton } from "../payments/monnify-button";
+import { MonnifyCancelledResponse } from "@/types/monnify";
 
 interface FundWalletModalProps {
   onSuccess?: () => void;
@@ -84,10 +86,10 @@ export function FundWalletModal({ onSuccess, trigger }: FundWalletModalProps) {
     }
   };
 
-  const handleError = (error: any) => {
-    toast.error("Error", {
+  const handleError = (error: MonnifyCancelledResponse) => {
+    toast.error(error.responseMessage || "Opps, we encountered an error", {
       description:
-        error.message || "An error occurred while funding your wallet.",
+        error.responseMessage || "An error occurred while funding your wallet.",
     });
   };
 
@@ -136,7 +138,7 @@ export function FundWalletModal({ onSuccess, trigger }: FundWalletModalProps) {
             </Label>
           </div>
 
-          {includeFees && feeBreakdown && (
+          {/* {includeFees && feeBreakdown && (
             <div className="bg-muted p-3 rounded-md text-sm">
               <p className="font-medium mb-1">Fee Breakdown:</p>
               <p>Base Amount: {formatCurrency(feeBreakdown.baseAmount)}</p>
@@ -145,13 +147,13 @@ export function FundWalletModal({ onSuccess, trigger }: FundWalletModalProps) {
                 Total: {formatCurrency(feeBreakdown.totalAmount)}
               </p>
             </div>
-          )}
+          )} */}
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={() => setIsOpen(false)}>
             Cancel
           </Button>
-          {includeFees && feeBreakdown && (
+          {/* {includeFees && feeBreakdown && (
             <PaystackButton
               amount={Math.round(Number(totalAmount))}
               email={session?.user?.email || ""}
@@ -163,7 +165,25 @@ export function FundWalletModal({ onSuccess, trigger }: FundWalletModalProps) {
               reference={generateTransactionReference()}
               onSuccess={handleSuccess}
             />
-          )}
+          )} */}
+          <MonnifyButton
+            amount={Math.round(Number(amount))}
+            currency="NGN"
+            reference={generateTransactionReference()}
+            customerFullName={session?.user?.name || "Guest User"}
+            customerEmail={session?.user?.email || "guest@example.com"}
+            paymentDescription="Wallet Funding"
+            metadata={{
+              type: "wallet_funding",
+              includeFees,
+              originalAmount: amount * 100,
+            }}
+            // incomeSplitConfig={null} // Adjust as needed
+            onLoadStart={() => console.log("Payment loading started")}
+            onLoadComplete={() => console.log("Payment loading completed")}
+            onComplete={handleSuccess}
+            onClose={(data) => handleError(data)}
+          />
         </DialogFooter>
       </DialogContent>
     </Dialog>

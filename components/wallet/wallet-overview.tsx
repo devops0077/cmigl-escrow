@@ -19,6 +19,7 @@ import { WithdrawModal } from "./withdraw-modal";
 import { PaystackScript } from "../payments/paystack-script";
 import { WalletTransactions } from "./wallet-transactions";
 import { RewardHistory } from "./reward-history";
+import { MonnifyScript } from "../payments/monnify-script";
 
 export function WalletOverview() {
   const {
@@ -46,6 +47,7 @@ export function WalletOverview() {
   return (
     <>
       <PaystackScript />
+      <MonnifyScript />
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 p-4 md:p-6">
         <Card className="md:col-span-2">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">

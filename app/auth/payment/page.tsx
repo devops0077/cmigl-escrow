@@ -16,6 +16,10 @@ import { toast } from "sonner";
 import { PaystackButton } from "@/components/payments/paystack-button";
 import { PaystackScript } from "@/components/payments/paystack-script";
 import { _escrowConfig } from "@/config";
+import { MonnifyButton } from "@/components/payments/monnify-button";
+import { generateTransactionReference } from "@/lib/utils";
+import React from "react";
+import { MonnifyScript } from "@/components/payments/monnify-script";
 
 export default function PaymentPage() {
   const router = useRouter();
@@ -71,18 +75,18 @@ export default function PaymentPage() {
 
   const handlePaymentSuccess = async (reference: string) => {
     try {
-      // Verify the payment on the server
-      const verificationResponse = await fetch(
-        `/api/payments/verify/${reference}`,
-        {
-          method: "GET",
-        }
-      );
+      // // Verify the payment on the server
+      // const verificationResponse = await fetch(
+      //   `/api/payments/verify/${reference}`,
+      //   {
+      //     method: "GET",
+      //   }
+      // );
 
-      if (!verificationResponse.ok) {
-        const error = await verificationResponse.json();
-        throw new Error(error.error || "Failed to verify payment");
-      }
+      // if (!verificationResponse.ok) {
+      //   const error = await verificationResponse.json();
+      //   throw new Error(error.error || "Failed to verify payment");
+      // }
       const res = await update({
         ...session,
         user: {
@@ -129,6 +133,7 @@ export default function PaymentPage() {
   return (
     <>
       <PaystackScript />
+      <MonnifyScript />
       <div className="container flex items-center justify-center min-h-screen py-10">
         <Card className="w-full max-w-md">
           <CardHeader>
@@ -158,18 +163,37 @@ export default function PaymentPage() {
           </CardContent>
           <CardFooter className="flex justify-center">
             {paymentData ? (
-              <PaystackButton
+              // <PaystackButton
+              //   amount={paymentData.amount}
+              //   email={paymentData.email}
+              //   reference={paymentData.reference}
+              //   onSuccess={handlePaymentSuccess}
+              //   onClose={handlePaymentClose}
+              //   metadata={
+              //     {
+              //       type: "registration_fee",
+              //       userId: searchParams.get("userId"),
+              //     } as any
+              //   }
+              // />
+              <MonnifyButton
                 amount={paymentData.amount}
-                email={paymentData.email}
-                reference={paymentData.reference}
-                onSuccess={handlePaymentSuccess}
-                onClose={handlePaymentClose}
-                metadata={
-                  {
-                    type: "registration_fee",
-                    userId: searchParams.get("userId"),
-                  } as any
+                currency="NGN"
+                reference={generateTransactionReference()}
+                customerFullName={session?.user?.name || "Guest User"}
+                customerEmail={session?.user?.email || "guest@example.com"}
+                paymentDescription="Wallet Funding"
+                metadata={{
+                  type: "registration_fee",
+                  userId: searchParams.get("userId") as string,
+                }}
+                // incomeSplitConfig={null} // Adjust as needed
+                onLoadStart={() => console.log("Payment loading started")}
+                onLoadComplete={() => console.log("Payment loading completed")}
+                onComplete={(res) =>
+                  handlePaymentSuccess(res.transactionReference)
                 }
+                onClose={handlePaymentClose}
               />
             ) : (
               <div className="flex flex-col items-center justify-center">

@@ -10,4 +10,12 @@ export const _escrowConfig = {
   publicUrl: process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000",
   paystackPublicKey: process.env.NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY || "",
   paystackSecretKey: process.env.PAYSTACK_SECRET_KEY,
+  paystackWebhookSecret: process.env.PAYSTACK_WEBHOOK_SECRET || "",
+
+  monnifyApiKey: process.env.NEXT_PUBLIC_MONNIFY_API_KEY || "",
+  monnifySecretKey: process.env.MONNIFY_SECRET_KEY || "",
+  monnifyBaseUrl:
+    process.env.NEXT_PUBLIC_MONNIFY_BASE_URL ||
+    "https://sandbox.monnify.com/api/v1",
+  monnifyContractCode: process.env.NEXT_PUBLIC_MONNIFY_CONTRACT_CODE || "",
 };

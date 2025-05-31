@@ -657,7 +657,7 @@ export function MonnifyWithdrawModal() {
         {(isResolvingAccount || accountName || accountError) && (
           <div className="space-y-1">
             {isResolvingAccount && (
-              <Card className="border-blue-200 bg-blue-900">
+              <Card className="border-blue-200 dark:bg-blue-900 bg-blue-100">
                 <CardContent className="p-1">
                   <div className="flex items-center gap-2 text-blue-500">
                     <Loader2 className="h-4 w-4 animate-spin" />
@@ -670,7 +670,7 @@ export function MonnifyWithdrawModal() {
             )}
 
             {accountName && !isResolvingAccount && (
-              <Card className="border-green-200 bg-green-900">
+              <Card className="border-green-200 dark:bg-green-900 bg-green-100">
                 <CardContent className="p-1">
                   <div className="flex items-center gap-2 text-green-500">
                     <CheckCircle2 className="h-4 w-4" />
@@ -686,7 +686,7 @@ export function MonnifyWithdrawModal() {
             )}
 
             {accountError && !isResolvingAccount && (
-              <Card className="border-red-200 bg-red-900">
+              <Card className="border-red-200 dark:bg-red-900 bg-red-100">
                 <CardContent className="p-1">
                   <div className="flex items-center gap-2 text-red-500">
                     <X className="h-4 w-4" />
@@ -704,15 +704,15 @@ export function MonnifyWithdrawModal() {
         )}
 
         {/* Security Notice */}
-        <Card className="border-amber-200 bg-amber-900">
+        <Card className="border-amber-200 dark:bg-amber-900 bg-amber-100">
           <CardContent className="p-1">
             <div className="flex items-start gap-2 text-amber-500">
               <Shield className="h-4 w-4 mt-0.5" />
               <div className="text-sm">
                 <div className="font-medium">Secure Processing</div>
                 <div>
-                  Your withdrawal will be processed securely via Monnify. Ensure
-                  your account details are correct.
+                  Your withdrawal will be processed securely. Ensure your
+                  account details are correct.
                 </div>
               </div>
             </div>
@@ -753,8 +753,7 @@ export function MonnifyWithdrawModal() {
         <div>
           <h3 className="text-lg font-semibold">Processing Your Withdrawal</h3>
           <p className="text-muted-foreground">
-            Your withdrawal is being processed via Monnify. This may take a few
-            minutes.
+            Your withdrawal is being processed. This may take a few minutes.
           </p>
         </div>
       </div>

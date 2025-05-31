@@ -23,6 +23,7 @@ export const publicRoutes = [
   "/api/users/status",
   "/api/auth/registration-fee/",
   "/api/payments/verify/(.*)",
+  "/api/webhook/(.*)",
   "/api/upload",
   "/api/admin/exists",
   "/api/content/(.*)",

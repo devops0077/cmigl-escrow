@@ -577,9 +577,7 @@ export class PaystackService {
           status: response.status,
           error: errorData,
         });
-        throw new Error(
-          `Paystack API error: ${errorData.message || "Unknown error"}`
-        );
+        throw new Error(`${errorData.message || "Unknown error"}`);
       }
 
       const data = await response.json();

@@ -1,6 +1,6 @@
 import { _escrowConfig } from "@/config";
 import { MonnifyGetTransactionStatusResponse } from "@/types/monnify";
-import axios, { AxiosInstance } from "axios";
+import axios, { AxiosError, AxiosInstance } from "axios";
 import { logger } from "./logger";
 import Redis from "ioredis";
 
@@ -56,30 +56,57 @@ interface TransactionVerification {
 interface DisbursementRequest {
   amount: number;
   reference: string;
-  bankCode: string;
-  bankAccountNumber: string;
+  destinationBankCode: string;
+  destinationAccountNumber: string;
   narration: string;
-  currencyCode: string;
+  currency: string;
 }
 
 // Interface for disbursement response
-interface DisbursementResponse {
-  transactionReference: string;
-  paymentReference: string;
-  status: string;
+
+export interface DisbursementStatus {
+  requestSuccessful: boolean;
+  responseMessage: string;
+  responseCode: string;
+  responseBody: DisbursementStatusResponseBody;
+}
+
+export interface DisbursementStatusResponseBody {
   amount: number;
+  reference: string;
+  status: string;
+  dateCreated: string;
+  totalFee: number;
+  destinationAccountName: string;
+  destinationBankName: string;
   destinationAccountNumber: string;
-  bankCode: string;
+  destinationBankCode: string;
 }
 
 // Interface for disbursement status response
-interface DisbursementStatus {
-  transactionReference: string;
-  status: string;
+export interface DisbursementStatus {
+  requestSuccessful: boolean;
+  responseMessage: string;
+  responseCode: string;
+  responseBody: DisbursementStatusResponseBody;
+}
+
+export interface DisbursementStatusResponseBody {
   amount: number;
+  reference: string;
+  narration: string;
+  currency: string;
+  fee: number;
+  twoFaEnabled: boolean;
+  status: string;
+  transactionDescription: string;
+  transactionReference: string;
+  createdOn: string;
+  sourceAccountNumber: string;
   destinationAccountNumber: string;
-  bankCode: string;
-  completedOn: string;
+  destinationAccountName: string;
+  destinationBankCode: string;
+  destinationBankName: string;
 }
 
 export class MonnifyService {
@@ -204,7 +231,11 @@ export class MonnifyService {
         "/api/v1/disbursements/single",
         {
           ...disbursementData,
-          sourceAccountNumber: _escrowConfig.monnifySourceAccountNumber,
+          sourceAccountNumber: "3934178936",
+          accountNumber: disbursementData.destinationAccountNumber,
+          bankCode: disbursementData.destinationBankCode,
+          // sourceAccountNumber: _escrowConfig.monnifySourceAccountNumber,
+          walletId: _escrowConfig.monnifyWalletId,
         }
       );
 
@@ -217,10 +248,18 @@ export class MonnifyService {
         bankCode: response.data.bankCode,
       };
     } catch (error: any) {
-      logger.error("Error initiating disbursement", {
-        error,
-        disbursementData,
-      });
+      if (error instanceof AxiosError && error.response) {
+        logger.error("Error initiating disbursement", {
+          status: error.response.status,
+          data: error.response.data,
+          disbursementData,
+        });
+      } else {
+        logger.error("Error initiating disbursement", {
+          error,
+          disbursementData,
+        });
+      }
       throw new Error(`Failed to initiate disbursement: ${error.message}`);
     }
   }

@@ -20,6 +20,7 @@ import { PaystackScript } from "../payments/paystack-script";
 import { WalletTransactions } from "./wallet-transactions";
 import { RewardHistory } from "./reward-history";
 import { MonnifyScript } from "../payments/monnify-script";
+import { MonnifyWithdrawModal } from "./monnify-withdraw-modal";
 
 export function WalletOverview() {
   const {
@@ -70,7 +71,7 @@ export function WalletOverview() {
           </CardContent>
           <CardFooter className="flex justify-between">
             <FundWalletModal onSuccess={handleRefresh} />
-            <WithdrawModal />
+            <MonnifyWithdrawModal />
           </CardFooter>
         </Card>
         <Card className="w-full">

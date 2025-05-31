@@ -223,18 +223,15 @@ export class MonnifyService {
   }
 
   // Method to initiate a disbursement
-  async initiateDisbursement(
-    disbursementData: DisbursementRequest
-  ): Promise<DisbursementResponse> {
+  async initiateDisbursement(disbursementData: DisbursementRequest) {
     try {
       const response = await this.axiosInstance.post(
         "/api/v1/disbursements/single",
         {
           ...disbursementData,
-          sourceAccountNumber: "3934178936",
           accountNumber: disbursementData.destinationAccountNumber,
           bankCode: disbursementData.destinationBankCode,
-          // sourceAccountNumber: _escrowConfig.monnifySourceAccountNumber,
+          sourceAccountNumber: _escrowConfig.monnifySourceAccountNumber,
           walletId: _escrowConfig.monnifyWalletId,
         }
       );

@@ -7,14 +7,15 @@ import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { Button } from "@/components/ui/button";
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
+  Drawer,
+  DrawerClose,
+  DrawerContent,
+  DrawerDescription,
+  DrawerFooter,
+  DrawerHeader,
+  DrawerTitle,
+  DrawerTrigger,
+} from "@/components/ui/drawer";
 import {
   Form,
   FormControl,
@@ -25,22 +26,10 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import {
-  Command,
-  CommandEmpty,
-  CommandGroup,
-  CommandInput,
-  CommandItem,
-  CommandList,
-} from "@/components/ui/command";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Separator } from "@/components/ui/separator";
 import { toast } from "sonner";
 import { logger } from "@/lib/logger";
 import {
@@ -54,24 +43,51 @@ import {
   Wallet,
   Shield,
   Clock,
-  Check,
   X,
+  ChevronRight,
+  Star,
+  TrendingUp,
+  Zap,
+  ArrowDown,
+  DollarSign,
 } from "lucide-react";
 import { useWallet } from "@/hooks/use-wallet";
 import { formatCurrency, cn } from "@/lib/utils";
 import { Card, CardContent } from "@/components/ui/card";
+import { motion, AnimatePresence } from "framer-motion";
+import {
+  Sheet,
+  SheetClose,
+  SheetContent,
+  SheetDescription,
+  SheetFooter,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from "../ui/sheet";
+import apiClient from "@/lib/api-client";
 
-// Bank type definition
+// Bank type definition with enhanced properties
 type Bank = {
   code: string;
   name: string;
   slug?: string;
   active?: boolean;
+  popular?: boolean;
+  category?: "tier1" | "tier2" | "digital" | "microfinance";
 };
+
+// Enhanced bank data with categories and popularity
+const POPULAR_BANKS = ["044", "058", "011", "214", "221", "033"];
+const TIER1_BANKS = ["044", "058", "011", "214", "221", "033", "070"];
+const DIGITAL_BANKS = ["100004", "100039", "100033", "999992", "100005"];
 
 // Withdrawal steps enum
 enum WithdrawalStep {
-  FORM = "form",
+  AMOUNT = "amount",
+  BANK_SELECTION = "bank_selection",
+  ACCOUNT_DETAILS = "account_details",
+  CONFIRMATION = "confirmation",
   PROCESSING = "processing",
   COMPLETED = "completed",
 }
@@ -93,19 +109,27 @@ const formSchema = z.object({
   }),
 });
 
-// Quick amount suggestions
-const QUICK_AMOUNTS = [5000, 10000, 25000, 50000, 100000];
+// Quick amount suggestions with labels
+const QUICK_AMOUNTS = [
+  { amount: 5000, label: "5K" },
+  { amount: 10000, label: "10K" },
+  { amount: 25000, label: "25K" },
+  { amount: 50000, label: "50K" },
+  { amount: 100000, label: "100K" },
+];
 
 export function MonnifyWithdrawModal() {
   const [open, setOpen] = useState(false);
   const [currentStep, setCurrentStep] = useState<WithdrawalStep>(
-    WithdrawalStep.FORM
+    WithdrawalStep.AMOUNT
   );
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
   const [banks, setBanks] = useState<Bank[]>([]);
   const [isFetchingBanks, setIsFetchingBanks] = useState(false);
-  const [bankSearchOpen, setBankSearchOpen] = useState(false);
+  const [bankSearchQuery, setBankSearchQuery] = useState("");
+  const [selectedBankCategory, setSelectedBankCategory] =
+    useState<string>("all");
   const [accountName, setAccountName] = useState("");
   const [isResolvingAccount, setIsResolvingAccount] = useState(false);
   const [accountError, setAccountError] = useState("");
@@ -131,14 +155,29 @@ export function MonnifyWithdrawModal() {
   const watchAccountNumber = form.watch("accountNumber");
   const watchAmount = form.watch("amount");
 
-  // Memoized filtered banks for search
-  const [bankSearchQuery, setBankSearchQuery] = useState("");
-  const filteredBanks = useMemo(() => {
-    if (!bankSearchQuery) return banks;
-    return banks.filter((bank) =>
-      bank.name.toLowerCase().includes(bankSearchQuery.toLowerCase())
-    );
-  }, [banks, bankSearchQuery]);
+  // Enhanced bank categorization
+  const categorizedBanks = useMemo(() => {
+    const enhancedBanks = banks.map((bank) => ({
+      ...bank,
+      popular: POPULAR_BANKS.includes(bank.code),
+      category: TIER1_BANKS.includes(bank.code)
+        ? "tier1"
+        : DIGITAL_BANKS.includes(bank.code)
+          ? "digital"
+          : "tier2",
+    })) as Bank[];
+
+    const filtered = bankSearchQuery
+      ? enhancedBanks.filter((bank) =>
+          bank.name.toLowerCase().includes(bankSearchQuery.toLowerCase())
+        )
+      : enhancedBanks;
+
+    if (selectedBankCategory === "all") return filtered;
+    if (selectedBankCategory === "popular")
+      return filtered.filter((bank) => bank.popular);
+    return filtered.filter((bank) => bank.category === selectedBankCategory);
+  }, [banks, bankSearchQuery, selectedBankCategory]);
 
   // Selected bank details
   const selectedBank = useMemo(() => {
@@ -146,16 +185,26 @@ export function MonnifyWithdrawModal() {
   }, [banks, watchBankCode]);
 
   // Form validation state
-  const isFormValid = useMemo(() => {
-    return (
-      watchAmount >= 1000 &&
-      watchBankCode &&
-      watchAccountNumber?.length === 10 &&
-      accountName &&
-      !accountError &&
-      (!walletData?.balance || watchAmount <= walletData.balance)
-    );
+  const isStepValid = useMemo(() => {
+    switch (currentStep) {
+      case WithdrawalStep.AMOUNT:
+        return (
+          watchAmount >= 1000 &&
+          (!walletData?.balance || watchAmount <= walletData.balance)
+        );
+      case WithdrawalStep.BANK_SELECTION:
+        return !!watchBankCode;
+      case WithdrawalStep.ACCOUNT_DETAILS:
+        return (
+          watchAccountNumber?.length === 10 && accountName && !accountError
+        );
+      case WithdrawalStep.CONFIRMATION:
+        return true;
+      default:
+        return false;
+    }
   }, [
+    currentStep,
     watchAmount,
     watchBankCode,
     watchAccountNumber,
@@ -163,6 +212,13 @@ export function MonnifyWithdrawModal() {
     accountError,
     walletData?.balance,
   ]);
+
+  // Step progress calculation
+  const stepProgress = useMemo(() => {
+    const steps = Object.values(WithdrawalStep);
+    const currentIndex = steps.indexOf(currentStep);
+    return ((currentIndex + 1) / steps.length) * 100;
+  }, [currentStep]);
 
   // Initialize component
   useEffect(() => {
@@ -173,8 +229,10 @@ export function MonnifyWithdrawModal() {
     if (!open) {
       setWithdrawalReference(null);
       setWithdrawalStatus(null);
-      setCurrentStep(WithdrawalStep.FORM);
+      setCurrentStep(WithdrawalStep.AMOUNT);
       setProcessingProgress(0);
+      setBankSearchQuery("");
+      setSelectedBankCategory("all");
     }
   }, [open, banks.length]);
 
@@ -299,7 +357,6 @@ export function MonnifyWithdrawModal() {
 
       setIsCheckingStatus(true);
 
-      // Simulate progress for better UX
       const progressInterval = setInterval(() => {
         setProcessingProgress((prev) => Math.min(prev + 10, 90));
       }, 500);
@@ -355,11 +412,20 @@ export function MonnifyWithdrawModal() {
     [refetchWallet, isCheckingStatus]
   );
 
-  // Manual refresh
-  const handleManualRefresh = () => {
-    if (withdrawalReference) {
-      setProcessingProgress(0);
-      checkWithdrawalStatus(withdrawalReference);
+  // Navigation functions
+  const goToNextStep = () => {
+    const steps = Object.values(WithdrawalStep);
+    const currentIndex = steps.indexOf(currentStep);
+    if (currentIndex < steps.length - 1) {
+      setCurrentStep(steps[currentIndex + 1]);
+    }
+  };
+
+  const goToPreviousStep = () => {
+    const steps = Object.values(WithdrawalStep);
+    const currentIndex = steps.indexOf(currentStep);
+    if (currentIndex > 0) {
+      setCurrentStep(steps[currentIndex - 1]);
     }
   };
 
@@ -368,14 +434,30 @@ export function MonnifyWithdrawModal() {
     form.setValue("amount", amount);
   };
 
+  // Bank selection
+  const handleBankSelect = (bankCode: string) => {
+    form.setValue("bankCode", bankCode);
+    goToNextStep();
+  };
+
+  // Manual refresh
+  const handleManualRefresh = () => {
+    if (withdrawalReference) {
+      setProcessingProgress(0);
+      checkWithdrawalStatus(withdrawalReference);
+    }
+  };
+
   // Form submission
-  async function onSubmit(values: z.infer<typeof formSchema>) {
+  async function onSubmit() {
     if (accountError || !accountName) {
       toast.error("Invalid account details", {
         description: "Please verify your account number and bank",
       });
       return;
     }
+
+    const values = form.getValues();
 
     if (walletData?.balance && values.amount > walletData.balance) {
       toast.error("Insufficient balance", {
@@ -389,28 +471,17 @@ export function MonnifyWithdrawModal() {
     setProcessingProgress(20);
 
     try {
-      const response = await fetch("/api/wallet/monnify-withdrawal", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          type: "monnify_withdrawal",
-          amount: values.amount,
-          bankCode: values.bankCode,
-          accountNumber: values.accountNumber,
-          accountName: accountName,
-        }),
+      const response = await apiClient.post("/wallet/monnify-withdrawal", {
+        type: "monnify_withdrawal",
+        amount: Number(values.amount),
+        bankCode: values.bankCode,
+        accountNumber: values.accountNumber,
+        accountName: accountName,
       });
 
       setProcessingProgress(60);
 
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || "Failed to process withdrawal");
-      }
-
-      const result = await response.json();
+      const result = await response.data;
       setWithdrawalReference(result.reference);
       setWithdrawalStatus("PENDING");
       setProcessingProgress(80);
@@ -429,7 +500,7 @@ export function MonnifyWithdrawModal() {
       refetchWallet();
     } catch (error) {
       logger.error("Monnify withdrawal error", { error });
-      setCurrentStep(WithdrawalStep.FORM);
+      setCurrentStep(WithdrawalStep.AMOUNT);
       setProcessingProgress(0);
 
       toast.error("Withdrawal failed", {
@@ -448,11 +519,12 @@ export function MonnifyWithdrawModal() {
       setAccountName("");
       setAccountError("");
       setBankSearchQuery("");
+      setSelectedBankCategory("all");
 
       if (withdrawalStatus === "COMPLETED" || withdrawalStatus === "FAILED") {
         setWithdrawalReference(null);
         setWithdrawalStatus(null);
-        setCurrentStep(WithdrawalStep.FORM);
+        setCurrentStep(WithdrawalStep.AMOUNT);
         localStorage.removeItem("pendingMonnifyWithdrawalReference");
       }
 
@@ -461,224 +533,300 @@ export function MonnifyWithdrawModal() {
     }
   };
 
-  // Render bank selection skeleton
-  const BankSelectionSkeleton = () => (
-    <div className="space-y-2">
-      <Skeleton className="h-4 w-16" />
-      <Skeleton className="h-10 w-full" />
-    </div>
-  );
+  // Render amount step
+  const renderAmountStep = () => (
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: -20 }}
+      className="space-y-6"
+    >
+      <div className="text-center space-y-2">
+        <div className="w-16 h-16 bg-primary  rounded-full flex items-center justify-center mx-auto">
+          <span className="h-8 w-8 text-2xl text-white">₦</span>
+        </div>
+        <h3 className="text-xl font-semibold">
+          How much would you like to withdraw?
+        </h3>
+        <p className="text-muted-foreground">
+          Enter the amount you want to transfer to your bank account
+        </p>
+      </div>
 
-  // Render form step
-  const renderFormStep = () => (
-    <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-        {/* Amount Field with Quick Selection */}
-        <FormField
-          control={form.control}
-          name="amount"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel className="flex items-center gap-2">
-                <Wallet className="h-4 w-4" />
-                Withdrawal Amount
-              </FormLabel>
-              <FormControl>
-                <div className="space-y-3">
-                  <div className="relative">
-                    <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground">
-                      ₦
-                    </span>
-                    <Input
-                      type="number"
-                      min="1000"
-                      step="100"
-                      placeholder="0.00"
-                      className="pl-8 text-lg font-medium"
-                      {...field}
-                    />
-                  </div>
-
-                  {/* Quick Amount Buttons */}
-                  <div className="flex flex-wrap gap-2">
-                    {QUICK_AMOUNTS.map((amount) => (
-                      <Button
-                        key={amount}
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        className="text-xs"
-                        onClick={() => handleQuickAmount(amount)}
-                        disabled={
-                          walletData?.balance
-                            ? amount > walletData.balance
-                            : false
-                        }
-                      >
-                        ₦{amount.toLocaleString()}
-                      </Button>
-                    ))}
-                  </div>
+      <FormField
+        control={form.control}
+        name="amount"
+        render={({ field }) => (
+          <FormItem>
+            <FormControl>
+              <div className="space-y-4">
+                <div className="relative">
+                  <span className="absolute left-4 top-1/2 transform -translate-y-1/2 text-2xl font-bold text-muted-foreground">
+                    ₦
+                  </span>
+                  <Input
+                    type="number"
+                    min="1000"
+                    step="100"
+                    placeholder="0.00"
+                    className="pl-12 text-2xl font-bold h-16 text-center border-2 focus:border-primary"
+                    {...field}
+                  />
                 </div>
-              </FormControl>
-              <FormDescription className="flex items-center justify-between">
+
+                {/* Quick Amount Buttons */}
+                <div className="grid grid-cols-5 gap-2">
+                  {QUICK_AMOUNTS.map(({ amount, label }) => (
+                    <Button
+                      key={amount}
+                      type="button"
+                      variant={watchAmount === amount ? "default" : "outline"}
+                      size="sm"
+                      className="h-12 flex flex-col gap-1"
+                      onClick={() => handleQuickAmount(amount)}
+                      disabled={
+                        walletData?.balance
+                          ? amount > walletData.balance
+                          : false
+                      }
+                    >
+                      <span className="text-xs font-medium">{label}</span>
+                      <span className="text-xs opacity-70">
+                        ₦{amount.toLocaleString()}
+                      </span>
+                    </Button>
+                  ))}
+                </div>
+              </div>
+            </FormControl>
+            <FormDescription className="text-center">
+              <div className="flex items-center justify-between">
                 <span>Minimum: ₦1,000</span>
                 {walletData?.balance !== undefined && (
-                  <span className="font-medium">
+                  <span className="font-medium text-primary">
                     Balance: ₦{walletData.balance.toLocaleString()}
                   </span>
                 )}
-              </FormDescription>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
+              </div>
+            </FormDescription>
+            <FormMessage />
+          </FormItem>
+        )}
+      />
+    </motion.div>
+  );
 
-        {/* Enhanced Bank Selection */}
-        <FormField
-          control={form.control}
-          name="bankCode"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel className="flex items-center gap-2">
-                <Building2 className="h-4 w-4" />
-                Select Bank
-              </FormLabel>
-              {isFetchingBanks ? (
-                <BankSelectionSkeleton />
-              ) : (
-                <Popover open={bankSearchOpen} onOpenChange={setBankSearchOpen}>
-                  <PopoverTrigger asChild>
-                    <FormControl>
-                      <Button
-                        variant="outline"
-                        role="combobox"
-                        aria-expanded={bankSearchOpen}
-                        className={cn(
-                          "w-full justify-between h-12",
-                          !field.value && "text-muted-foreground"
-                        )}
-                      >
-                        {selectedBank ? (
-                          <div className="flex items-center gap-2">
-                            <div className="w-6 h-6 bg-primary/10 rounded-full flex items-center justify-center">
-                              <Building2 className="h-3 w-3 text-primary" />
-                            </div>
-                            <span className="truncate">
-                              {selectedBank.name}
-                            </span>
-                          </div>
-                        ) : (
-                          <div className="flex items-center gap-2">
-                            <Search className="h-4 w-4" />
-                            <span>Search and select your bank</span>
-                          </div>
-                        )}
-                        <ArrowRight className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                      </Button>
-                    </FormControl>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-full p-0" align="start">
-                    <Command>
-                      <CommandInput
-                        placeholder="Search banks..."
-                        value={bankSearchQuery}
-                        onValueChange={setBankSearchQuery}
-                      />
-                      <CommandList>
-                        <CommandEmpty>No banks found.</CommandEmpty>
-                        <CommandGroup>
-                          {filteredBanks.map((bank) => (
-                            <CommandItem
-                              key={bank.code}
-                              value={bank.name}
-                              onSelect={() => {
-                                form.setValue("bankCode", bank.code);
-                                setBankSearchOpen(false);
-                                setBankSearchQuery("");
-                              }}
-                              className="flex items-center gap-2 p-3"
-                            >
-                              <div className="w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center">
-                                <Building2 className="h-4 w-4 text-primary" />
-                              </div>
-                              <div className="flex-1">
-                                <div className="font-medium">{bank.name}</div>
-                                <div className="text-xs text-muted-foreground">
-                                  {bank.code}
-                                </div>
-                              </div>
-                              {field.value === bank.code && (
-                                <Check className="h-4 w-4 text-primary" />
-                              )}
-                            </CommandItem>
-                          ))}
-                        </CommandGroup>
-                      </CommandList>
-                    </Command>
-                  </PopoverContent>
-                </Popover>
-              )}
-              <FormMessage />
-            </FormItem>
-          )}
-        />
+  // Render bank selection step
+  const renderBankSelectionStep = () => (
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: -20 }}
+      className="space-y-2"
+    >
+      <div className="text-center space-y-1">
+        <div className="w-16 h-16 bg-gradient-to-br from-green-500 to-teal-600 rounded-full flex items-center justify-center mx-auto">
+          <Building2 className="h-8 w-8 text-white" />
+        </div>
+        <h3 className="text-xl font-semibold">Select your bank</h3>
+        <p className="text-muted-foreground">
+          Choose the bank where you want to receive your funds
+        </p>
+      </div>
 
-        {/* Account Number with Enhanced Validation */}
-        <FormField
-          control={form.control}
-          name="accountNumber"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel className="flex items-center gap-2">
-                <CreditCard className="h-4 w-4" />
-                Account Number
-              </FormLabel>
-              <FormControl>
-                <div className="relative">
-                  <Input
-                    type="text"
-                    placeholder="Enter your 10-digit account number"
-                    maxLength={10}
-                    className="pr-10"
-                    {...field}
-                  />
-                  {isResolvingAccount && (
-                    <Loader2 className="absolute right-3 top-1/2 transform -translate-y-1/2 h-4 w-4 animate-spin text-muted-foreground" />
+      {/* Search and Filter */}
+      <div className="space-y-4">
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input
+            placeholder="Search banks..."
+            value={bankSearchQuery}
+            onChange={(e) => setBankSearchQuery(e.target.value)}
+            className="pl-10"
+          />
+        </div>
+
+        {/* Bank Categories */}
+        <div className="flex gap-2 overflow-x-auto pb-2">
+          {[
+            { key: "all", label: "All Banks", icon: Building2 },
+            { key: "popular", label: "Popular", icon: Star },
+            { key: "tier1", label: "Tier 1", icon: TrendingUp },
+            { key: "digital", label: "Digital", icon: Zap },
+          ].map(({ key, label, icon: Icon }) => (
+            <Button
+              key={key}
+              variant={selectedBankCategory === key ? "default" : "outline"}
+              size="sm"
+              className="flex items-center gap-2 whitespace-nowrap"
+              onClick={() => setSelectedBankCategory(key)}
+            >
+              <Icon className="h-4 w-4" />
+              {label}
+            </Button>
+          ))}
+        </div>
+      </div>
+
+      {/* Banks List */}
+      <div className="space-y-2 max-h-96 overflow-y-auto">
+        {isFetchingBanks ? (
+          <div className="space-y-2">
+            {Array.from({ length: 6 }).map((_, i) => (
+              <Skeleton key={i} className="h-16 w-full" />
+            ))}
+          </div>
+        ) : categorizedBanks.length === 0 ? (
+          <div className="text-center py-8 text-muted-foreground">
+            <Building2 className="h-12 w-12 mx-auto mb-2 opacity-50" />
+            <p>No banks found</p>
+          </div>
+        ) : (
+          <AnimatePresence>
+            {categorizedBanks.map((bank, index) => (
+              <motion.div
+                key={bank.code}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -20 }}
+                transition={{ delay: index * 0.05 }}
+              >
+                <Card
+                  className={cn(
+                    "cursor-pointer transition-all duration-200 hover:shadow-md hover:border-primary/50",
+                    watchBankCode === bank.code && "border-primary bg-primary/5"
                   )}
-                </div>
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
+                  onClick={() => handleBankSelect(bank.code)}
+                >
+                  <CardContent className="p-4">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <div className="w-12 h-12 bg-gradient-to-br from-green-500 to-teal-600 rounded-full flex items-center justify-center">
+                          <Building2 className="h-6 w-6 text-white" />
+                        </div>
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2">
+                            <h4 className="font-medium">{bank.name}</h4>
+                            {bank.popular && (
+                              <Badge variant="secondary" className="text-xs">
+                                <Star className="h-3 w-3 mr-1" />
+                                Popular
+                              </Badge>
+                            )}
+                          </div>
+                          <p className="text-sm text-muted-foreground">
+                            {bank.code}
+                          </p>
+                        </div>
+                      </div>
+                      <ChevronRight className="h-5 w-5 text-muted-foreground" />
+                    </div>
+                  </CardContent>
+                </Card>
+              </motion.div>
+            ))}
+          </AnimatePresence>
+        )}
+      </div>
+    </motion.div>
+  );
 
-        {/* Account Verification Status */}
+  // Render account details step
+  const renderAccountDetailsStep = () => (
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: -20 }}
+      className="space-y-6"
+    >
+      <div className="text-center space-y-2">
+        <div className="w-16 h-16 bg-gradient-to-br from-orange-500 to-red-600 rounded-full flex items-center justify-center mx-auto">
+          <CreditCard className="h-8 w-8 text-white" />
+        </div>
+        <h3 className="text-xl font-semibold">Enter account details</h3>
+        <p className="text-muted-foreground">
+          Provide your account number for {selectedBank?.name}
+        </p>
+      </div>
+
+      {/* Selected Bank Display */}
+      {selectedBank && (
+        <Card className="border-primary/20 bg-primary/5">
+          <CardContent className="p-4">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center">
+                <Building2 className="h-5 w-5 text-white" />
+              </div>
+              <div>
+                <h4 className="font-medium">{selectedBank.name}</h4>
+                <p className="text-sm text-muted-foreground">
+                  {selectedBank.code}
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      <FormField
+        control={form.control}
+        name="accountNumber"
+        render={({ field }) => (
+          <FormItem>
+            <FormLabel className="text-base font-medium">
+              Account Number
+            </FormLabel>
+            <FormControl>
+              <div className="relative">
+                <Input
+                  type="text"
+                  placeholder="Enter your 10-digit account number"
+                  maxLength={10}
+                  className="pr-10 h-12 text-lg"
+                  {...field}
+                />
+                {isResolvingAccount && (
+                  <Loader2 className="absolute right-3 top-1/2 transform -translate-y-1/2 h-5 w-5 animate-spin text-muted-foreground" />
+                )}
+              </div>
+            </FormControl>
+            <FormMessage />
+          </FormItem>
+        )}
+      />
+
+      {/* Account Verification Status */}
+      <AnimatePresence>
         {(isResolvingAccount || accountName || accountError) && (
-          <div className="space-y-1">
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: "auto" }}
+            exit={{ opacity: 0, height: 0 }}
+          >
             {isResolvingAccount && (
-              <Card className="border-blue-200 dark:bg-blue-900 bg-blue-100">
-                <CardContent className="p-1">
-                  <div className="flex items-center gap-2 text-blue-500">
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                    <span className="text-sm font-medium">
-                      Verifying account details...
-                    </span>
+              <Card className="border-blue-200 bg-blue-50 dark:bg-blue-900/20">
+                <CardContent className="p-4">
+                  <div className="flex items-center gap-3 text-blue-600">
+                    <Loader2 className="h-5 w-5 animate-spin" />
+                    <div>
+                      <div className="font-medium">Verifying account...</div>
+                      <div className="text-sm opacity-80">
+                        Please wait while we verify your account details
+                      </div>
+                    </div>
                   </div>
                 </CardContent>
               </Card>
             )}
 
             {accountName && !isResolvingAccount && (
-              <Card className="border-green-200 dark:bg-green-900 bg-green-100">
-                <CardContent className="p-1">
-                  <div className="flex items-center gap-2 text-green-500">
-                    <CheckCircle2 className="h-4 w-4" />
+              <Card className="border-green-200 bg-green-50 dark:bg-green-900/20">
+                <CardContent className="p-4">
+                  <div className="flex items-center gap-3 text-green-600">
+                    <CheckCircle2 className="h-5 w-5" />
                     <div>
-                      <div className="text-sm font-medium">
-                        Account Verified
-                      </div>
-                      <div className="text-sm">{accountName}</div>
+                      <div className="font-medium">Account verified</div>
+                      <div className="text-sm opacity-80">{accountName}</div>
                     </div>
                   </div>
                 </CardContent>
@@ -686,72 +834,114 @@ export function MonnifyWithdrawModal() {
             )}
 
             {accountError && !isResolvingAccount && (
-              <Card className="border-red-200 dark:bg-red-900 bg-red-100">
-                <CardContent className="p-1">
-                  <div className="flex items-center gap-2 text-red-500">
-                    <X className="h-4 w-4" />
+              <Card className="border-red-200 bg-red-50 dark:bg-red-900/20">
+                <CardContent className="p-4">
+                  <div className="flex items-center gap-3 text-red-600">
+                    <X className="h-5 w-5" />
                     <div>
-                      <div className="text-sm font-medium">
-                        Verification Failed
-                      </div>
-                      <div className="text-sm">{accountError}</div>
+                      <div className="font-medium">Verification failed</div>
+                      <div className="text-sm opacity-80">{accountError}</div>
                     </div>
                   </div>
                 </CardContent>
               </Card>
             )}
-          </div>
+          </motion.div>
         )}
+      </AnimatePresence>
+    </motion.div>
+  );
 
-        {/* Security Notice */}
-        <Card className="border-amber-200 dark:bg-amber-900 bg-amber-100">
-          <CardContent className="p-1">
-            <div className="flex items-start gap-2 text-amber-500">
-              <Shield className="h-4 w-4 mt-0.5" />
+  // Render confirmation step
+  const renderConfirmationStep = () => {
+    const values = form.getValues();
+    return (
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        exit={{ opacity: 0, y: -20 }}
+        className="space-y-6"
+      >
+        <div className="text-center space-y-2">
+          <div className="w-16 h-16 bg-gradient-to-br from-purple-500 to-pink-600 rounded-full flex items-center justify-center mx-auto">
+            <Shield className="h-8 w-8 text-white" />
+          </div>
+          <h3 className="text-xl font-semibold">Confirm withdrawal</h3>
+          <p className="text-muted-foreground">
+            Please review your withdrawal details before proceeding
+          </p>
+        </div>
+
+        <Card className="border-2 border-primary/20">
+          <CardContent className="p-6 space-y-4">
+            <div className="flex justify-between items-center">
+              <span className="text-muted-foreground">Amount</span>
+              <span className="text-2xl font-bold text-primary">
+                ₦{values.amount.toLocaleString()}
+              </span>
+            </div>
+            <Separator />
+            <div className="flex justify-between items-center">
+              <span className="text-muted-foreground">Bank</span>
+              <span className="font-medium">{selectedBank?.name}</span>
+            </div>
+            <div className="flex justify-between items-center">
+              <span className="text-muted-foreground">Account Number</span>
+              <span className="font-mono">{values.accountNumber}</span>
+            </div>
+            <div className="flex justify-between items-center">
+              <span className="text-muted-foreground">Account Name</span>
+              <span className="font-medium">{accountName}</span>
+            </div>
+            <Separator />
+            <div className="flex justify-between items-center">
+              <span className="text-muted-foreground">Processing Fee</span>
+              <span className="font-medium text-green-600">Free</span>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="border-amber-200 bg-amber-50 dark:bg-amber-900/20">
+          <CardContent className="p-4">
+            <div className="flex items-start gap-3 text-amber-600">
+              <Shield className="h-5 w-5 mt-0.5" />
               <div className="text-sm">
                 <div className="font-medium">Secure Processing</div>
-                <div>
-                  Your withdrawal will be processed securely. Ensure your
-                  account details are correct.
+                <div className="opacity-80">
+                  Your withdrawal will be processed securely via Monnify. Funds
+                  typically arrive within minutes.
                 </div>
               </div>
             </div>
           </CardContent>
         </Card>
-
-        <DialogFooter>
-          <Button
-            type="submit"
-            disabled={!isFormValid || isLoading}
-            className="w-full sm:w-auto"
-            size="lg"
-          >
-            {isLoading ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Processing...
-              </>
-            ) : (
-              <>
-                Withdraw ₦{watchAmount?.toLocaleString() || 0}
-                <ArrowRight className="ml-2 h-4 w-4" />
-              </>
-            )}
-          </Button>
-        </DialogFooter>
-      </form>
-    </Form>
-  );
+      </motion.div>
+    );
+  };
 
   // Render processing step
   const renderProcessingStep = () => (
-    <div className="space-y-6">
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: -20 }}
+      className="space-y-6"
+    >
       <div className="text-center space-y-4">
-        <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto">
-          <Clock className="h-8 w-8 text-primary animate-pulse" />
+        <div className="w-20 h-20 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center mx-auto">
+          <motion.div
+            animate={{ rotate: 360 }}
+            transition={{
+              duration: 2,
+              repeat: Number.POSITIVE_INFINITY,
+              ease: "linear",
+            }}
+          >
+            <Clock className="h-10 w-10 text-white" />
+          </motion.div>
         </div>
         <div>
-          <h3 className="text-lg font-semibold">Processing Your Withdrawal</h3>
+          <h3 className="text-xl font-semibold">Processing your withdrawal</h3>
           <p className="text-muted-foreground">
             Your withdrawal is being processed. This may take a few minutes.
           </p>
@@ -763,75 +953,91 @@ export function MonnifyWithdrawModal() {
           <span>Progress</span>
           <span>{processingProgress}%</span>
         </div>
-        <Progress value={processingProgress} className="h-2" />
+        <Progress value={processingProgress} className="h-3" />
       </div>
 
       {withdrawalReference && (
         <Card>
           <CardContent className="p-4">
-            <div className="space-y-2 text-sm">
+            <div className="space-y-3 text-sm">
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Reference:</span>
-                <span className="font-mono">{withdrawalReference}</span>
+                <span className="font-mono text-xs">{withdrawalReference}</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Provider:</span>
-                <Badge variant="outline">Monnify</Badge>
+                <Badge variant="outline" className="text-xs">
+                  Monnify
+                </Badge>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Status:</span>
+                <Badge variant="secondary" className="text-xs">
+                  Processing
+                </Badge>
               </div>
             </div>
           </CardContent>
         </Card>
       )}
 
-      <div className="flex flex-col sm:flex-row gap-2">
+      <div className="flex flex-col gap-3">
         <Button
           variant="outline"
           onClick={handleManualRefresh}
           disabled={isCheckingStatus}
-          className="flex-1"
+          className="w-full"
         >
           {isCheckingStatus ? (
             <>
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              Checking...
+              Checking status...
             </>
           ) : (
             <>
               <RefreshCw className="mr-2 h-4 w-4" />
-              Refresh Status
+              Refresh status
             </>
           )}
         </Button>
-        <Button variant="ghost" onClick={handleClose} className="flex-1">
-          Close (Processing in Background)
+        <Button variant="ghost" onClick={handleClose} className="w-full">
+          Close (Processing in background)
         </Button>
       </div>
-    </div>
+    </motion.div>
   );
 
   // Render completed step
   const renderCompletedStep = () => (
-    <div className="space-y-6">
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: -20 }}
+      className="space-y-6"
+    >
       <div className="text-center space-y-4">
-        <div
+        <motion.div
+          initial={{ scale: 0 }}
+          animate={{ scale: 1 }}
+          transition={{ type: "spring", duration: 0.6 }}
           className={cn(
-            "w-16 h-16 rounded-full flex items-center justify-center mx-auto",
+            "w-20 h-20 rounded-full flex items-center justify-center mx-auto",
             withdrawalStatus === "COMPLETED"
               ? "bg-green-100 text-green-600"
               : "bg-red-100 text-red-600"
           )}
         >
           {withdrawalStatus === "COMPLETED" ? (
-            <CheckCircle2 className="h-8 w-8" />
+            <CheckCircle2 className="h-10 w-10" />
           ) : (
-            <X className="h-8 w-8" />
+            <X className="h-10 w-10" />
           )}
-        </div>
+        </motion.div>
         <div>
-          <h3 className="text-lg font-semibold">
+          <h3 className="text-xl font-semibold">
             {withdrawalStatus === "COMPLETED"
-              ? "Withdrawal Completed!"
-              : "Withdrawal Failed"}
+              ? "Withdrawal completed!"
+              : "Withdrawal failed"}
           </h3>
           <p className="text-muted-foreground">
             {withdrawalStatus === "COMPLETED"
@@ -841,45 +1047,120 @@ export function MonnifyWithdrawModal() {
         </div>
       </div>
 
-      <DialogFooter>
-        <Button onClick={handleClose} className="w-full" size="lg">
-          Close
-        </Button>
-      </DialogFooter>
-    </div>
+      <Button onClick={handleClose} className="w-full" size="lg">
+        Close
+      </Button>
+    </motion.div>
   );
 
   return (
-    <Dialog
-      open={open}
-      onOpenChange={(newOpen) => {
-        if (!isLoading || !newOpen) setOpen(newOpen);
-      }}
-    >
-      <DialogTrigger asChild>
-        <Button variant="outline" className="gap-2">
-          <Building2 className="h-4 w-4" />
+    <Sheet open={open} onOpenChange={setOpen}>
+      <SheetTrigger asChild>
+        <Button className="gap-2" variant="default" size="lg">
+          <ArrowDown className="h-4 w-4" />
           Withdraw
         </Button>
-      </DialogTrigger>
-      <DialogContent className="sm:max-w-[500px] max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <Building2 className="h-5 w-5 text-primary" />
+      </SheetTrigger>
+      <SheetContent className="w-full sm:max-w-xl p-0 flex flex-col">
+        <SheetHeader className="text-center pb-2">
+          <SheetTitle className="flex items-center justify-center gap-2 text-xl">
+            <Wallet className="h-6 w-6 text-primary" />
             Withdraw Funds
-          </DialogTitle>
-          <DialogDescription>
-            Securely withdraw funds from your wallet to your bank account using
-            secure payment infrastructure.
-          </DialogDescription>
-        </DialogHeader>
+          </SheetTitle>
+          <SheetDescription>
+            Securely transfer funds from your wallet to your bank account
+          </SheetDescription>
 
-        <div className="py-4">
-          {currentStep === WithdrawalStep.FORM && renderFormStep()}
-          {currentStep === WithdrawalStep.PROCESSING && renderProcessingStep()}
-          {currentStep === WithdrawalStep.COMPLETED && renderCompletedStep()}
+          {/* Progress Indicator */}
+          {currentStep !== WithdrawalStep.PROCESSING &&
+            currentStep !== WithdrawalStep.COMPLETED && (
+              <div className="mt-4">
+                <Progress value={stepProgress} className="h-2" />
+                <div className="flex justify-between text-xs text-muted-foreground mt-2">
+                  <span>
+                    Step{" "}
+                    {Object.values(WithdrawalStep).indexOf(currentStep) + 1}
+                  </span>
+                  <span>of {Object.values(WithdrawalStep).length - 2}</span>
+                </div>
+              </div>
+            )}
+        </SheetHeader>
+
+        <div className="px-4 pb-4 overflow-y-auto flex-1">
+          <Form {...form}>
+            <AnimatePresence mode="wait">
+              {currentStep === WithdrawalStep.AMOUNT && renderAmountStep()}
+              {currentStep === WithdrawalStep.BANK_SELECTION &&
+                renderBankSelectionStep()}
+              {currentStep === WithdrawalStep.ACCOUNT_DETAILS &&
+                renderAccountDetailsStep()}
+              {currentStep === WithdrawalStep.CONFIRMATION &&
+                renderConfirmationStep()}
+              {currentStep === WithdrawalStep.PROCESSING &&
+                renderProcessingStep()}
+              {currentStep === WithdrawalStep.COMPLETED &&
+                renderCompletedStep()}
+            </AnimatePresence>
+          </Form>
         </div>
-      </DialogContent>
-    </Dialog>
+
+        {/* Navigation Footer */}
+        {currentStep !== WithdrawalStep.PROCESSING &&
+          currentStep !== WithdrawalStep.COMPLETED && (
+            <SheetFooter>
+              <div className="flex gap-3">
+                {currentStep !== WithdrawalStep.AMOUNT && (
+                  <Button
+                    variant="outline"
+                    onClick={goToPreviousStep}
+                    className="flex-1"
+                    disabled={isLoading}
+                  >
+                    Back
+                  </Button>
+                )}
+
+                {currentStep === WithdrawalStep.CONFIRMATION ? (
+                  <Button
+                    onClick={onSubmit}
+                    disabled={!isStepValid || isLoading}
+                    className="flex-1 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700"
+                    size="lg"
+                  >
+                    {isLoading ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Processing...
+                      </>
+                    ) : (
+                      <>
+                        Confirm Withdrawal
+                        <ArrowRight className="ml-2 h-4 w-4" />
+                      </>
+                    )}
+                  </Button>
+                ) : (
+                  <Button
+                    onClick={goToNextStep}
+                    disabled={!isStepValid}
+                    className="flex-1"
+                    size="lg"
+                  >
+                    Continue
+                    <ArrowRight className="ml-2 h-4 w-4" />
+                  </Button>
+                )}
+              </div>
+
+              <SheetClose asChild>
+                <Button variant="ghost" className="w-full">
+                  Cancel
+                </Button>
+              </SheetClose>
+            </SheetFooter>
+          )}
+      </SheetContent>
+    </Sheet>
   );
 }

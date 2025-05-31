@@ -38,7 +38,7 @@ export async function POST(req: NextRequest) {
 
   // Duplicate notification check
   const transactionReference =
-    payload?.meta?.payload?.transactionReference ||
+    payload?.payload?.transactionReference ||
     payload?.eventData?.transactionReference;
   if (!transactionReference) {
     logger.error("Missing transactionReference in webhook payload");
@@ -88,15 +88,15 @@ type MonnifyPayload = {
   };
 };
 
-async function processMonnifyNotification(payload: MonnifyPayload) {
+async function processMonnifyNotification(payload: any) {
   try {
-    const data = payload?.meta?.payload || payload.eventData;
+    const data = payload?.payload || payload.eventData;
     if (!data) {
       throw new AppError("Invalid payload structure", 400);
     }
 
     const { paymentReference, amountPaid, transactionReference: trxRef } = data;
-    const metadata = payload.metaData || {};
+    const metadata = payload.payload.metaData || {};
 
     // Validate required fields
     if (!paymentReference || !amountPaid || !trxRef) {

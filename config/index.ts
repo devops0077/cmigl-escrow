@@ -20,7 +20,7 @@ export const _escrowConfig = {
   monnifyContractCode: process.env.NEXT_PUBLIC_MONNIFY_CONTRACT_CODE || "",
   monnifySourceAccountNumber:
     process.env.NEXT_PUBLIC_MONNIFY_SOURCE_ACCOUNT_NUMBER || "",
-  monnifyWalletId: "3696211248",
+  monnifyWalletId: "8000022521",
 
   redisUrl: process.env.REDIS_URL || "redis://localhost:6379",
   redisPassword: process.env.REDIS_PASSWORD || "",

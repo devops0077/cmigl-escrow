@@ -754,7 +754,7 @@ export function MonnifyWithdrawModal() {
         <Card className="border-primary/20 bg-primary/5">
           <CardContent className="p-4">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center">
+              <div className="w-10 h-10 bg-gradient-to-br from-green-500 to-teal-600 rounded-full flex items-center justify-center">
                 <Building2 className="h-5 w-5 text-white" />
               </div>
               <div>
@@ -877,7 +877,7 @@ export function MonnifyWithdrawModal() {
             <div className="flex justify-between items-center">
               <span className="text-muted-foreground">Amount</span>
               <span className="text-2xl font-bold text-primary">
-                ₦{values.amount.toLocaleString()}
+                {formatCurrency(values.amount)}
               </span>
             </div>
             <Separator />

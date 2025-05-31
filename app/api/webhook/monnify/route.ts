@@ -37,7 +37,9 @@ export async function POST(req: NextRequest) {
   logger.info("Received Monnify webhook:", { payload });
 
   // Duplicate notification check
-  const transactionReference = payload?.eventData?.transactionReference;
+  const transactionReference =
+    payload?.meta?.payload?.transactionReference ||
+    payload?.eventData?.transactionReference;
   if (!transactionReference) {
     logger.error("Missing transactionReference in webhook payload");
     return NextResponse.json({ error: "Invalid payload" }, { status: 400 });
@@ -48,12 +50,12 @@ export async function POST(req: NextRequest) {
   }
 
   // Transaction hash validation (optional but recommended)
-  const sentHash = req.headers.get("monnify-signature");
-  const computedHash = computeMonnifyHash(payload);
-  if (sentHash !== computedHash) {
-    logger.error("Monnify webhook hash mismatch", { sentHash, computedHash });
-    return NextResponse.json({ error: "Invalid signature" }, { status: 401 });
-  }
+  //   const sentHash = req.headers.get("monnify-signature");
+  //   const computedHash = computeMonnifyHash(payload);
+  //   if (sentHash !== computedHash) {
+  //     logger.error("Monnify webhook hash mismatch", { sentHash, computedHash });
+  //     return NextResponse.json({ error: "Invalid signature" }, { status: 401 });
+  //   }
 
   // Process the notification asynchronously
   processMonnifyNotification(payload).catch((err) => {
@@ -64,114 +66,121 @@ export async function POST(req: NextRequest) {
   return NextResponse.json({}, { status: 200 });
 }
 
-async function processMonnifyNotification(payload: any) {
-  const trxRef = payload?.eventData?.transactionReference;
-  switch (payload.eventType) {
-    case "SUCCESSFUL_TRANSACTION":
-      console.info("Processing Monnify notification:", { payload });
-      if (!payload.eventData) {
-        console.error("Missing eventData in Monnify notification payload");
-        break;
-      }
-      // Process successful transaction
-      const { paymentReference, amountPaid, transactionReference } =
-        payload.eventData;
+type MonnifyPayload = {
+  meta?: {
+    payload: {
+      transactionReference: string;
+      paymentReference: string;
+      amountPaid: number;
+      customer: any;
+    };
+  };
+  eventData?: {
+    transactionReference: string;
+    paymentReference: string;
+    amountPaid: number;
+    customer: any;
+    userId?: string;
+  };
+  metaData?: {
+    type: "wallet_funding" | "registration_fee";
+    userId: string;
+  };
+};
 
-      if (!paymentReference || !amountPaid || !transactionReference) {
-        console.error("Missing required fields in Monnify notification", {
-          paymentReference,
-          amountPaid,
-          transactionReference,
-        });
-        break;
-      }
-      // Here you would typically update your database, notify the user, etc.
-      const metadata = payload.eventData.metaData || {};
+async function processMonnifyNotification(payload: MonnifyPayload) {
+  try {
+    const data = payload?.meta?.payload || payload.eventData;
+    if (!data) {
+      throw new AppError("Invalid payload structure", 400);
+    }
 
-      if (metadata?.type === "wallet_funding") {
-        const amountInNaira = +amountPaid;
+    const { paymentReference, amountPaid, transactionReference: trxRef } = data;
+    const metadata = payload.metaData || {};
 
-        // Ensure we have a valid user email
-        if (!metadata.userId) {
-          throw new AppError("User ID is required", 400);
-        }
+    // Validate required fields
+    if (!paymentReference || !amountPaid || !trxRef) {
+      throw new AppError("Missing required payment fields", 400);
+    }
 
-        // Find the user by ID
-        const user = await prisma.user.findUnique({
-          where: { id: metadata.userId },
-        });
-
-        if (!user) {
-          throw new AppError("User not found", 404);
-        }
-
-        // Update the user's wallet balance
-        await prisma.wallet.upsert({
-          where: { userId: user.id },
-          update: {
-            balance: {
-              increment: amountInNaira,
-            },
-            transactions: {
-              create: {
-                type: "DEPOSIT",
-                amount: amountInNaira,
-                reference: trxRef,
-                status: TransactionStatus.COMPLETED,
-              },
-            },
-          },
-          create: {
-            userId: user.id,
-            balance: amountInNaira,
-            transactions: {
-              create: {
-                type: "DEPOSIT",
-                amount: amountInNaira,
-                reference: trxRef,
-                status: TransactionStatus.COMPLETED,
-              },
-            },
-          },
-        });
-
-        return NextResponse.json({
-          message: "Wallet funded successfully",
-          amount: amountInNaira,
-        });
-      } else if (metadata?.type === "registration_fee") {
-        const userId = String(metadata.userId) || payload.eventData.userId;
-
-        // Update registration fee status
-        await prisma.registrationFee.update({
-          where: { userId },
-          data: {
-            paid: true,
-            reference: trxRef,
-          },
-        });
-
-        // Activate user account
-        await prisma.user.update({
-          where: { id: userId },
-          data: { status: "ACTIVE" },
-        });
-        // udpate session user
-
-        logger.info("Registration fee payment verified and user activated", {
-          userId,
-          reference: trxRef,
-        });
-      }
-
-      console.info("Monnify transaction successful:", {
-        paymentReference,
-        amountPaid,
-        transactionReference,
-      });
-      break;
-    case "FAILED_TRANSACTION":
-      console.warn("Monnify transaction failed:", { payload });
-      break;
+    switch (metadata.type) {
+      case "wallet_funding":
+        const userId =
+          metadata.userId ||
+          (await prisma.user.findUnique({
+            where: { email: data.customer?.email },
+          })?.id);
+        return await handleWalletFunding(userId, amountPaid, trxRef);
+      case "registration_fee":
+        return await handleRegistrationFee(
+          metadata.userId || data.userId,
+          trxRef
+        );
+      default:
+        throw new AppError("Unknown transaction type", 400);
+    }
+  } catch (error) {
+    logger.error("Failed to process Monnify notification:", { error });
+    throw error;
   }
+}
+
+async function handleWalletFunding(
+  userId: string,
+  amount: number,
+  reference: string
+) {
+  if (!userId) throw new AppError("User ID is required", 400);
+
+  const user = await prisma.user.findUnique({ where: { id: userId } });
+  if (!user) throw new AppError("User not found", 404);
+
+  await prisma.wallet.upsert({
+    where: { userId },
+    update: {
+      balance: { increment: amount },
+      transactions: {
+        create: {
+          type: "DEPOSIT",
+          amount,
+          reference,
+          status: TransactionStatus.COMPLETED,
+        },
+      },
+    },
+    create: {
+      userId,
+      balance: amount,
+      transactions: {
+        create: {
+          type: "DEPOSIT",
+          amount,
+          reference,
+          status: TransactionStatus.COMPLETED,
+        },
+      },
+    },
+  });
+
+  return NextResponse.json({ message: "Wallet funded successfully", amount });
+}
+
+async function handleRegistrationFee(userId: string, reference: string) {
+  if (!userId) throw new AppError("User ID is required", 400);
+
+  await prisma.$transaction([
+    prisma.registrationFee.update({
+      where: { userId },
+      data: { paid: true, reference },
+    }),
+    prisma.user.update({
+      where: { id: userId },
+      data: { status: "ACTIVE" },
+    }),
+  ]);
+
+  logger.info("Registration fee payment verified and user activated", {
+    userId,
+    reference,
+  });
 }

@@ -328,16 +328,18 @@ export class MonnifyService {
   }
 }
 
+export const redisClient = new Redis({
+  host: _escrowConfig.redisHost,
+  port: _escrowConfig.redisPort,
+  password: _escrowConfig.redisPassword,
+  db: _escrowConfig.redisDb,
+});
+
 export const monnifyService = new MonnifyService(
   {
     baseUrl: _escrowConfig.monnifyBaseUrl,
     apiKey: _escrowConfig.monnifyApiKey,
     clientSecret: _escrowConfig.monnifySecretKey,
   },
-  new Redis({
-    host: _escrowConfig.redisHost,
-    port: _escrowConfig.redisPort,
-    password: _escrowConfig.redisPassword,
-    db: _escrowConfig.redisDb,
-  })
+  redisClient
 );

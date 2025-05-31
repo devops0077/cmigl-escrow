@@ -177,6 +177,8 @@ export function FundWalletModal({ onSuccess, trigger }: FundWalletModalProps) {
               type: "wallet_funding",
               includeFees,
               originalAmount: amount * 100,
+              userId: session?.user?.id || "guest",
+              email: session?.user?.email || "guest@example.com",
             }}
             // incomeSplitConfig={null} // Adjust as needed
             onLoadStart={() => console.log("Payment loading started")}

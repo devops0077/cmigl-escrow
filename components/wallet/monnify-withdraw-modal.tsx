@@ -268,21 +268,16 @@ export function MonnifyWithdrawModal() {
   // Recovery system
   useEffect(() => {
     if (withdrawalReference) {
-      localStorage.setItem(
-        "pendingMonnifyWithdrawalReference",
-        withdrawalReference
-      );
+      localStorage.setItem("pendingWithdrawalReference", withdrawalReference);
     }
 
     if (withdrawalStatus === "COMPLETED" || withdrawalStatus === "FAILED") {
-      localStorage.removeItem("pendingMonnifyWithdrawalReference");
+      localStorage.removeItem("pendingWithdrawalReference");
     }
   }, [withdrawalReference, withdrawalStatus]);
 
   useEffect(() => {
-    const pendingReference = localStorage.getItem(
-      "pendingMonnifyWithdrawalReference"
-    );
+    const pendingReference = localStorage.getItem("pendingWithdrawalReference");
     if (pendingReference) {
       setWithdrawalReference(pendingReference);
       setWithdrawalStatus("PENDING");
@@ -363,7 +358,7 @@ export function MonnifyWithdrawModal() {
 
       try {
         const response = await fetch(
-          `/api/wallet/monnify-withdrawal/verify/${reference}`
+          `/api/wallet/withdrawal/verify/${reference}`
         );
         if (!response.ok) {
           throw new Error("Failed to verify withdrawal status");
@@ -376,7 +371,7 @@ export function MonnifyWithdrawModal() {
           setProcessingProgress(100);
           setCurrentStep(WithdrawalStep.COMPLETED);
           refetchWallet();
-          localStorage.removeItem("pendingMonnifyWithdrawalReference");
+          localStorage.removeItem("pendingWithdrawalReference");
 
           toast.success("Withdrawal completed!", {
             description:
@@ -386,7 +381,7 @@ export function MonnifyWithdrawModal() {
           setProcessingProgress(100);
           setCurrentStep(WithdrawalStep.COMPLETED);
           refetchWallet();
-          localStorage.removeItem("pendingMonnifyWithdrawalReference");
+          localStorage.removeItem("pendingWithdrawalReference");
 
           toast.error("Withdrawal failed", {
             description: "Your funds have been returned to your wallet.",
@@ -471,8 +466,8 @@ export function MonnifyWithdrawModal() {
     setProcessingProgress(20);
 
     try {
-      const response = await apiClient.post("/wallet/monnify-withdrawal", {
-        type: "monnify_withdrawal",
+      const response = await apiClient.post("/wallet", {
+        type: "withdrawal",
         amount: Number(values.amount),
         bankCode: values.bankCode,
         accountNumber: values.accountNumber,
@@ -486,20 +481,17 @@ export function MonnifyWithdrawModal() {
       setWithdrawalStatus("PENDING");
       setProcessingProgress(80);
 
-      localStorage.setItem(
-        "pendingMonnifyWithdrawalReference",
-        result.reference
-      );
+      localStorage.setItem("pendingWithdrawalReference", result.reference);
 
       setTimeout(() => checkWithdrawalStatus(result.reference), 3000);
 
       toast.success("Withdrawal initiated", {
-        description: "Your withdrawal request has been submitted via Monnify.",
+        description: "Your withdrawal request has been submitted.",
       });
 
       refetchWallet();
     } catch (error) {
-      logger.error("Monnify withdrawal error", { error });
+      logger.error("Paystack withdrawal error", { error });
       setCurrentStep(WithdrawalStep.AMOUNT);
       setProcessingProgress(0);
 
@@ -525,7 +517,7 @@ export function MonnifyWithdrawModal() {
         setWithdrawalReference(null);
         setWithdrawalStatus(null);
         setCurrentStep(WithdrawalStep.AMOUNT);
-        localStorage.removeItem("pendingMonnifyWithdrawalReference");
+        localStorage.removeItem("pendingWithdrawalReference");
       }
 
       setOpen(false);
@@ -908,7 +900,7 @@ export function MonnifyWithdrawModal() {
               <div className="text-sm">
                 <div className="font-medium">Secure Processing</div>
                 <div className="opacity-80">
-                  Your withdrawal will be processed securely via Monnify. Funds
+                  Your withdrawal will be processed securely via paystack. Funds
                   typically arrive within minutes.
                 </div>
               </div>
@@ -967,7 +959,7 @@ export function MonnifyWithdrawModal() {
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Provider:</span>
                 <Badge variant="outline" className="text-xs">
-                  Monnify
+                  Paystack
                 </Badge>
               </div>
               <div className="flex justify-between">

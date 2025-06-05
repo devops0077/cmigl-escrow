@@ -138,7 +138,7 @@ export function FundWalletModal({ onSuccess, trigger }: FundWalletModalProps) {
             </Label>
           </div>
 
-          {/* {includeFees && feeBreakdown && (
+          {includeFees && feeBreakdown && (
             <div className="bg-muted p-3 rounded-md text-sm">
               <p className="font-medium mb-1">Fee Breakdown:</p>
               <p>Base Amount: {formatCurrency(feeBreakdown.baseAmount)}</p>
@@ -147,13 +147,13 @@ export function FundWalletModal({ onSuccess, trigger }: FundWalletModalProps) {
                 Total: {formatCurrency(feeBreakdown.totalAmount)}
               </p>
             </div>
-          )} */}
+          )}
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={() => setIsOpen(false)}>
             Cancel
           </Button>
-          {/* {includeFees && feeBreakdown && (
+          {includeFees && feeBreakdown && (
             <PaystackButton
               amount={Math.round(Number(totalAmount))}
               email={session?.user?.email || ""}
@@ -165,8 +165,8 @@ export function FundWalletModal({ onSuccess, trigger }: FundWalletModalProps) {
               reference={generateTransactionReference()}
               onSuccess={handleSuccess}
             />
-          )} */}
-          <MonnifyButton
+          )}
+          {/* <MonnifyButton
             amount={Math.round(Number(amount))}
             currency="NGN"
             reference={generateTransactionReference()}
@@ -185,7 +185,7 @@ export function FundWalletModal({ onSuccess, trigger }: FundWalletModalProps) {
             onLoadComplete={() => console.log("Payment loading completed")}
             onComplete={handleSuccess}
             onClose={(data) => handleError(data)}
-          />
+          /> */}
         </DialogFooter>
       </DialogContent>
     </Dialog>

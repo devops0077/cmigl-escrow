@@ -8,13 +8,19 @@ import { Toaster } from "sonner";
 import { ReactQueryProvider } from "@/lib/react-query-provider";
 import { HelpBubble } from "@/components/help/help-bubble";
 import { RestrictionProvider } from "@/providers/restriction-provider";
+import * as Sentry from "@sentry/nextjs";
 
 const inter = Inter({ subsets: ["latin"] });
 
-export const metadata: Metadata = {
-  title: "CMIGL Escrow Services",
-  description: "Secure transactions between buyers and sellers",
-};
+export function generateMetadata(): Metadata {
+  return {
+    title: "CMIGL Escrow Services",
+    description: "Secure transactions between buyers and sellers",
+    other: {
+      ...Sentry.getTraceData(),
+    },
+  };
+}
 
 export default function RootLayout({
   children,

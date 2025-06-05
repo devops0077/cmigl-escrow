@@ -133,7 +133,7 @@ export default function PaymentPage() {
   return (
     <>
       <PaystackScript />
-      <MonnifyScript />
+      {/* <MonnifyScript /> */}
       <div className="container flex items-center justify-center min-h-screen py-10">
         <Card className="w-full max-w-md">
           <CardHeader>
@@ -163,39 +163,39 @@ export default function PaymentPage() {
           </CardContent>
           <CardFooter className="flex justify-center">
             {paymentData ? (
-              // <PaystackButton
-              //   amount={paymentData.amount}
-              //   email={paymentData.email}
-              //   reference={paymentData.reference}
-              //   onSuccess={handlePaymentSuccess}
-              //   onClose={handlePaymentClose}
-              //   metadata={
-              //     {
-              //       type: "registration_fee",
-              //       userId: searchParams.get("userId"),
-              //     } as any
-              //   }
-              // />
-              <MonnifyButton
+              <PaystackButton
                 amount={paymentData.amount}
-                currency="NGN"
-                reference={generateTransactionReference()}
-                customerFullName={session?.user?.name || "Guest User"}
-                customerEmail={session?.user?.email || "guest@example.com"}
-                paymentDescription="Wallet Funding"
-                metadata={{
-                  type: "registration_fee",
-                  userId: searchParams.get("userId") as string,
-                }}
-                // incomeSplitConfig={null} // Adjust as needed
-                onLoadStart={() => console.log("Payment loading started")}
-                onLoadComplete={() => console.log("Payment loading completed")}
-                onComplete={(res) =>
-                  handlePaymentSuccess(res.transactionReference)
-                }
+                email={paymentData.email}
+                reference={paymentData.reference}
+                onSuccess={handlePaymentSuccess}
                 onClose={handlePaymentClose}
+                metadata={
+                  {
+                    type: "registration_fee",
+                    userId: searchParams.get("userId"),
+                  } as any
+                }
               />
             ) : (
+              // <MonnifyButton
+              //   amount={paymentData.amount}
+              //   currency="NGN"
+              //   reference={generateTransactionReference()}
+              //   customerFullName={session?.user?.name || "Guest User"}
+              //   customerEmail={session?.user?.email || "guest@example.com"}
+              //   paymentDescription="Wallet Funding"
+              //   metadata={{
+              //     type: "registration_fee",
+              //     userId: searchParams.get("userId") as string,
+              //   }}
+              //   // incomeSplitConfig={null} // Adjust as needed
+              //   onLoadStart={() => console.log("Payment loading started")}
+              //   onLoadComplete={() => console.log("Payment loading completed")}
+              //   onComplete={(res) =>
+              //     handlePaymentSuccess(res.transactionReference)
+              //   }
+              //   onClose={handlePaymentClose}
+              // />
               <div className="flex flex-col items-center justify-center">
                 <Button disabled>Unable to initialize payment</Button>
                 {session?.user.id && (

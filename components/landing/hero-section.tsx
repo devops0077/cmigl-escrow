@@ -329,7 +329,7 @@ export function HeroSection() {
                   whileHover={{ scale: 1.05 }}
                 >
                   <CheckIcon className="h-4 w-4" />
-                  <span className="text-muted-foreground">Flat 2.5% fee</span>
+                  <span className="text-muted-foreground">Flat 4.5% fee</span>
                 </motion.div>
                 <motion.div
                   className="flex items-center space-x-1"

@@ -49,7 +49,7 @@ export default function TransactionNotificationEmail({
             <Text style={list}>
               • Amount: ₦{details.amount.toFixed(2)}
               <br />• Product: {details.productDetails}
-              <br />• Fee: ₦{details.fee.toFixed(2)} (2.5% of transaction
+              <br />• Fee: ₦{details.fee.toFixed(2)} (4.5% of transaction
               amount)
             </Text>
           </>

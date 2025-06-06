@@ -125,9 +125,9 @@ export function Features() {
       gradient: "from-blue-500 to-purple-600",
     },
     {
-      title: "Flat 2.5% Fee",
+      title: "Flat 4.5% Fee",
       description:
-        "Simple and transparent pricing with a flat 2.5% fee on all transactions.",
+        "Simple and transparent pricing with a flat 4.5% fee on all transactions.",
       icon: PercentIcon,
       gradient: "from-purple-500 to-pink-600",
     },

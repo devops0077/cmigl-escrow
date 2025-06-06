@@ -7,16 +7,6 @@ import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { Button } from "@/components/ui/button";
 import {
-  Drawer,
-  DrawerClose,
-  DrawerContent,
-  DrawerDescription,
-  DrawerFooter,
-  DrawerHeader,
-  DrawerTitle,
-  DrawerTrigger,
-} from "@/components/ui/drawer";
-import {
   Form,
   FormControl,
   FormDescription,
@@ -49,7 +39,6 @@ import {
   TrendingUp,
   Zap,
   ArrowDown,
-  DollarSign,
 } from "lucide-react";
 import { useWallet } from "@/hooks/use-wallet";
 import { formatCurrency, cn } from "@/lib/utils";
@@ -75,6 +64,17 @@ type Bank = {
   active?: boolean;
   popular?: boolean;
   category?: "tier1" | "tier2" | "digital" | "microfinance";
+};
+
+// Fee structure based on the provided screenshot
+const calculateProcessingFee = (amount: number): number => {
+  if (amount <= 5000) {
+    return 10; // NGN 10 for transfers of NGN 5,000 and below
+  } else if (amount <= 50000) {
+    return 25; // NGN 25 for transfers between NGN 5,001 and NGN 50,000
+  } else {
+    return 50; // NGN 50 for transfers above NGN 50,000
+  }
 };
 
 // Enhanced bank data with categories and popularity
@@ -465,6 +465,8 @@ export function MonnifyWithdrawModal() {
     setCurrentStep(WithdrawalStep.PROCESSING);
     setProcessingProgress(20);
 
+    const processingFee = calculateProcessingFee(Number(values.amount));
+
     try {
       const response = await apiClient.post("/wallet", {
         type: "withdrawal",
@@ -472,6 +474,7 @@ export function MonnifyWithdrawModal() {
         bankCode: values.bankCode,
         accountNumber: values.accountNumber,
         accountName: accountName,
+        processingFee: processingFee,
       });
 
       setProcessingProgress(60);
@@ -592,13 +595,19 @@ export function MonnifyWithdrawModal() {
               </div>
             </FormControl>
             <FormDescription className="text-center">
-              <div className="flex items-center justify-between">
+              <span className="flex items-center justify-between">
                 <span>Minimum: ₦1,000</span>
                 {walletData?.balance !== undefined && (
                   <span className="font-medium text-primary">
                     Balance: ₦{walletData.balance.toLocaleString()}
                   </span>
                 )}
+              </span>
+              <div className="mt-2 text-xs text-muted-foreground">
+                <span>Processing fees: </span>
+                <span>₦10 (≤₦5,000), </span>
+                <span>₦25 (₦5,001-₦50,000), </span>
+                <span>₦50 (&gt;₦50,000)</span>
               </div>
             </FormDescription>
             <FormMessage />
@@ -677,7 +686,7 @@ export function MonnifyWithdrawModal() {
           <AnimatePresence>
             {categorizedBanks.map((bank, index) => (
               <motion.div
-                key={bank.code}
+                key={index}
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -20 }}
@@ -847,6 +856,10 @@ export function MonnifyWithdrawModal() {
   // Render confirmation step
   const renderConfirmationStep = () => {
     const values = form.getValues();
+    const processingFee = calculateProcessingFee(values.amount);
+    const totalAmount = values.amount;
+    const amountAfterFee = totalAmount - processingFee;
+
     return (
       <motion.div
         initial={{ opacity: 0, y: 20 }}
@@ -888,7 +901,15 @@ export function MonnifyWithdrawModal() {
             <Separator />
             <div className="flex justify-between items-center">
               <span className="text-muted-foreground">Processing Fee</span>
-              <span className="font-medium text-green-600">Free</span>
+              <span className="font-medium">
+                {formatCurrency(processingFee)}
+              </span>
+            </div>
+            <div className="flex justify-between items-center font-medium">
+              <span>You will receive</span>
+              <span className="text-green-600">
+                {formatCurrency(amountAfterFee)}
+              </span>
             </div>
           </CardContent>
         </Card>

@@ -266,7 +266,7 @@ export function HowItWorks() {
                 transition={{ delay: 1.2, duration: 0.5 }}
               >
                 Join CMIGL Escrow with a one-time registration fee of ₦500.
-                After that, enjoy our services with just a flat 2.5% transaction
+                After that, enjoy our services with just a flat 4.5% transaction
                 fee.
               </motion.p>
 

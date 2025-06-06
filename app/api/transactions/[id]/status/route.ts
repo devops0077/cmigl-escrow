@@ -39,6 +39,22 @@ export async function PATCH(
 
     const transaction = await prisma.transaction.findUnique({
       where: { id: transactionId },
+      include: {
+        buyer: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+          },
+        },
+        seller: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+          },
+        },
+      },
     });
 
     if (!transaction) {
@@ -182,7 +198,7 @@ export async function PATCH(
         userId: transaction.sellerId,
         title: "Transaction Completed",
         type: "ADMIN_NOTIFICATION",
-        message: `Transaction ${transaction.id} has been completed. Funds released.`,
+        message: `Transaction with ${transaction.buyer.name} has been completed. ${formatCurrency(transaction.amount)} has been paid to your wallet.`,
         url:
           process.env.NEXT_PUBLIC_APP_URL +
           `/dashboard/transactions/${transaction.id}`,

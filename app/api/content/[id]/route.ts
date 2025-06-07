@@ -32,15 +32,7 @@ export async function GET(
       return NextResponse.json({ error: "Content not found" }, { status: 404 });
     }
 
-    // Add cache control headers
-    const headers = new Headers();
-    headers.set(
-      "Cache-Control",
-      "public, max-age=300, s-maxage=600, stale-while-revalidate=86400"
-    );
-
     return NextResponse.json(content, {
-      headers,
       status: 200,
     });
   } catch (error) {

@@ -7,6 +7,7 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { getContentById } from "@/lib/content-client";
+import apiClient from "@/lib/api-client";
 
 interface DynamicContentProps {
   content: string;
@@ -26,8 +27,9 @@ export function DynamicContent({
   // Use React Query to potentially fetch updated content
   const { data, isLoading, isError, error, refetch } = useQuery({
     queryKey: ["content", contentId],
-    queryFn: async () => await getContentById(contentId),
+    queryFn: async () => await apiClient.get(`/content/${contentId}`),
     // Start with the initial content we got from the server
+    // @ts-ignore
     initialData: { id: contentId, content: initialContent },
     // Only refetch on mount or manual refetch
     staleTime: Number.POSITIVE_INFINITY,
@@ -88,7 +90,8 @@ export function DynamicContent({
     <div className="overflow-auto">
       <div
         className="prose dark:prose-invert max-w-none"
-        dangerouslySetInnerHTML={{ __html: data.content }}
+        // @ts-ignore
+        dangerouslySetInnerHTML={{ __html: data?.content ?? initialContent }}
       />
       <div className="mt-4 text-right">
         <Button

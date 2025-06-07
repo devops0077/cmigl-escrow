@@ -85,11 +85,7 @@ export async function GET(
     });
 
     // Set cache control headers
-    return NextResponse.json(content, {
-      headers: {
-        "Cache-Control": "public, s-maxage=60, stale-while-revalidate=300",
-      },
-    });
+    return NextResponse.json(content);
   } catch (error) {
     logger.error("Error fetching content by type:", error);
     return NextResponse.json(

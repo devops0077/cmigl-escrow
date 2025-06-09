@@ -63,7 +63,7 @@ export function Testimonials() {
       role: "Buyer",
       initials: "IS",
       content:
-        "I was hesitant to buy expensive electronics online, but Vokun Escrow made it safe and secure. The seller only received payment after I confirmed everything was as described. Great service!",
+        "I was hesitant to buy expensive electronics online, but CMIGL Escrow made it safe and secure. The seller only received payment after I confirmed everything was as described. Great service!",
     },
     {
       name: "Ademola Jerry",
@@ -143,7 +143,7 @@ export function Testimonials() {
               className="max-w-[900px] text-muted-foreground md:text-xl/relaxed lg:text-base/relaxed xl:text-xl/relaxed"
               variants={itemVariants}
             >
-              See what our users have to say about their experience with Vokun
+              See what our users have to say about their experience with CMIGL
               Escrow Services.
             </motion.p>
           </div>

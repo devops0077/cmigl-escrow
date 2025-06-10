@@ -35,8 +35,8 @@ import { SecurityEventType } from "@/lib/generated/prisma";
 import apiClient from "@/lib/api-client";
 
 const formSchema = z.object({
-  email: z.string().email({
-    message: "Please enter a valid email address.",
+  email: z.string().min(1, {
+    message: "Field is required.",
   }),
   password: z.string().min(8, {
     message: "Password must be at least 8 characters.",
@@ -164,9 +164,12 @@ function LoginPage() {
                   name="email"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Email</FormLabel>
+                      <FormLabel>Email | Username | Phone</FormLabel>
                       <FormControl>
-                        <Input placeholder="example@example.com" {...field} />
+                        <Input
+                          placeholder="Enter your email, username, or phone number"
+                          {...field}
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>

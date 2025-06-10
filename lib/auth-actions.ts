@@ -199,8 +199,14 @@ export async function payRegistrationFee(
 }
 
 export async function verifyCredentials(email: string, password: string) {
-  const user = await prisma.user.findUnique({
-    where: { email },
+  const user = await prisma.user.findFirst({
+    where: {
+      OR: [
+        { email },
+        { username: email }, // Allow username as email
+        { phone: email }, // Allow phone number as email
+      ],
+    },
   });
 
   if (!user || !user.password) {

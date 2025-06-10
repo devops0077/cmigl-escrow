@@ -15,7 +15,7 @@ import { HomeIcon } from "lucide-react";
 import { DashboardHeader } from "@/components/dashboard/dashboard-header";
 
 export const metadata: Metadata = {
-  title: "Feedback Management | Admin | Vokun Escrow",
+  title: "Feedback Management | Admin | Cmigl Escrow",
   description: "Manage user feedback, suggestions, and bug reports.",
 };
 

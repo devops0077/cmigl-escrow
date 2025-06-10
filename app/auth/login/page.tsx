@@ -85,11 +85,19 @@ function LoginPage() {
             return;
           }
         } else if (result.error.includes("CredentialsSignin")) {
-          setError("Invalid email or password.");
+          setError("Invalid credentials.");
           await apiClient.post("/user/security-log", {
             type: SecurityEventType.LOGIN_FAILED,
             email: values.email,
-            reason: "Invalid email or password.",
+            reason: "Invalid credentials.",
+          });
+          return;
+        } else {
+          setError("An unexpected error occurred. Please try again later.");
+          await apiClient.post("/user/security-log", {
+            type: SecurityEventType.LOGIN_FAILED,
+            email: values.email,
+            reason: result.error,
           });
         }
         return;
@@ -108,7 +116,6 @@ function LoginPage() {
       router.push(callbackUrl);
     } catch (error) {
       console.error("Login error:", error);
-      setError("An unexpected error occurred. Please try again.");
     } finally {
       setIsLoading(false);
     }

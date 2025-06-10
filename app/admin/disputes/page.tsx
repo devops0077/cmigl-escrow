@@ -12,7 +12,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { DashboardHeader } from "@/components/dashboard/dashboard-header";
 
 export const metadata: Metadata = {
-  title: "Admin Disputes | Vokun Escrow",
+  title: "Admin Disputes | Cmigl Escrow",
   description: "Manage and resolve user disputes",
 };
 

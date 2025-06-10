@@ -34,6 +34,7 @@ import {
 import { PassportImageCapture } from "@/components/auth/passport-image-capture";
 import { DynamicContent } from "../content/dynamic-content";
 import { ContentVersionInfo } from "../content/content-version-info";
+import axios, { AxiosError } from "axios";
 
 // Define the single form schema
 const formSchema = z
@@ -143,7 +144,7 @@ export function MultiStepRegisterForm({
     setError(null);
 
     try {
-      const result = await registerUser({
+      const result = await axios.post("/api/auth/register", {
         name: values.name,
         email: values.email,
         phone: values.phone,
@@ -153,17 +154,16 @@ export function MultiStepRegisterForm({
         termsAccepted: values.termsAccepted,
       });
 
-      if (result.id) {
-        setSuccess(true);
-        toast.success("Registration successful", {
-          description: "Please check your email to verify your account.",
-        });
-      }
-    } catch (error) {
+      setSuccess(true);
+      toast.success("Registration successful", {
+        description: "Please check your email to verify your account.",
+      });
+    } catch (error: any) {
       console.error("Registration error:", error);
       setError(
-        error instanceof Error
-          ? error.message
+        error instanceof AxiosError
+          ? error.response?.data?.message ||
+              "Registration failed. Please try again."
           : "Registration failed. Please try again."
       );
     } finally {

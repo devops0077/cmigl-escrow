@@ -13,6 +13,8 @@ export const publicRoutes = [
   "/knowledge-base/(.*)",
   "/tutorials",
   "/tutorials/(.*)",
+  "/monitoring",
+  "/monitoring/(.*)",
   "/faq",
   "/feeback",
   "/new-verification",

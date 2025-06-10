@@ -114,7 +114,7 @@ export class EmailService {
     });
   }
   async sendPasswordResetEmail(email: string, token: string) {
-    const resetUrl = `${_escrowConfig.publicUrl}/auth/reset-password?token=${token}`;
+    const resetUrl = `${_escrowConfig.publicUrl}auth/reset-password?token=${token}`;
 
     const subject = "Reset Your CMIGL Escrow Password";
     const text = `

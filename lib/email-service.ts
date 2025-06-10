@@ -3,6 +3,7 @@ import VerificationEmail from "@/emails/verification-email";
 import WelcomeEmail from "@/emails/welcome-email";
 import TransactionNotificationEmail from "@/emails/transaction-notification-email";
 import axios from "axios";
+import { _escrowConfig } from "@/config";
 
 interface EmailOptions {
   to: string;
@@ -113,7 +114,7 @@ export class EmailService {
     });
   }
   async sendPasswordResetEmail(email: string, token: string) {
-    const resetUrl = `${process.env.NEXTAUTH_URL}/auth/reset-password?token=${token}`;
+    const resetUrl = `${_escrowConfig.publicUrl}/auth/reset-password?token=${token}`;
 
     const subject = "Reset Your CMIGL Escrow Password";
     const text = `

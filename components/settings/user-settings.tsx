@@ -276,16 +276,11 @@ export function UserSettings() {
 
       profileForm.setValue("name", session?.user.name as string);
       profileForm.setValue("email", session?.user?.email as string);
-      profileForm.setValue(
-        "bio",
-        session?.user.bio ??
-          "We'd like to know more about you, please update your bio."
-      );
       profileForm.setValue("phone", session?.user.phone);
-      profileForm.setValue(
-        "address",
-        session?.user.address ?? "And oh, do remember to update your address."
-      );
+      session?.user.bio &&
+        profileForm.setValue("bio", String(session?.user.bio));
+      session?.user.address &&
+        profileForm.setValue("address", String(session?.user.address));
     }, 500);
 
     return () => clearTimeout(timer);

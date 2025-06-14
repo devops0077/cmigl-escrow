@@ -87,6 +87,8 @@ model User {
   userSettings          UserSettings?
   securityLogs          SecurityLog[]        @relation("UserSecurityLogs")
   pushSubscriptions     PushSubscription[]   @relation("UserPushSubscriptions")
+  sentMessages          AdminMessage[]       @relation("SentMessages")
+  receivedMessages      AdminMessage[]       @relation("ReceivedMessages")
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -857,4 +859,55 @@ enum SecurityEventType {
   ALL_SESSIONS_REVOKED
   ACCOUNT_DELETION_REQUESTED
   ACCOUNT_DELETED
+}
+
+// Enum for message priority levels
+enum MessagePriority {
+  LOW
+  NORMAL
+  HIGH
+  URGENT
+}
+
+// AdminMessage model for direct messaging between admins and users
+model AdminMessage {
+  id          String          @id @default(cuid())
+  senderId    String
+  recipientId String
+  content     String
+  priority    MessagePriority @default(NORMAL)
+  readAt      DateTime?
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+
+  // Relations
+  sender      User                @relation("SentMessages", fields: [senderId], references: [id], onDelete: Cascade)
+  recipient   User                @relation("ReceivedMessages", fields: [recipientId], references: [id], onDelete: Cascade)
+  attachments MessageAttachment[]
+
+  // Indexes for better performance
+  @@index([senderId])
+  @@index([recipientId])
+  @@index([createdAt])
+  @@index([priority])
+  @@index([readAt])
+  @@map("AdminMessage")
+}
+
+// MessageAttachment model for file attachments
+model MessageAttachment {
+  id        String   @id @default(cuid())
+  messageId String
+  url       String
+  filename  String
+  fileType  String
+  createdAt DateTime @default(now())
+
+  // Relations
+  message AdminMessage @relation(fields: [messageId], references: [id], onDelete: Cascade)
+
+  // Indexes
+  @@index([messageId])
+  @@index([fileType])
+  @@map("MessageAttachment")
 }

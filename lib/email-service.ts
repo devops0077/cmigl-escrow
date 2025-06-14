@@ -4,11 +4,13 @@ import WelcomeEmail from "@/emails/welcome-email";
 import TransactionNotificationEmail from "@/emails/transaction-notification-email";
 import axios from "axios";
 import { _escrowConfig } from "@/config";
+import { zohomail, zohomailInMemory } from "@/services/zohomail.service";
 
 interface EmailOptions {
   to: string;
   subject: string;
   html: string;
+  useZoho?: boolean;
 }
 
 export class EmailService {
@@ -26,19 +28,36 @@ export class EmailService {
   //     });
   //   }
 
-  public async sendEmail({ to, subject, html }: EmailOptions): Promise<void> {
+  public async sendEmail({
+    to,
+    subject,
+    html,
+    useZoho = false, // Default to using Zoho
+  }: EmailOptions): Promise<void> {
     try {
-      //   await this.transporter.sendMail({
-      //     from: `"CMIGL Escrow" <${process.env.EMAIL_FROM}>`,
-      //     to,
-      //     subject,
-      //     html,
-      //   });
-      await axios.post(`${process.env.NEXT_PUBLIC_APP_URL}/api/send-email`, {
-        to,
-        subject,
-        html,
-      });
+      if (useZoho) {
+        await zohomailInMemory.sendEmail("890104447", {
+          from: {
+            email: _escrowConfig.mails.noreply,
+            user_name: "CMIGL Escrow", // Sender name
+          },
+          to: [
+            {
+              email: to,
+              user_name: to.split("@")[0], // Extract name from email
+            },
+          ],
+          subject,
+          content: html,
+          mail_format: "html",
+        });
+      } else {
+        await axios.post(`${process.env.NEXT_PUBLIC_APP_URL}/api/send-email`, {
+          to,
+          subject,
+          html,
+        });
+      }
     } catch (error) {
       console.error("Failed to send email:", error);
       throw new Error("Failed to send email");

@@ -27,4 +27,14 @@ export const _escrowConfig = {
   redisDb: process.env.REDIS_DB ? parseInt(process.env.REDIS_DB) : 0,
   redisHost: process.env.REDIS_HOST || "localhost",
   redisPort: process.env.REDIS_PORT ? parseInt(process.env.REDIS_PORT) : 6379,
+
+  zohomailClientId: process.env.ZOHOMAIL_CLIENT_ID || "",
+  zohomailClientSecret: process.env.ZOHOMAIL_CLIENT_SECRET || "",
+  zohomailGrantToken: process.env.ZOHOMAIL_GRANT_TOKEN || "",
+
+  mails: {
+    noreply: process.env.NEXT_PUBLIC_EMAIL_NO_REPLY || "no-reply@cmigl.org",
+    support: process.env.NEXT_PUBLIC_EMAIL_SUPPORT || "support@cmigl.org",
+    info: process.env.NEXT_PUBLIC_EMAIL_INFO || "info@cmigl.org",
+  },
 };

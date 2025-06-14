@@ -1,3 +1,5 @@
+import { _escrowConfig } from "@/config";
+// import { redisClient } from "@/lib/monnify-service";
 import axios, { AxiosInstance, AxiosRequestConfig } from "axios";
 import Redis, { RedisOptions } from "ioredis";
 
@@ -14,10 +16,12 @@ interface ZohoTokenResponse {
 interface ZohoMailConfig {
   clientId: string;
   clientSecret: string;
-  redirectUri: string;
+  grantToken?: string; // For Self Client flow, optional
+  redirectUri?: string;
   apiDomain?: string;
   redisUrl?: string;
   redisConfig?: RedisOptions;
+  useRedis?: boolean; // New optional flag to enable/disable Redis
 }
 
 interface EmailAddress {
@@ -85,20 +89,23 @@ interface CachedToken {
 
 export class ZohoMailClient {
   private config: ZohoMailConfig;
-  private redis: Redis;
+  private redis?: Redis; // Now optional
   private httpClient: AxiosInstance;
   private tokenCacheKey: string;
+  private inMemoryTokenCache: CachedToken | null = null; // In-memory fallback
 
-  constructor(config: ZohoMailConfig) {
+  constructor(config: ZohoMailConfig, redisClientInstance?: Redis) {
     this.config = {
       apiDomain: "https://www.zohoapis.com",
+      useRedis: true, // Default to true for backward compatibility
       ...config,
     };
 
-    // Initialize Redis client
-    this.redis = config.redisUrl
-      ? new Redis(config.redisUrl)
-      : new Redis(config.redisConfig || {});
+    // Initialize Redis client only if enabled and provided
+    if (this.config.useRedis && redisClientInstance) {
+      this.redis = redisClientInstance;
+    }
+
     this.tokenCacheKey = `zoho_mail_token:${this.config.clientId}`;
 
     // Initialize HTTP client
@@ -156,12 +163,44 @@ export class ZohoMailClient {
     const params = new URLSearchParams({
       client_id: this.config.clientId,
       response_type: "code",
-      redirect_uri: this.config.redirectUri,
+      redirect_uri: this.config.redirectUri ?? "",
       scope: scopes.join(","),
       access_type: "offline",
     });
 
     return `https://accounts.zoho.com/oauth/v2/auth?${params.toString()}`;
+  }
+
+  /**
+   * Exchange grant token for access and refresh tokens (Self Client flow)
+   */
+  async exchangeGrantTokenForToken(
+    grantToken?: string
+  ): Promise<ZohoTokenResponse> {
+    try {
+      const response = await axios.post(
+        "https://accounts.zoho.com/oauth/v2/token",
+        null,
+        {
+          params: {
+            code: this.config.grantToken || grantToken,
+            grant_type: "authorization_code",
+            client_id: this.config.clientId,
+            client_secret: this.config.clientSecret,
+            redirect_uri: this.config.redirectUri, // Optional for Self Client
+          },
+        }
+      );
+
+      const tokenData = response.data;
+      await this.cacheToken(tokenData);
+
+      return tokenData;
+    } catch (error: any) {
+      throw new Error(
+        `Failed to exchange grant token for token: ${error.response?.data?.error || error.message}`
+      );
+    }
   }
 
   /**
@@ -201,23 +240,39 @@ export class ZohoMailClient {
    */
   private async getValidAccessToken(): Promise<string | null> {
     try {
-      const cachedTokenStr = await this.redis.get(this.tokenCacheKey);
+      let cachedToken: CachedToken | null = null;
 
-      if (!cachedTokenStr) {
+      // Try to get token from Redis first (if available)
+      if (this.redis) {
+        const cachedTokenStr = await this.redis.get(this.tokenCacheKey);
+        if (cachedTokenStr) {
+          cachedToken = JSON.parse(cachedTokenStr);
+        }
+      } else {
+        // Fall back to in-memory cache
+        cachedToken = this.inMemoryTokenCache;
+      }
+
+      if (!cachedToken) {
         return null;
       }
 
-      const cachedToken: CachedToken = JSON.parse(cachedTokenStr);
       const now = Date.now();
 
       // Check if token expires within the next 5 minutes (buffer for safety)
       if (cachedToken.expires_at - now < 5 * 60 * 1000) {
         if (cachedToken.refresh_token) {
           await this.refreshAccessToken();
-          const refreshedTokenStr = await this.redis.get(this.tokenCacheKey);
-          if (refreshedTokenStr) {
-            const refreshedToken: CachedToken = JSON.parse(refreshedTokenStr);
-            return refreshedToken.access_token;
+
+          // Get refreshed token
+          if (this.redis) {
+            const refreshedTokenStr = await this.redis.get(this.tokenCacheKey);
+            if (refreshedTokenStr) {
+              const refreshedToken: CachedToken = JSON.parse(refreshedTokenStr);
+              return refreshedToken.access_token;
+            }
+          } else {
+            return this.inMemoryTokenCache?.access_token || null;
           }
         }
         return null;
@@ -235,13 +290,21 @@ export class ZohoMailClient {
    */
   private async refreshAccessToken(): Promise<void> {
     try {
-      const cachedTokenStr = await this.redis.get(this.tokenCacheKey);
+      let cachedToken: CachedToken | null = null;
 
-      if (!cachedTokenStr) {
-        throw new Error("No cached token found");
+      // Get current token from cache
+      if (this.redis) {
+        const cachedTokenStr = await this.redis.get(this.tokenCacheKey);
+        if (cachedTokenStr) {
+          cachedToken = JSON.parse(cachedTokenStr);
+        }
+      } else {
+        cachedToken = this.inMemoryTokenCache;
       }
 
-      const cachedToken: CachedToken = JSON.parse(cachedTokenStr);
+      if (!cachedToken) {
+        throw new Error("No cached token found");
+      }
 
       if (!cachedToken.refresh_token) {
         throw new Error("No refresh token available");
@@ -274,7 +337,7 @@ export class ZohoMailClient {
   }
 
   /**
-   * Cache token in Redis with expiration
+   * Cache token with Redis or in-memory fallback
    */
   private async cacheToken(tokenData: ZohoTokenResponse): Promise<void> {
     const expiresAt = Date.now() + tokenData.expires_in * 1000;
@@ -287,21 +350,30 @@ export class ZohoMailClient {
       scope: tokenData.scope,
     };
 
-    // Cache with TTL slightly longer than token expiry for safety
-    const ttlSeconds = tokenData.expires_in + 300; // 5 minutes buffer
+    if (this.redis) {
+      // Cache with TTL slightly longer than token expiry for safety
+      const ttlSeconds = tokenData.expires_in + 300; // 5 minutes buffer
 
-    await this.redis.setex(
-      this.tokenCacheKey,
-      ttlSeconds,
-      JSON.stringify(cachedToken)
-    );
+      await this.redis.setex(
+        this.tokenCacheKey,
+        ttlSeconds,
+        JSON.stringify(cachedToken)
+      );
+    } else {
+      // Store in memory as fallback
+      this.inMemoryTokenCache = cachedToken;
+    }
   }
 
   /**
    * Clear token cache
    */
   private async clearTokenCache(): Promise<void> {
-    await this.redis.del(this.tokenCacheKey);
+    if (this.redis) {
+      await this.redis.del(this.tokenCacheKey);
+    } else {
+      this.inMemoryTokenCache = null;
+    }
   }
 
   /**
@@ -328,6 +400,21 @@ export class ZohoMailClient {
     emailOptions: SendEmailOptions
   ): Promise<any> {
     try {
+      if (
+        !emailOptions.from ||
+        !emailOptions.to ||
+        !emailOptions.subject ||
+        !emailOptions.content
+      ) {
+        throw new Error(
+          "Missing required email fields: from, to, subject, content"
+        );
+      }
+      if (!(await this.isAuthenticated())) {
+        const grantToken = "your-grant-token-from-console";
+        await this.exchangeGrantTokenForToken(grantToken);
+      }
+
       const response = await this.httpClient.post(
         `${this.config.apiDomain}/mail/v1/accounts/${accountId}/messages`,
         emailOptions
@@ -646,22 +733,27 @@ export class ZohoMailClient {
    */
   async revokeToken(): Promise<void> {
     try {
-      const cachedTokenStr = await this.redis.get(this.tokenCacheKey);
+      let cachedToken: CachedToken | null = null;
 
-      if (cachedTokenStr) {
-        const cachedToken: CachedToken = JSON.parse(cachedTokenStr);
-
-        if (cachedToken.refresh_token) {
-          await axios.post(
-            "https://accounts.zoho.com/oauth/v2/token/revoke",
-            null,
-            {
-              params: {
-                token: cachedToken.refresh_token,
-              },
-            }
-          );
+      if (this.redis) {
+        const cachedTokenStr = await this.redis.get(this.tokenCacheKey);
+        if (cachedTokenStr) {
+          cachedToken = JSON.parse(cachedTokenStr);
         }
+      } else {
+        cachedToken = this.inMemoryTokenCache;
+      }
+
+      if (cachedToken?.refresh_token) {
+        await axios.post(
+          "https://accounts.zoho.com/oauth/v2/token/revoke",
+          null,
+          {
+            params: {
+              token: cachedToken.refresh_token,
+            },
+          }
+        );
       }
 
       await this.clearTokenCache();
@@ -681,9 +773,53 @@ export class ZohoMailClient {
   }
 
   /**
-   * Close Redis connection
+   * Close Redis connection (only if Redis is being used)
    */
   async disconnect(): Promise<void> {
-    await this.redis.quit();
+    if (this.redis) {
+      await this.redis.quit();
+    }
   }
+
+  /**
+   * Get current caching strategy info
+   */
+  getCacheInfo(): { useRedis: boolean; hasRedisConnection: boolean } {
+    return {
+      useRedis: this.config.useRedis ?? true,
+      hasRedisConnection: !!this.redis,
+    };
+  }
+}
+
+// Export instances for different use cases
+
+// With Redis (backward compatible)
+export const zohomail = new ZohoMailClient(
+  {
+    clientId: _escrowConfig.zohomailClientId,
+    clientSecret: _escrowConfig.zohomailClientSecret,
+    grantToken: _escrowConfig.zohomailGrantToken,
+    useRedis: true,
+  }
+  // redisClient
+);
+
+// Without Redis (in-memory only)
+export const zohomailInMemory = new ZohoMailClient(
+  {
+    clientId: _escrowConfig.zohomailClientId,
+    clientSecret: _escrowConfig.zohomailClientSecret,
+    grantToken: _escrowConfig.zohomailGrantToken,
+    useRedis: false,
+  }
+  // No Redis client passed
+);
+
+// Factory function for custom configurations
+export function createZohoMailClient(
+  config: ZohoMailConfig,
+  redisClient?: Redis
+): ZohoMailClient {
+  return new ZohoMailClient(config, redisClient);
 }

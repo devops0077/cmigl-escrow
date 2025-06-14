@@ -171,7 +171,7 @@ function LoginPage() {
                   name="email"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Email | Username | Phone</FormLabel>
+                      <FormLabel>Email, Username or Phone</FormLabel>
                       <FormControl>
                         <Input
                           placeholder="Enter your email, username, or phone number"

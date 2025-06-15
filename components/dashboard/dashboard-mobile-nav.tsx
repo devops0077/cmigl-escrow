@@ -16,6 +16,10 @@ import {
   CreditCard,
   History,
   AlertCircleIcon,
+  TrendingUp,
+  BookOpen,
+  MessageCircle,
+  Bubbles,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -41,6 +45,7 @@ export function DashboardMobileNav() {
     { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
     { name: "Wallet", href: "/dashboard/wallet", icon: Wallet },
     { name: "Transactions", href: "/dashboard/transactions", icon: History },
+    { name: "Messages", href: "/dashboard/messages", icon: MessageCircle },
   ];
 
   const secondaryNavItems = [
@@ -50,8 +55,12 @@ export function DashboardMobileNav() {
 
   const adminNavItems = [
     { name: "Admin Panel", href: "/admin", icon: Shield },
-    // { name: "Users", href: "/admin/users", icon: Users },
+    { name: "Revenue", href: "/admin/revenue", icon: TrendingUp },
+    { name: "Users", href: "/admin/users", icon: Users },
     { name: "Disputes", href: "/admin/disputes", icon: AlertCircleIcon },
+    { name: "Content", href: "/admin/content", icon: BookOpen },
+    { name: "Messages", href: "/admin/messages", icon: MessageCircle },
+    { name: "Feedback", href: "/admin/feedback", icon: Bubbles },
   ];
 
   const handleLogout = async () => {

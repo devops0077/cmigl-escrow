@@ -29,71 +29,156 @@ export async function GET(request: Request) {
     const limit = Number.parseInt(searchParams.get("limit") || "20");
     const offset = (page - 1) * limit;
 
-    // Get all conversations (users who have exchanged messages with admins)
-    const conversations = (await prisma.$queryRaw`
-      SELECT DISTINCT
-        u.id,
-        u.name,
-        u.email,
-        u.username,
-        u.image,
-        u.role,
-        u.restricted,
-        u.isActive,
-        (
-          SELECT content 
-          FROM AdminMessage am 
-          WHERE (am.senderId = u.id AND am.recipientId = ${admin.id}) 
-             OR (am.senderId = ${admin.id} AND am.recipientId = u.id)
-          ORDER BY am.createdAt DESC 
-          LIMIT 1
-        ) as lastMessage,
-        (
-          SELECT createdAt 
-          FROM AdminMessage am 
-          WHERE (am.senderId = u.id AND am.recipientId = ${admin.id}) 
-             OR (am.senderId = ${admin.id} AND am.recipientId = u.id)
-          ORDER BY am.createdAt DESC 
-          LIMIT 1
-        ) as lastMessageAt,
-        (
-          SELECT COUNT(*) 
-          FROM AdminMessage am 
-          WHERE am.senderId = u.id 
-            AND am.recipientId = ${admin.id} 
-            AND am.readAt IS NULL
-        ) as unreadCount
-      FROM User u
-      WHERE EXISTS (
-        SELECT 1 FROM AdminMessage am 
-        WHERE (am.senderId = u.id AND am.recipientId = ${admin.id}) 
-           OR (am.senderId = ${admin.id} AND am.recipientId = u.id)
-      )
-      ${search ? `AND (u.name ILIKE '%${search}%' OR u.email ILIKE '%${search}%' OR u.username ILIKE '%${search}%')` : ""}
-      ORDER BY lastMessageAt DESC
-      LIMIT ${limit} OFFSET ${offset}
-    `) as any[];
+    // Build search conditions
+    const searchConditions = search
+      ? {
+          OR: [
+            { name: { contains: search, mode: "insensitive" as const } },
+            { email: { contains: search, mode: "insensitive" as const } },
+            { username: { contains: search, mode: "insensitive" as const } },
+          ],
+        }
+      : {};
 
-    const totalConversations = (await prisma.$queryRaw`
-      SELECT COUNT(DISTINCT u.id) as count
-      FROM User u
-      WHERE EXISTS (
-        SELECT 1 FROM AdminMessage am 
-        WHERE (am.senderId = u.id AND am.recipientId = ${admin.id}) 
-           OR (am.senderId = ${admin.id} AND am.recipientId = u.id)
-      )
-      ${search ? `AND (u.name ILIKE '%${search}%' OR u.email ILIKE '%${search}%' OR u.username ILIKE '%${search}%')` : ""}
-    `) as any[];
+    // Get users who have exchanged messages with the admin
+    const usersWithMessages = await prisma.user.findMany({
+      where: {
+        AND: [
+          {
+            OR: [
+              // Users who sent messages to this admin
+              {
+                sentMessages: {
+                  some: {
+                    recipientId: admin.id,
+                  },
+                },
+              },
+              // Users who received messages from this admin
+              {
+                id: {
+                  in: await prisma.adminMessage
+                    .findMany({
+                      where: { senderId: admin.id },
+                      select: { recipientId: true },
+                      distinct: ["recipientId"],
+                    })
+                    .then((messages) =>
+                      messages
+                        .map((msg) => msg.recipientId)
+                        .filter((id): id is string => id !== null)
+                    ),
+                },
+              },
+            ],
+          },
+          searchConditions,
+        ],
+      },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        username: true,
+        image: true,
+        role: true,
+        restricted: true,
+        isActive: true,
+      },
+      orderBy: { createdAt: "desc" },
+      skip: offset,
+      take: limit,
+    });
+
+    // Get conversation details for each user
+    const conversations = await Promise.all(
+      usersWithMessages.map(async (user) => {
+        // Get the last message in the conversation
+        const lastMessage = await prisma.adminMessage.findFirst({
+          where: {
+            OR: [
+              { senderId: user.id, recipientId: admin.id },
+              { senderId: admin.id, recipientId: user.id },
+            ],
+          },
+          orderBy: { createdAt: "desc" },
+          select: {
+            content: true,
+            createdAt: true,
+          },
+        });
+
+        // Count unread messages from this user to the admin
+        const unreadCount = await prisma.adminMessage.count({
+          where: {
+            senderId: user.id,
+            recipientId: admin.id,
+            readAt: null,
+          },
+        });
+
+        return {
+          ...user,
+          lastMessage: lastMessage?.content || null,
+          lastMessageAt: lastMessage?.createdAt || null,
+          unreadCount,
+        };
+      })
+    );
+
+    // Sort conversations by last message timestamp (most recent first)
+    const sortedConversations = conversations.sort((a, b) => {
+      if (!a.lastMessageAt && !b.lastMessageAt) return 0;
+      if (!a.lastMessageAt) return 1;
+      if (!b.lastMessageAt) return -1;
+      return (
+        new Date(b.lastMessageAt).getTime() -
+        new Date(a.lastMessageAt).getTime()
+      );
+    });
+
+    // Get total count for pagination
+    const totalCount = await prisma.user.count({
+      where: {
+        AND: [
+          {
+            OR: [
+              {
+                sentMessages: {
+                  some: {
+                    recipientId: admin.id,
+                  },
+                },
+              },
+              {
+                id: {
+                  in: await prisma.adminMessage
+                    .findMany({
+                      where: { senderId: admin.id },
+                      select: { recipientId: true },
+                      distinct: ["recipientId"],
+                    })
+                    .then((messages) =>
+                      messages
+                        .map((msg) => msg.recipientId)
+                        .filter((id): id is string => id !== null)
+                    ),
+                },
+              },
+            ],
+          },
+          searchConditions,
+        ],
+      },
+    });
 
     return NextResponse.json({
-      conversations,
+      conversations: sortedConversations,
       pagination: {
         page,
         limit,
-        total: Number(totalConversations[0]?.count || 0),
-        totalPages: Math.ceil(
-          Number(totalConversations[0]?.count || 0) / limit
-        ),
+        total: totalCount,
+        totalPages: Math.ceil(totalCount / limit),
       },
     });
   } catch (error) {

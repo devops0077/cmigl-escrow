@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useParams, useRouter } from "next/navigation";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import {
@@ -35,6 +35,7 @@ import {
   Ban,
   UserCheck,
   Edit,
+  MessageSquare,
 } from "lucide-react";
 import { UserProfileSection } from "@/components/admin/user-profile-section";
 import { UserAccountSection } from "@/components/admin/user-account-section";
@@ -45,6 +46,10 @@ import { UserRestrictionsSection } from "@/components/admin/user-restrictions-se
 import { UserEditDialog } from "@/components/admin/user-edit-dialog";
 import { UserRestrictionDialog } from "@/components/admin/user-restriction-dialog";
 import { getInitials, formatCurrency } from "@/lib/utils";
+import { UserMessagesSection } from "@/components/admin/user-messages-section";
+import { RealTimeMessageCenter } from "@/components/messages/real-time-message-center";
+import { EnhancedMessageCenter } from "@/components/messages/enhanced-message-center";
+import { useUpdateParams } from "@/hooks/use-update-params";
 
 interface UserDetails {
   id: string;
@@ -83,6 +88,13 @@ export default function AdminUserDetailsPage() {
 
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isRestrictionDialogOpen, setIsRestrictionDialogOpen] = useState(false);
+  const searchParams = useSearchParams();
+  const tab = searchParams.get("tab") || "profile";
+  const { updateParam } = useUpdateParams();
+
+  const handleSetTab = (e: string) => {
+    updateParam("tab", e);
+  };
 
   // Fetch user details
   const {
@@ -400,7 +412,7 @@ export default function AdminUserDetailsPage() {
             <CardTitle className="text-sm font-medium">
               Registration Fee
             </CardTitle>
-            <span className="h-4 w-4 text-muted-foreground text-lg">₦</span>
+            <DollarSign className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="flex items-center justify-between">
@@ -447,13 +459,13 @@ export default function AdminUserDetailsPage() {
 
       {/* Email Verification Actions */}
       {!isEmailVerified && (
-        <Card className="mb-6 border-orange-200 bg-orange-50 dark:border-orange-900 dark:bg-orange-950">
+        <Card className="mb-6 border-orange-200 bg-orange-50">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-orange-800 dark:text-orange-200">
+            <CardTitle className="flex items-center gap-2 text-orange-800">
               <AlertTriangle className="h-5 w-5" />
               Email Not Verified
             </CardTitle>
-            <CardDescription className="text-orange-700 dark:text-orange-300">
+            <CardDescription className="text-orange-700">
               This user's email address has not been verified. You can manually
               verify it or resend the verification email.
             </CardDescription>
@@ -490,8 +502,13 @@ export default function AdminUserDetailsPage() {
       )}
 
       {/* Main Content Tabs */}
-      <Tabs defaultValue="profile" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-2 lg:grid-cols-6">
+      <Tabs
+        defaultValue="profile"
+        value={tab}
+        onValueChange={handleSetTab}
+        className="space-y-6"
+      >
+        <TabsList className="grid w-full grid-cols-2 lg:grid-cols-7">
           <TabsTrigger value="profile" className="flex items-center gap-2">
             <User className="h-4 w-4" />
             Profile
@@ -515,6 +532,10 @@ export default function AdminUserDetailsPage() {
           <TabsTrigger value="restrictions" className="flex items-center gap-2">
             <Shield className="h-4 w-4" />
             Restrictions
+          </TabsTrigger>
+          <TabsTrigger value="messages" className="flex items-center gap-2">
+            <MessageSquare className="h-4 w-4" />
+            Messages
           </TabsTrigger>
         </TabsList>
 
@@ -540,6 +561,14 @@ export default function AdminUserDetailsPage() {
 
         <TabsContent value="restrictions">
           <UserRestrictionsSection userId={userId} />
+        </TabsContent>
+
+        <TabsContent value="messages">
+          <EnhancedMessageCenter
+            isAdminView={true}
+            recipientName={displayName}
+            recipientId={userId}
+          />
         </TabsContent>
       </Tabs>
 

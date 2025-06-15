@@ -20,6 +20,7 @@ import {
   TvMinimalPlayIcon,
   TrendingUp,
   Bubbles,
+  MessageCircle,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -68,6 +69,7 @@ export function DashboardSidebar() {
     { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
     { name: "Transactions", href: "/dashboard/transactions", icon: History },
     { name: "Wallet", href: "/dashboard/wallet", icon: Wallet },
+    { name: "Messages", href: "/dashboard/messages", icon: MessageCircle },
   ];
 
   const secondaryNavItems = [
@@ -81,6 +83,7 @@ export function DashboardSidebar() {
     { name: "Users", href: "/admin/users", icon: Users },
     { name: "Disputes", href: "/admin/disputes", icon: AlertCircleIcon },
     { name: "Content", href: "/admin/content", icon: BookOpen },
+    { name: "Messages", href: "/admin/messages", icon: MessageCircle },
     { name: "Feedback", href: "/admin/feedback", icon: Bubbles },
   ];
 

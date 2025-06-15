@@ -84,19 +84,72 @@ model User {
   adImpressions         AdImpression[]       @relation("AdImpressions")
   adClicks              AdClick[]            @relation("AdClicks")
   revenue               Revenue[]
+  presence              UserPresence?
   userSettings          UserSettings?
   securityLogs          SecurityLog[]        @relation("UserSecurityLogs")
   pushSubscriptions     PushSubscription[]   @relation("UserPushSubscriptions")
   sentMessages          AdminMessage[]       @relation("SentMessages")
   receivedMessages      AdminMessage[]       @relation("ReceivedMessages")
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+  messageReaction MessageReaction[]
 }
 
 enum UserRole {
   USER
   ADMIN
+}
+
+model MessageReaction {
+  id        String   @id @default(cuid())
+  messageId String
+  userId    String
+  emoji     String
+  createdAt DateTime @default(now())
+
+  // Relations
+  message AdminMessage @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  user    User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // Unique constraint: one reaction per user per message per emoji
+  @@unique([messageId, userId, emoji])
+  @@index([messageId])
+  @@index([userId])
+  @@map("MessageReaction")
+}
+
+// New UserPresence model for tracking online status
+model UserPresence {
+  id        String   @id @default(cuid())
+  userId    String   @unique
+  isOnline  Boolean  @default(false)
+  lastSeen  DateTime @default(now())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([isOnline])
+  @@index([lastSeen])
+  @@map("UserPresence")
+}
+
+// New MessageThread model for organizing conversations
+model MessageThread {
+  id             String   @id @default(cuid())
+  subject        String
+  participantIds String[] // Array of user IDs
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  // Relations
+  messages AdminMessage[]
+
+  @@index([participantIds])
+  @@index([createdAt])
+  @@map("MessageThread")
 }
 
 enum UserStatus {
@@ -261,6 +314,8 @@ enum NotificationType {
   DISPUTE_CREATED // Added dispute notification types
   DISPUTE_UPDATED
   DISPUTE_RESOLVED
+  ADMIN_MESSAGE
+  USER_MESSAGE
 }
 
 // New model for push subscriptions
@@ -859,6 +914,7 @@ enum SecurityEventType {
   ALL_SESSIONS_REVOKED
   ACCOUNT_DELETION_REQUESTED
   ACCOUNT_DELETED
+  ADMIN_MESSAGE_SENT
 }
 
 // Enum for message priority levels
@@ -873,10 +929,16 @@ enum MessagePriority {
 model AdminMessage {
   id          String          @id @default(cuid())
   senderId    String
+  threadId    String?
   recipientId String
   content     String
+  messageType String          @default("text") // text, image, file, etc.
+  replyToId   String?
   priority    MessagePriority @default(NORMAL)
   readAt      DateTime?
+  deliveredAt DateTime? // New field for delivery tracking
+  isEdited    Boolean         @default(false)
+  editedAt    DateTime? // Edit timestamp
   createdAt   DateTime        @default(now())
   updatedAt   DateTime        @updatedAt
 
@@ -884,8 +946,14 @@ model AdminMessage {
   sender      User                @relation("SentMessages", fields: [senderId], references: [id], onDelete: Cascade)
   recipient   User                @relation("ReceivedMessages", fields: [recipientId], references: [id], onDelete: Cascade)
   attachments MessageAttachment[]
+  thread      MessageThread?      @relation(fields: [threadId], references: [id], onDelete: SetNull)
+  replyTo     AdminMessage?       @relation("MessageReply", fields: [replyToId], references: [id], onDelete: SetNull)
+  replies     AdminMessage[]      @relation("MessageReply")
+  reactions   MessageReaction[]
 
   // Indexes for better performance
+  @@index([threadId])
+  @@index([deliveredAt])
   @@index([senderId])
   @@index([recipientId])
   @@index([createdAt])

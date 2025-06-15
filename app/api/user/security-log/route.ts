@@ -5,6 +5,7 @@ import { SecurityService } from "@/lib/security-service";
 import { SecurityEventType } from "@/lib/generated/prisma";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
+import { ipAddress } from "@vercel/functions";
 
 export async function GET(request: NextRequest) {
   try {
@@ -82,6 +83,7 @@ export async function POST(request: Request) {
     // Parse and validate the request body
     const body = await request.json();
     const validationResult = securityEventSchema.safeParse(body);
+    const ip = ipAddress(request);
 
     if (!validationResult.success) {
       return NextResponse.json(
@@ -122,6 +124,7 @@ export async function POST(request: Request) {
       successful,
       request,
       reason,
+      ipAddress: ip,
     };
 
     // Handle different event types

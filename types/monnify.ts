@@ -4,6 +4,7 @@ export interface MonnifyResponse {
   completed: boolean;
   completedOn: string;
   createdOn: string;
+  
   currencyCode: string;
   customerEmail: string;
   customerName: string;

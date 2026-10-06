@@ -257,7 +257,7 @@ export function HowItWorks() {
                 animate={isInView ? { opacity: 1 } : { opacity: 0 }}
                 transition={{ delay: 1, duration: 0.5 }}
               >
-                One-Time Registration Fee
+                Simple, Transparent Pricing
               </motion.h3>
               <motion.p
                 className="text-muted-foreground"
@@ -265,9 +265,9 @@ export function HowItWorks() {
                 animate={isInView ? { opacity: 1 } : { opacity: 0 }}
                 transition={{ delay: 1.2, duration: 0.5 }}
               >
-                Join CMIGL Escrow with a one-time registration fee of ₦500.
-                After that, enjoy our services with just a flat 4.5% transaction
-                fee.
+                Sign up for free. We only charge a flat 4.5% transaction fee
+                when you use our escrow service — no hidden costs, no
+                registration fees.
               </motion.p>
 
               <motion.div
@@ -286,9 +286,9 @@ export function HowItWorks() {
                 }}
               >
                 <div className="inline-flex items-center justify-center rounded-full bg-primary/10 px-4 py-1 text-sm font-medium text-primary">
-                  <span className="mr-1">Only</span>
-                  <span className="text-lg font-bold">₦500</span>
-                  <span className="ml-1">to start</span>
+                  <span className="mr-1">Just</span>
+                  <span className="text-lg font-bold">4.5%</span>
+                  <span className="ml-1">per transaction</span>
                 </div>
               </motion.div>
             </div>

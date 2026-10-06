@@ -418,8 +418,8 @@ export function MultiStepRegisterForm({
             />
             <div className="space-y-2">
               <p className="text-sm text-muted-foreground">
-                A one-time (non-refundable) registration fee of ₦500 will be
-                required after email verification.
+                Registration is free. You&apos;ll get full access to the
+                platform as soon as you verify your email.
               </p>
             </div>
             <div className="flex justify-between">

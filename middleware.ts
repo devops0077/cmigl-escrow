@@ -6,7 +6,6 @@ import {
   publicRoutes,
   adminRoutes,
   isPublicRouteFn,
-  paymentRoute,
 } from "@/routes";
 import axios from "axios";
 
@@ -17,14 +16,12 @@ export default middleware(async (req, ctx) => {
 
   // @ts-ignore
   const role = req.auth?.user?.role;
-  const isActive = req.auth?.user?.status === "ACTIVE";
   const isRestricted = req.auth?.user?.restricted;
 
   const isApiRoute = nextUrl.pathname.startsWith(apiAuthPrefix);
   const isAuthRoute = authRoutes.includes(nextUrl.pathname);
   const isPublicRoute = isPublicRouteFn(nextUrl.pathname);
   const isAdminRoute = adminRoutes.includes(nextUrl.pathname);
-  const isPaymentRoute = paymentRoute.includes(nextUrl.pathname);
   const isRestrictionRoute = nextUrl.pathname === "/account-restricted";
 
   const isAdmin = role === "ADMIN";
@@ -77,22 +74,7 @@ export default middleware(async (req, ctx) => {
     return Response.redirect(new URL("/account-restricted", nextUrl));
   }
 
-  if (
-    isLoggedIn &&
-    !isActive &&
-    !isPaymentRoute &&
-    !isApiRoute &&
-    !isPublicRoute &&
-    !isRestrictionRoute
-  ) {
-    // Redirect to payment page if user is not active and not on the payment route
-    console.log("USER ACTIVE", isActive);
-    return Response.redirect(
-      new URL(`/auth/payment?userId=${req?.auth?.user.id}`, nextUrl)
-    );
-  }
-
-  return null; // Changed from new Response(null, { status: 204 })
+  return null;
 });
 
 export const config = {

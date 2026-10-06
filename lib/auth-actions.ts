@@ -12,7 +12,6 @@ import {
   UserNotFoundError,
 } from "./error-class";
 import { auth } from "@/auth";
-import { _escrowConfig } from "@/config";
 import { authHelpers } from "./auth-helpers";
 import { NextRequest } from "next/server";
 
@@ -76,12 +75,6 @@ export async function registerUser({
           expires: tokenExpiry,
         },
       },
-      registrationFee: {
-        create: {
-          amount: _escrowConfig.registrationFee,
-          paid: false,
-        },
-      },
       wallet: {
         create: {
           balance: 0,
@@ -117,10 +110,10 @@ export async function verifyEmail(token: string) {
     throw new CustomError("Verification token has expired");
   }
 
-  // Mark email as verified but user remains inactive until registration fee is paid
+  // Mark email as verified and activate the account immediately
   await prisma.user.update({
     where: { id: verificationToken.userId },
-    data: { emailVerified: new Date(), isActive: true },
+    data: { emailVerified: new Date(), isActive: true, status: "ACTIVE" },
   });
 
   // Delete the used token

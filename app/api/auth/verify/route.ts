@@ -13,11 +13,11 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    const result = await verifyEmail(token);
+    await verifyEmail(token);
 
-    // Redirect to payment page with userId
+    // Email verified — redirect straight to login so the user can sign in
     return NextResponse.redirect(
-      new URL(`/auth/payment?userId=${result.userId}`, request.url)
+      new URL(`/auth/login?verified=true`, request.url)
     );
   } catch (error) {
     console.error("Email verification error:", error);

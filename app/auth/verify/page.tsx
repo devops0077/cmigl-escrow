@@ -78,8 +78,8 @@ function VerifyPage() {
                 <CheckCircle2 className="h-4 w-4 text-green-600 dark:text-green-400" />
                 <AlertTitle>Email verified successfully!</AlertTitle>
                 <AlertDescription>
-                  Your email has been verified. Please complete the registration
-                  by paying the one-time fee.
+                  Your email has been verified and your account is now active.
+                  You can sign in and start using the platform.
                 </AlertDescription>
               </Alert>
             ) : (
@@ -94,13 +94,9 @@ function VerifyPage() {
             {success ? (
               <Button
                 className="w-full"
-                onClick={() =>
-                  router.push(
-                    `/auth/login?callbackUrl=/auth/payment?userId=${userId}&verified=true`
-                  )
-                }
+                onClick={() => router.push("/auth/login?verified=true")}
               >
-                Continue to Payment
+                Continue to Login
               </Button>
             ) : (
               <Button

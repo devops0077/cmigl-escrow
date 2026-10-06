@@ -23,7 +23,6 @@ export const publicRoutes = [
   "/api/send-email",
   "/api/users/search",
   "/api/users/status",
-  "/api/auth/registration-fee/",
   "/api/payments/verify/(.*)",
   "/api/webhook/(.*)",
   "/api/upload",
@@ -47,8 +46,6 @@ export const authRoutes = [
   "/auth/reset-password",
   "/auth/verify",
 ];
-
-export const paymentRoute = ["/auth/payment"];
 
 export const adminRoutes = ["/admin"];
 

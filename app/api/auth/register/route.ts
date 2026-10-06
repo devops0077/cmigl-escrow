@@ -1,4 +1,3 @@
-import { _escrowConfig } from "@/config";
 import { emailService } from "@/lib/email-service";
 import { prisma } from "@/lib/prisma";
 import { hash } from "bcryptjs";
@@ -78,12 +77,6 @@ export const POST = async (request: Request) => {
           create: {
             token,
             expires: tokenExpiry,
-          },
-        },
-        registrationFee: {
-          create: {
-            amount: _escrowConfig.registrationFee,
-            paid: false,
           },
         },
         wallet: {

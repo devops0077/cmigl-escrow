@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 import Image from "next/image";
 import { FadeIn } from "@/components/animations/fade-in";
-import { ProcessSteps } from "@/components/landing/hero-section";
+import { ProcessSteps } from "@/components/auth/process-steps";
 
 export default function AuthLayout({ children }: { children: ReactNode }) {
   return (

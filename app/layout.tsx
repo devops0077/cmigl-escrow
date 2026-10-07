@@ -32,7 +32,7 @@ export default function RootLayout({
             <RestrictionProvider>
               <ThemeProvider
                 attribute="class"
-                defaultTheme="system"
+                defaultTheme="light"
                 enableSystem
                 disableTransitionOnChange
               >

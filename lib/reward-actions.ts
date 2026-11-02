@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { prisma } from "./prisma";
 import { auth } from "@/auth";
+import { headers } from "next/headers";
 import { AppError } from "./error-class";
 import { logger } from "./logger";
 import { createNotification } from "./notification-service";
@@ -47,7 +48,7 @@ const rewardScheduleSchema = z.object({
 
 // Helper function to check admin permissions
 async function checkAdminPermission() {
-  const session = await auth();
+  const session = await auth.api.getSession({ headers: await headers() });
 
   if (!session?.user?.email) {
     throw new AppError("Unauthorized", 401);
@@ -924,7 +925,7 @@ function getDaysInMonth(year: number, month: number) {
 // Get user's reward history
 export async function getUserRewardHistory(limit = 10, page = 1) {
   try {
-    const session = await auth();
+    const session = await auth.api.getSession({ headers: await headers() });
     if (!session?.user) {
       throw new AppError("Unauthorized", 401);
     }
@@ -971,3 +972,4 @@ export async function getUserRewardHistory(limit = 10, page = 1) {
     throw error;
   }
 }
+

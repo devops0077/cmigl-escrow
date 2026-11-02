@@ -534,10 +534,16 @@ export async function createTransaction({
   sellerId,
   amount,
   productDetails,
+  marketplaceOrderId,
+  productCategory,
 }: {
   sellerId: string;
   amount: number;
   productDetails: string;
+  // WhoDeySell handoff only: the marketplace EscrowOrder id, stored so a
+  // repeat checkout with the same order reuses the transaction.
+  marketplaceOrderId?: string;
+  productCategory?: string;
 }) {
   try {
     const session = await auth();
@@ -572,6 +578,8 @@ export async function createTransaction({
         amount,
         escrowFee,
         productDetails,
+        productCategory,
+        marketplaceOrderId,
         status: "PENDING",
       },
     });

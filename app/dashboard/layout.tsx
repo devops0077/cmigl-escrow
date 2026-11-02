@@ -20,6 +20,14 @@ export default async function DashboardLayout({
     redirect("/auth/login?callbackUrl=/dashboard");
   }
 
+  // Restricted gating lives here, not in middleware: the Edge runtime
+  // cannot look the session up, so middleware only checks for a session
+  // cookie. This preserves the old middleware's redirect for the main
+  // app surface; API routes enforce restrictions themselves.
+  if (session.user.restricted) {
+    redirect("/account-restricted");
+  }
+
   return (
     <>
       <AdvertisementDisplay placement="DASHBOARD" />

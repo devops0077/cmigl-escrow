@@ -62,7 +62,7 @@ interface UserDetails {
   status: string;
   isActive: boolean;
   restricted: boolean;
-  emailVerified: string | null;
+  emailVerified: boolean;
   termsAccepted: boolean;
   createdAt: string;
   updatedAt: string;
@@ -600,3 +600,4 @@ export default function AdminUserDetailsPage() {
     </div>
   );
 }
+

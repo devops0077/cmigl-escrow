@@ -32,8 +32,8 @@ export default function RootLayout({
             <RestrictionProvider>
               <ThemeProvider
                 attribute="class"
-                defaultTheme="light"
-                enableSystem
+                defaultTheme="dark"
+                enableSystem={false}
                 disableTransitionOnChange
               >
                 {children}

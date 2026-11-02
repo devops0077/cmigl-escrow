@@ -10,10 +10,12 @@ export function ThemeToggle({
   children,
   isCollapsed,
   isMobile = false,
+  className,
 }: {
   children?: React.ReactNode;
   isCollapsed?: boolean;
   isMobile?: boolean;
+  className?: string;
 }) {
   const { setTheme, theme } = useTheme();
   const [mounted, setMounted] = useState(false);
@@ -27,7 +29,10 @@ export function ThemeToggle({
         variant="ghost"
         onClick={() => setTheme(theme === "light" ? "dark" : "light")}
         aria-label="Toggle theme"
-        className={`relative w-full justify-baseline  rounded-md text-sm font-medium transition-colors focus:outline-none focus:ring-0  disabled:pointer-events-none disabled:opacity-50 dark:focus:ring-offset-slate-900 `}
+        className={cn(
+          `relative w-full justify-baseline  rounded-md text-sm font-medium transition-colors focus:outline-none focus:ring-0  disabled:pointer-events-none disabled:opacity-50 dark:focus:ring-offset-slate-900 `,
+          className
+        )}
       >
         {mounted && theme === "dark" ? (
           <Sun

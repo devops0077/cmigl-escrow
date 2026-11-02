@@ -1,19 +1,17 @@
 "use server";
 
-import { compare, hash } from "bcryptjs";
-import { revalidatePath } from "next/cache";
 import { prisma } from "./prisma";
+import { createCredentialAccount, setCredentialPassword } from "./credential-account";
 import { emailService } from "./email-service";
 import { nanoid } from "nanoid";
 import {
   AppError,
   CustomError,
-  InActiveAccountError,
   UserNotFoundError,
 } from "./error-class";
 import { auth } from "@/auth";
-import { authHelpers } from "./auth-helpers";
-import { NextRequest } from "next/server";
+import { headers } from "next/headers";
+import { revalidatePath } from "next/cache";
 
 export async function registerUser({
   name,
@@ -51,22 +49,19 @@ export async function registerUser({
     }
   }
 
-  // Hash password
-  const hashedPassword = await hash(password, 10);
-
   // Create verification token
   const token = nanoid(36);
   const tokenExpiry = new Date();
   tokenExpiry.setHours(tokenExpiry.getHours() + 24); // Token expires in 24 hours
 
-  // Create user
+  // Create user (no password column: the credential lives in the
+  // Better Auth Account row created below, hashed with scrypt).
   const user = await prisma.user.create({
     data: {
       name,
       email,
       phone,
       username,
-      password: hashedPassword,
       passportImage,
       termsAccepted,
       verificationToken: {
@@ -84,6 +79,8 @@ export async function registerUser({
     },
   });
 
+  await createCredentialAccount(user.id, password);
+
   // Send verification email
   try {
     await emailService.sendVerificationEmail(email, token);
@@ -94,6 +91,24 @@ export async function registerUser({
 
   revalidatePath("/auth/login");
   return user;
+}
+
+/**
+ * Resolve a login identifier (email, username or phone) to the account
+ * email for Better Auth's email sign-in, which accepts email only.
+ * Returns null for unknown identifiers so the login page can fail
+ * exactly like a wrong password.
+ */
+export async function resolveLoginEmail(
+  identifier: string
+): Promise<string | null> {
+  const user = await prisma.user.findFirst({
+    where: {
+      OR: [{ username: identifier }, { phone: identifier }],
+    },
+    select: { email: true },
+  });
+  return user?.email ?? null;
 }
 
 export async function verifyEmail(token: string) {
@@ -110,10 +125,12 @@ export async function verifyEmail(token: string) {
     throw new CustomError("Verification token has expired");
   }
 
-  // Mark email as verified and activate the account immediately
+  // Mark email as verified and activate the account immediately.
+  // emailVerified is a boolean under Better Auth (converted from the
+  // old DateTime column by the better-auth migration).
   await prisma.user.update({
     where: { id: verificationToken.userId },
-    data: { emailVerified: new Date(), isActive: true, status: "ACTIVE" },
+    data: { emailVerified: true, isActive: true, status: "ACTIVE" },
   });
 
   // Delete the used token
@@ -189,38 +206,6 @@ export async function payRegistrationFee(
 
   revalidatePath("/auth/login");
   return { success: true };
-}
-
-export async function verifyCredentials(email: string, password: string) {
-  const user = await prisma.user.findFirst({
-    where: {
-      OR: [
-        { email },
-        { username: email }, // Allow username as email
-        { phone: email }, // Allow phone number as email
-      ],
-    },
-  });
-
-  if (!user || !user.password) {
-    return null;
-  }
-
-  const isValidPassword = await compare(password, user.password);
-
-  if (!isValidPassword) {
-    return null;
-  }
-
-  // Check if user is active (has paid registration fee)
-  // if (!user.isActive) {
-  //   throw new InActiveAccountError(
-  //     "inactive_account"
-  //     // "Account not active. Please complete registration by paying the one-time fee."
-  //   );
-  // }
-
-  return user;
 }
 
 export async function resendVerificationEmail(email: string) {
@@ -314,14 +299,11 @@ export async function resetPassword(token: string, newPassword: string) {
     throw new Error("Reset token has expired");
   }
 
-  // Hash new password
-  const hashedPassword = await hash(newPassword, 10);
-
-  // Update user password
-  await prisma.user.update({
-    where: { id: verificationToken.userId },
-    data: { password: hashedPassword },
-  });
+  // New credential hash (scrypt, via Better Auth's default hasher) on
+  // the Account row. The legacy User.password column is left untouched:
+  // it is only read by the one-time migration script, and overwriting
+  // it here could clobber a not-yet-migrated hash.
+  await setCredentialPassword(verificationToken.userId, newPassword);
 
   // Delete the used token
   await prisma.verificationToken.delete({
@@ -332,7 +314,7 @@ export async function resetPassword(token: string, newPassword: string) {
 }
 
 export async function getAccountStatus() {
-  const session = await auth();
+  const session = await auth.api.getSession({ headers: await headers() });
   if (!session?.user) {
     throw new Error("Unauthorized");
   }

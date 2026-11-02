@@ -1,9 +1,7 @@
-import { CredentialsSignin } from "next-auth";
-import { AuthError } from "next-auth";
-
-export class CustomError extends CredentialsSignin {
+export class CustomError extends Error {
+  code: string;
   constructor(code: string) {
-    super();
+    super(code);
     this.code = code;
     this.message = code;
     this.stack = undefined;
@@ -60,3 +58,4 @@ export class UnauthorizedError extends CustomError {
     Object.setPrototypeOf(this, InActiveAccountError.prototype);
   }
 }
+

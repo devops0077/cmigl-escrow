@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/auth";
-import { hash } from "bcryptjs";
+import { headers } from "next/headers";
+import { createCredentialAccount } from "@/lib/credential-account";
 import { z } from "zod";
 
 const createUserSchema = z.object({
@@ -14,7 +15,7 @@ const createUserSchema = z.object({
 });
 
 async function checkAdminPermission() {
-  const session = await auth();
+  const session = await auth.api.getSession({ headers: await headers() });
 
   if (!session?.user?.email) {
     throw new Error("Unauthorized");
@@ -152,9 +153,6 @@ export async function POST(request: Request) {
       );
     }
 
-    // Hash password
-    const hashedPassword = await hash(validatedData.password, 10);
-
     // Create user
     const user = await prisma.user.create({
       data: {
@@ -162,10 +160,9 @@ export async function POST(request: Request) {
         email: validatedData.email,
         username: validatedData.username,
         phone: validatedData.phone,
-        password: hashedPassword,
         role: validatedData.role,
         isActive: true,
-        emailVerified: new Date(),
+        emailVerified: true,
         status: "ACTIVE",
         termsAccepted: true,
         wallet: {
@@ -191,6 +188,8 @@ export async function POST(request: Request) {
       },
     });
 
+    await createCredentialAccount(user.id, validatedData.password);
+
     return NextResponse.json({ user });
   } catch (error) {
     console.error("Error creating user:", error);
@@ -206,3 +205,4 @@ export async function POST(request: Request) {
     );
   }
 }
+

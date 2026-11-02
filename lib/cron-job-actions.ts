@@ -4,10 +4,11 @@ import { revalidatePath } from "next/cache";
 import cronJobService, { type CreateCronJobRequest } from "./cron-job-service";
 import { logger } from "./logger";
 import { auth } from "@/auth";
+import { headers } from "next/headers";
 
 // Check if user is admin
 async function isAdmin() {
-  const session = await auth();
+  const session = await auth.api.getSession({ headers: await headers() });
   return session?.user?.role === "ADMIN";
 }
 
@@ -36,7 +37,7 @@ export async function createCronJob(formData: FormData) {
       throw new Error("Unauthorized: Admin access required");
     }
 
-    const session = await auth();
+    const session = await auth.api.getSession({ headers: await headers() });
     const id = formData.get("id") as string;
     const url = formData.get("url") as string;
     const schedule = formData.get("schedule") as string;
@@ -93,7 +94,7 @@ export async function deleteCronJob(id: string) {
       throw new Error("Unauthorized: Admin access required");
     }
 
-    const session = await auth();
+    const session = await auth.api.getSession({ headers: await headers() });
 
     const result = await cronJobService.deleteJob(id);
 
@@ -137,3 +138,4 @@ export async function checkCronServerHealth() {
     };
   }
 }
+

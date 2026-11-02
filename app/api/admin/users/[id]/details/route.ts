@@ -1,9 +1,10 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/auth";
+import { headers } from "next/headers";
 
 async function checkAdminPermission() {
-  const session = await auth();
+  const session = await auth.api.getSession({ headers: await headers() });
 
   if (!session?.user?.email) {
     throw new Error("Unauthorized");
@@ -79,7 +80,7 @@ export async function GET(
       status: user.status,
       isActive: user.isActive,
       restricted: user.restricted,
-      emailVerified: user.emailVerified?.toISOString() || null,
+      emailVerified: user.emailVerified,
       termsAccepted: user.termsAccepted,
       walletBalance: user.wallet?.balance || 0,
       escrowBalance: user.wallet?.escrowBalance || 0,
@@ -100,3 +101,4 @@ export async function GET(
     );
   }
 }
+

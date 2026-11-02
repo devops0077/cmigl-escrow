@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/auth";
+import { headers } from "next/headers";
 import {
   PushNotificationService,
   type NotificationSound,
@@ -9,7 +10,7 @@ import { prisma } from "@/lib/prisma";
 // GET endpoint to check subscription status
 export async function GET(request: Request) {
   try {
-    const session = await auth();
+    const session = await auth.api.getSession({ headers: await headers() });
 
     if (!session?.user?.email) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -53,7 +54,7 @@ export async function GET(request: Request) {
 // POST endpoint to subscribe to push notifications
 export async function POST(request: Request) {
   try {
-    const session = await auth();
+    const session = await auth.api.getSession({ headers: await headers() });
 
     if (!session?.user?.email) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -100,7 +101,7 @@ export async function POST(request: Request) {
 // DELETE endpoint to unsubscribe from push notifications
 export async function DELETE(request: Request) {
   try {
-    const session = await auth();
+    const session = await auth.api.getSession({ headers: await headers() });
 
     if (!session?.user?.email) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -142,7 +143,7 @@ export async function DELETE(request: Request) {
 // PATCH endpoint to update push notification settings
 export async function PATCH(request: Request) {
   try {
-    const session = await auth();
+    const session = await auth.api.getSession({ headers: await headers() });
 
     if (!session?.user?.email) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -189,3 +190,4 @@ export async function PATCH(request: Request) {
     );
   }
 }
+

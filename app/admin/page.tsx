@@ -1,6 +1,6 @@
 "use client";
 
-import { useSession } from "next-auth/react";
+import { authClient } from "@/lib/auth-client";
 import { redirect } from "next/navigation";
 import { DashboardShell } from "@/components/dashboard/dashboard-shell";
 import { DashboardHeader } from "@/components/dashboard/dashboard-header";
@@ -9,9 +9,9 @@ import { Suspense } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
 
 export default function AdminDashboardPage() {
-  const { data: session, status } = useSession();
+  const { data: session, isPending } = authClient.useSession();
 
-  if (status === "loading") {
+  if (isPending) {
     return (
       <div className="flex h-screen items-center justify-center">
         Loading...
@@ -31,3 +31,4 @@ export default function AdminDashboardPage() {
     </>
   );
 }
+

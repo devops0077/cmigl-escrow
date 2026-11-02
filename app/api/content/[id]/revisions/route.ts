@@ -2,6 +2,7 @@ import { type NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { logger } from "@/lib/logger";
 import { auth } from "@/auth";
+import { headers } from "next/headers";
 
 // GET /api/content/:id/revisions - Get content revisions
 export async function GET(
@@ -10,7 +11,7 @@ export async function GET(
 ) {
   try {
     // Check authentication and admin role
-    const session = await auth();
+    const session = await auth.api.getSession({ headers: await headers() });
     if (!session?.user?.email) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
@@ -50,3 +51,4 @@ export async function GET(
     );
   }
 }
+

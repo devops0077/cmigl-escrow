@@ -25,7 +25,7 @@ import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { useSession, signOut } from "next-auth/react";
+import { authClient } from "@/lib/auth-client";
 import { formatCurrency } from "@/lib/utils";
 import { useWalletBalance } from "@/hooks/use-wallet-balance";
 import { ThemeToggle } from "../theme-toggle";
@@ -33,9 +33,9 @@ import { ThemeToggle } from "../theme-toggle";
 export function DashboardMobileNav() {
   const pathname = usePathname();
   const [isOpen, setIsOpen] = useState(false);
-  const { data: session, status } = useSession();
+  const { data: session, isPending } = authClient.useSession();
 
-  const isLoadingUserData = status === "loading";
+  const isLoadingUserData = isPending;
   const user = session?.user;
   const isAdmin = user?.role === "ADMIN";
 
@@ -64,7 +64,7 @@ export function DashboardMobileNav() {
   ];
 
   const handleLogout = async () => {
-    await signOut();
+    await authClient.signOut();
     setIsOpen(false);
   };
 
@@ -331,3 +331,4 @@ export function DashboardMobileNav() {
     </>
   );
 }
+

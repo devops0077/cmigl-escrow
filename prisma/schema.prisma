@@ -12,32 +12,45 @@ datasource db {
 }
 
 model Account {
-  id                String   @id @default(cuid())
-  userId            String
-  type              String
-  provider          String
-  providerAccountId String
-  refresh_token     String?  @db.Text
-  access_token      String?  @db.Text
-  expires_at        Int?
-  token_type        String?
-  scope             String?
-  id_token          String?  @db.Text
-  session_state     String?
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
+  id                    String    @id @default(cuid())
+  accountId             String
+  providerId            String
+  userId                String
+  accessToken           String?   @db.Text
+  refreshToken          String?   @db.Text
+  idToken               String?   @db.Text
+  accessTokenExpiresAt  DateTime?
+  refreshTokenExpiresAt DateTime?
+  scope                 String?
+  // Credential (email/password) hash. Better Auth's default is scrypt;
+  // rows migrated from the old User.password column hold bcrypt hashes
+  // until the owner's next successful login upgrades them (see
+  // docs/better-auth-migration.md and auth.ts).
+  password              String? // LEGACY ONLY: old NextAuth bcrypt hashes. Runtime sign-in reads Account.password; see docs/better-auth-migration.md
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  @@unique([provider, providerAccountId])
+  @@unique([providerId, accountId])
+  @@index([userId])
 }
 
 model Session {
-  id           String   @id @default(cuid())
-  sessionToken String   @unique
-  userId       String
-  expires      DateTime
-  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id        String   @id @default(cuid())
+  token     String   @unique
+  expiresAt DateTime
+  ipAddress String?
+  userAgent String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  oauthRefreshTokens OauthRefreshToken[]
+  oauthAccessTokens  OauthAccessToken[]
+
+  @@index([userId])
 }
 
 model User {
@@ -45,21 +58,25 @@ model User {
   name                  String?
   email                 String?              @unique
   username              String?              @unique
-  phone                 String               @unique
-  emailVerified         DateTime?
+  phone                 String?              @unique // Nullable so SSO (WhoDeySell) JIT provisioning can create a user before a phone number is collected
+  emailVerified         Boolean              @default(false) // Converted from DateTime by the better-auth migration (verified = was non-null)
   isActive              Boolean              @default(false)
   registrationFee       RegistrationFee?
   image                 String?
   bio                   String?
   address               String?
   passportImage         String? // Added passport image field
-  password              String?
+  password              String? // LEGACY ONLY: old NextAuth bcrypt hashes. Runtime sign-in reads Account.password; see docs/better-auth-migration.md
   role                  UserRole             @default(USER)
   status                UserStatus           @default(PENDING)
   restricted            Boolean              @default(false)
   termsAccepted         Boolean              @default(false)
   accounts              Account[]
   sessions              Session[]
+  oauthClients          OauthClient[]
+  oauthRefreshTokens    OauthRefreshToken[]
+  oauthAccessTokens     OauthAccessToken[]
+  oauthConsents         OauthConsent[]
   sentTransactions      Transaction[]        @relation("SentTransactions")
   receivedTransactions  Transaction[]        @relation("ReceivedTransactions")
   marketplaceSellerMappings MarketplaceSellerMapping[]
@@ -192,6 +209,192 @@ model VerificationToken {
   createdAt DateTime @default(now())
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
+
+// Better Auth core tables (generated with `bunx @better-auth/cli generate`,
+// then merged here; the generated @@map("...") lowercase table names were
+// dropped so new tables follow this repo's PascalCase convention).
+// VerificationToken (below, pre-existing) is separate: it backs the
+// app's own email-verification / password-reset flows.
+model Verification {
+  id         String   @id @default(cuid())
+  identifier String
+  value      String
+  expiresAt  DateTime
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([identifier])
+}
+
+model Jwks {
+  id         String    @id @default(cuid())
+  publicKey  String    @db.Text
+  privateKey String    @db.Text
+  createdAt  DateTime
+  expiresAt  DateTime?
+  alg        String?
+  crv        String?
+}
+
+// OAuth 2.1 provider plugin tables (see docs/sso-whodeysell.md).
+model OauthClient {
+  id                               String                @id @default(cuid())
+  clientId                         String                @unique
+  clientSecret                     String?
+  clientDiscoveryId                String?
+  disabled                         Boolean?              @default(false)
+  skipConsent                      Boolean?
+  enableEndSession                 Boolean?
+  subjectType                      String?
+  scopes                           String[]
+  clientCredentialsScopes          String[]              @default([])
+  userId                           String?
+  user                             User?                 @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt                        DateTime?             @default(now())
+  updatedAt                        DateTime?             @updatedAt
+  name                             String?
+  uri                              String?
+  icon                             String?
+  contacts                         String[]
+  tos                              String?
+  policy                           String?
+  softwareId                       String?
+  softwareVersion                  String?
+  softwareStatement                String?
+  redirectUris                     String[]
+  postLogoutRedirectUris           String[]
+  backchannelLogoutUri             String?
+  backchannelLogoutSessionRequired Boolean?
+  tokenEndpointAuthMethod          String?
+  applicationType                  String?
+  jwks                             String?               @db.Text
+  jwksUri                          String?
+  grantTypes                       String[]
+  responseTypes                    String[]
+  requirePKCE                      Boolean?
+  dpopBoundAccessTokens            Boolean?              @default(false)
+  referenceId                      String?
+  metadata                         Json?
+  oauthClientResources             OauthClientResource[]
+  oauthRefreshTokens               OauthRefreshToken[]
+  oauthAccessTokens                OauthAccessToken[]
+  oauthConsents                    OauthConsent[]
+
+  @@index([userId])
+}
+
+model OauthResource {
+  id                            String                @id @default(cuid())
+  identifier                    String                @unique
+  name                          String
+  accessTokenTtl                Int?
+  refreshTokenTtl               Int?
+  signingAlgorithm              String?
+  signingKeyId                  String?
+  allowedScopes                 String[]
+  customClaims                  Json?
+  dpopBoundAccessTokensRequired Boolean?              @default(false)
+  disabled                      Boolean?              @default(false)
+  createdAt                     DateTime?             @default(now())
+  updatedAt                     DateTime?             @updatedAt
+  policyVersion                 Int?                  @default(1)
+  metadata                      Json?
+  oauthClientResources          OauthClientResource[]
+}
+
+model OauthClientResource {
+  id            String       @id @default(cuid())
+  clientId      String
+  oauthClient   OauthClient  @relation(fields: [clientId], references: [clientId], onDelete: Cascade)
+  resourceId    String
+  oauthResource OauthResource @relation(fields: [resourceId], references: [identifier], onDelete: Cascade)
+  metadata      Json?
+  createdAt     DateTime?    @default(now())
+
+  @@index([clientId])
+  @@index([resourceId])
+}
+
+model OauthRefreshToken {
+  id                      String             @id @default(cuid())
+  token                   String             @unique
+  clientId                String
+  oauthClient             OauthClient        @relation(fields: [clientId], references: [clientId], onDelete: Cascade)
+  sessionId               String?
+  session                 Session?           @relation(fields: [sessionId], references: [id], onDelete: SetNull)
+  userId                  String
+  user                    User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  referenceId             String?
+  authorizationCodeId     String?
+  resources               String[]
+  requestedUserInfoClaims String[]
+  expiresAt               DateTime?
+  createdAt               DateTime?          @default(now())
+  revoked                 DateTime?
+  rotatedAt               DateTime?
+  rotationReplayResponse  String?
+  rotationReplayExpiresAt DateTime?
+  authTime                DateTime?
+  confirmation            Json?
+  scopes                  String[]
+  oauthAccessTokens       OauthAccessToken[]
+
+  @@index([clientId])
+  @@index([sessionId])
+  @@index([userId])
+  @@index([authorizationCodeId])
+}
+
+model OauthAccessToken {
+  id                      String             @id @default(cuid())
+  token                   String?            @unique
+  clientId                String
+  oauthClient             OauthClient        @relation(fields: [clientId], references: [clientId], onDelete: Cascade)
+  sessionId               String?
+  session                 Session?           @relation(fields: [sessionId], references: [id], onDelete: SetNull)
+  userId                  String?
+  user                    User?              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  referenceId             String?
+  authorizationCodeId     String?
+  resources               String[]
+  requestedUserInfoClaims String[]
+  refreshId               String?
+  oauthRefreshToken       OauthRefreshToken? @relation(fields: [refreshId], references: [id], onDelete: Cascade)
+  expiresAt               DateTime?
+  createdAt               DateTime?          @default(now())
+  revoked                 DateTime?
+  confirmation            Json?
+  scopes                  String[]
+
+  @@index([clientId])
+  @@index([sessionId])
+  @@index([userId])
+  @@index([authorizationCodeId])
+  @@index([refreshId])
+}
+
+model OauthConsent {
+  id                      String      @id @default(cuid())
+  clientId                String
+  oauthClient             OauthClient @relation(fields: [clientId], references: [clientId], onDelete: Cascade)
+  userId                  String?
+  user                    User?       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  referenceId             String?
+  resources               String[]
+  requestedUserInfoClaims String[]
+  scopes                  String[]
+  createdAt               DateTime?   @default(now())
+  updatedAt               DateTime?   @updatedAt
+
+  @@index([clientId])
+  @@index([userId])
+}
+
+model OauthClientAssertion {
+  id        String   @id @default(cuid())
+  expiresAt DateTime
+}
+
 
 model Wallet {
   id            String              @id @default(cuid())
@@ -997,3 +1200,4 @@ model MessageAttachment {
   @@index([fileType])
   @@map("MessageAttachment")
 }
+

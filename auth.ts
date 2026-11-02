@@ -186,6 +186,12 @@ export const auth = betterAuth({
   // SSO callbacks) must be accepted as trusted origins.
   trustedOrigins: [
     "https://whodeysell.com",
+    // The new Vercel deployment's own address: until escrow.cmigl.org
+    // moves to this deployment, browser sign-ins originate here, and
+    // Better Auth rejects them without this entry (the login form
+    // masks every auth error as "Invalid credentials", which hides
+    // the real cause). Harmless to keep after the domain move.
+    "https://cmigl-escrow.vercel.app",
     ...(process.env.NODE_ENV !== "production"
       ? ["http://localhost:3000"]
       : []),

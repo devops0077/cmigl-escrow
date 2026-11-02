@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/auth";
+import { headers } from "next/headers";
 import cronJobService from "@/lib/cron-job-service";
 import { logger } from "@/lib/logger";
 
@@ -7,7 +8,7 @@ import { logger } from "@/lib/logger";
 export async function GET() {
   try {
     // Check if user is authenticated and is an admin
-    const session = await auth();
+    const session = await auth.api.getSession({ headers: await headers() });
     if (!session || session.user.role !== "ADMIN") {
       return NextResponse.json(
         { error: "Unauthorized: Admin access required" },
@@ -30,3 +31,4 @@ export async function GET() {
     );
   }
 }
+

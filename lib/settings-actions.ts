@@ -1,6 +1,7 @@
 "use server";
 
 import { auth } from "@/auth";
+import { headers } from "next/headers";
 import { SettingsService } from "@/lib/settings-service";
 import { z } from "zod";
 import { revalidatePath } from "next/cache";
@@ -67,7 +68,7 @@ const localeSchema = z.object({
  */
 export async function getUserSettings() {
   try {
-    const session = await auth();
+    const session = await auth.api.getSession({ headers: await headers() });
 
     if (!session?.user?.id) {
       return { error: "Unauthorized" };
@@ -88,7 +89,7 @@ export async function updateUserProfile(
   formData: z.infer<typeof profileSchema>
 ) {
   try {
-    const session = await auth();
+    const session = await auth.api.getSession({ headers: await headers() });
 
     if (!session?.user?.id) {
       return { success: false, error: "Unauthorized" };
@@ -127,7 +128,7 @@ export async function updateUserPassword(
   formData: z.infer<typeof passwordSchema>
 ) {
   try {
-    const session = await auth();
+    const session = await auth.api.getSession({ headers: await headers() });
 
     if (!session?.user?.id) {
       return { success: false, error: "Unauthorized" };
@@ -172,7 +173,7 @@ export async function updateNotificationSettings(
   formData: z.infer<typeof notificationSchema>
 ) {
   try {
-    const session = await auth();
+    const session = await auth.api.getSession({ headers: await headers() });
 
     if (!session?.user?.id) {
       return { success: false, error: "Unauthorized" };
@@ -207,7 +208,7 @@ export async function updateAppearanceSettings(
   formData: z.infer<typeof appearanceSchema>
 ) {
   try {
-    const session = await auth();
+    const session = await auth.api.getSession({ headers: await headers() });
 
     if (!session?.user?.id) {
       return { success: false, error: "Unauthorized" };
@@ -242,7 +243,7 @@ export async function updateLocaleSettings(
   formData: z.infer<typeof localeSchema>
 ) {
   try {
-    const session = await auth();
+    const session = await auth.api.getSession({ headers: await headers() });
 
     if (!session?.user?.id) {
       return { success: false, error: "Unauthorized" };
@@ -272,7 +273,7 @@ export async function updateLocaleSettings(
  */
 export async function resetUserSettings() {
   try {
-    const session = await auth();
+    const session = await auth.api.getSession({ headers: await headers() });
 
     if (!session?.user?.id) {
       return { success: false, error: "Unauthorized" };
@@ -294,7 +295,7 @@ export async function resetUserSettings() {
  */
 export async function exportUserData() {
   try {
-    const session = await auth();
+    const session = await auth.api.getSession({ headers: await headers() });
 
     if (!session?.user?.id) {
       return { success: false, error: "Unauthorized" };
@@ -318,7 +319,7 @@ export async function exportUserData() {
  */
 export async function deleteUserAccount() {
   try {
-    const session = await auth();
+    const session = await auth.api.getSession({ headers: await headers() });
 
     if (!session?.user?.id) {
       return { success: false, error: "Unauthorized" };
@@ -340,3 +341,4 @@ export async function deleteUserAccount() {
     return { success: false, error: "Failed to delete account" };
   }
 }
+

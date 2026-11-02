@@ -3,7 +3,8 @@
 import { revalidatePath } from "next/cache";
 import { prisma } from "./prisma";
 import { auth } from "@/auth";
-import { hash } from "bcryptjs";
+import { headers } from "next/headers";
+import { createCredentialAccount } from "./credential-account";
 import { AppError } from "./error-class";
 
 export async function ensureAdminExists() {
@@ -18,18 +19,15 @@ export async function ensureAdminExists() {
   if (adminCount === 0) {
     const defaultAdminPassword =
       process.env.DEFAULT_ADMIN_PASSWORD || "Admin@123456";
-    const hashedPassword = await hash(defaultAdminPassword, 10);
-
     const admin = await prisma.user.create({
       data: {
         name: "System Administrator",
         email: (process.env.DEFAULT_ADMIN_EMAIL as string) || "admin@cmigl.com",
         username: "admin",
-        password: hashedPassword,
         phone: (process.env.DEFAULT_ADMIN_PHONE as string) || "+2348000000000",
         role: "ADMIN",
         isActive: true,
-        emailVerified: new Date(),
+        emailVerified: true,
         status: "ACTIVE",
         termsAccepted: true,
         wallet: {
@@ -47,6 +45,8 @@ export async function ensureAdminExists() {
       },
     });
 
+    await createCredentialAccount(admin.id, defaultAdminPassword);
+
     console.log("Created default admin user:", admin.email);
     return { success: true, message: "Default admin user created" };
   }
@@ -56,7 +56,7 @@ export async function ensureAdminExists() {
 
 // Get admin dashboard overview
 export async function getAdminDashboardOverview() {
-  const session = await auth();
+  const session = await auth.api.getSession({ headers: await headers() });
   if (!session?.user || session.user.role !== "ADMIN") {
     throw new AppError("Unauthorized");
   }
@@ -131,7 +131,7 @@ export async function getAdminDashboardOverview() {
 }
 
 async function checkAdminPermission() {
-  const session = await auth();
+  const session = await auth.api.getSession({ headers: await headers() });
 
   if (!session?.user?.email) {
     throw new Error("Unauthorized");
@@ -436,3 +436,4 @@ export async function removeUserRestriction(restrictionId: string) {
   revalidatePath("/admin/users");
   return { success: true };
 }
+

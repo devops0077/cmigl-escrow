@@ -50,7 +50,7 @@ import {
   getConversationChannel,
   PUSHER_EVENTS,
 } from "@/lib/pusher-client";
-import { useSession } from "next-auth/react";
+import { authClient } from "@/lib/auth-client";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -135,7 +135,7 @@ export function EnhancedMessageCenter({
   recipientName,
   isAdminView = false,
 }: EnhancedMessageCenterProps) {
-  const { data: session } = useSession();
+  const { data: session } = authClient.useSession();
   const [newMessage, setNewMessage] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
   const [showSearch, setShowSearch] = useState(false);
@@ -1314,3 +1314,4 @@ export function EnhancedMessageCenter({
     </motion.div>
   );
 }
+

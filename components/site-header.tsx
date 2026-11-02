@@ -6,11 +6,11 @@ import { Button } from "@/components/ui/button";
 import { UserNav } from "@/components/user-nav";
 import { MainNav } from "@/components/main-nav";
 import { MobileNav } from "@/components/mobile-nav";
-import { useSession } from "next-auth/react";
+import { authClient } from "@/lib/auth-client";
 
 export function SiteHeader() {
   const pathname = usePathname();
-  const { data: session } = useSession();
+  const { data: session } = authClient.useSession();
 
   // Don't show header on auth pages
   if (pathname.startsWith("/auth")) {
@@ -45,3 +45,4 @@ export function SiteHeader() {
     </header>
   );
 }
+

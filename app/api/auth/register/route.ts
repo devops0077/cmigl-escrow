@@ -1,6 +1,6 @@
 import { emailService } from "@/lib/email-service";
 import { prisma } from "@/lib/prisma";
-import { hash } from "bcryptjs";
+import { createCredentialAccount } from "@/lib/credential-account";
 import { nanoid } from "nanoid";
 import { revalidatePath } from "next/cache";
 import { NextResponse } from "next/server";
@@ -55,9 +55,6 @@ export const POST = async (request: Request) => {
       }
     }
 
-    // Hash password
-    const hashedPassword = await hash(password, 10);
-
     // Create verification token
     const token = nanoid(36);
     const tokenExpiry = new Date();
@@ -70,7 +67,6 @@ export const POST = async (request: Request) => {
         email,
         phone,
         username,
-        password: hashedPassword,
         passportImage,
         termsAccepted,
         verificationToken: {
@@ -87,6 +83,8 @@ export const POST = async (request: Request) => {
         },
       },
     });
+
+    await createCredentialAccount(user.id, password);
 
     // Send verification email
     try {
@@ -118,3 +116,4 @@ export const POST = async (request: Request) => {
     );
   }
 };
+

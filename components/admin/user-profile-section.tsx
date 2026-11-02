@@ -32,7 +32,7 @@ interface UserDetails {
   status: string;
   isActive: boolean;
   restricted: boolean;
-  emailVerified: string | null;
+  emailVerified: boolean;
   termsAccepted: boolean;
   createdAt: string;
   updatedAt: string;
@@ -225,9 +225,7 @@ export function UserProfileSection({ user }: UserProfileSectionProps) {
                 <span className="text-sm font-medium text-muted-foreground">
                   Email Verified
                 </span>
-                <span className="text-sm">
-                  {format(new Date(user.emailVerified), "PPP 'at' p")}
-                </span>
+                <span className="text-sm">Yes</span>
               </div>
             )}
           </div>
@@ -236,3 +234,4 @@ export function UserProfileSection({ user }: UserProfileSectionProps) {
     </div>
   );
 }
+

@@ -4,6 +4,7 @@ import { logger } from "@/lib/logger";
 import { monnifyService } from "@/lib/monnify-service";
 import { paystackService } from "@/lib/paystack-service";
 import { auth } from "@/auth";
+import { headers } from "next/headers";
 import type { WalletTransactionStatus } from "@prisma/client";
 
 /**
@@ -21,7 +22,7 @@ export async function initiateMonnifyWithdrawal(
   accountName: string
 ) {
   try {
-    const session = await auth();
+    const session = await auth.api.getSession({ headers: await headers() });
     if (!session?.user) {
       throw new AppError("Unauthorized", 401);
     }
@@ -200,7 +201,7 @@ export async function initiateMonnifyWithdrawal(
  */
 export async function verifyMonnifyWithdrawalStatus(reference: string) {
   try {
-    const session = await auth();
+    const session = await auth.api.getSession({ headers: await headers() });
     if (!session?.user) {
       throw new AppError("Unauthorized", 401);
     }
@@ -316,3 +317,4 @@ export async function verifyMonnifyWithdrawalStatus(reference: string) {
     throw error;
   }
 }
+

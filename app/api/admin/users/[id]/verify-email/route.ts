@@ -1,10 +1,11 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/auth";
+import { headers } from "next/headers";
 import { createNotificationWithPush } from "@/lib/api-utils";
 
 async function checkAdminPermission() {
-  const session = await auth();
+  const session = await auth.api.getSession({ headers: await headers() });
 
   if (!session?.user?.email) {
     throw new Error("Unauthorized");
@@ -49,7 +50,7 @@ export async function POST(
     await prisma.user.update({
       where: { id: userId },
       data: {
-        emailVerified: new Date(),
+        emailVerified: true,
       },
     });
 
@@ -79,3 +80,4 @@ export async function POST(
     );
   }
 }
+

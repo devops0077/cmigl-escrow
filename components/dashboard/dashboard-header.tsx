@@ -24,7 +24,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { useSession, signOut } from "next-auth/react";
+import { authClient } from "@/lib/auth-client";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useRouter } from "next/navigation";
 import { NotificationDrawer } from "@/components/notifications/notification-drawer";
@@ -42,8 +42,8 @@ export function DashboardHeader({
 }: DashboardHeaderProps) {
   const [isSticky, setIsSticky] = useState(false);
   const { scrollY } = useScroll();
-  const { data, status } = useSession();
-  const isLoadingUserData = status === "loading";
+  const { data, isPending } = authClient.useSession();
+  const isLoadingUserData = isPending;
   const router = useRouter();
 
   // Monitor scroll position to determine if header should be sticky
@@ -189,7 +189,7 @@ export function DashboardHeader({
               <DropdownMenuSeparator />
               <DropdownMenuItem
                 className="text-destructive focus:text-destructive"
-                onClick={async () => await signOut()}
+                onClick={async () => await authClient.signOut()}
               >
                 <LogOut className="mr-2 h-4 w-4" />
                 <span>Log out</span>
@@ -201,3 +201,4 @@ export function DashboardHeader({
     </motion.div>
   );
 }
+

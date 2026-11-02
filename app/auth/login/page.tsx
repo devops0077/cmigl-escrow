@@ -3,7 +3,7 @@
 import { Suspense, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { signIn } from "next-auth/react";
+import { authClient } from "@/lib/auth-client";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
@@ -29,10 +29,9 @@ import { toast } from "sonner";
 import { FadeIn } from "@/components/animations/fade-in";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { CheckCircle2, Info } from "lucide-react";
-import { InActiveAccountError } from "@/lib/error-class";
-import { AuthError } from "next-auth";
 import { SecurityEventType } from "@/lib/generated/prisma";
 import apiClient from "@/lib/api-client";
+import { resolveLoginEmail } from "@/lib/auth-actions";
 
 const formSchema = z.object({
   email: z.string().min(1, {
@@ -65,41 +64,37 @@ function LoginPage() {
     setError(null);
 
     try {
-      const result = await signIn("credentials", {
-        email: values.email,
+      // Better Auth email sign-in takes an email address only, but this
+      // form historically also accepted a username or phone number.
+      // Resolve those to the account email first; an unresolvable
+      // identifier fails exactly like a wrong password (no existence
+      // leak beyond what the old login already revealed).
+      const identifier = values.email.trim();
+      const email = identifier.includes("@")
+        ? identifier
+        : await resolveLoginEmail(identifier);
+      if (!email) {
+        setError("Invalid credentials.");
+        await apiClient.post("/user/security-log", {
+          type: SecurityEventType.LOGIN_FAILED,
+          email: identifier,
+          reason: "Invalid credentials.",
+        });
+        return;
+      }
+
+      const { error } = await authClient.signIn.email({
+        email,
         password: values.password,
-        redirect: false,
       });
 
-      if (result?.error) {
-        console.log(result);
-        if (result?.code?.includes("inactive_account")) {
-          setError("Your account is not active. Redirecting...");
-          const response = await fetch(
-            `/api/auth/user-by-email?email=${encodeURIComponent(values.email)}`
-          );
-          const data = await response.json();
-
-          if (data.userId) {
-            router.push(`/auth/payment?userId=${data.userId}`);
-            return;
-          }
-        } else if (result.error.includes("CredentialsSignin")) {
-          setError("Invalid credentials.");
-          await apiClient.post("/user/security-log", {
-            type: SecurityEventType.LOGIN_FAILED,
-            email: values.email,
-            reason: "Invalid credentials.",
-          });
-          return;
-        } else {
-          setError("An unexpected error occurred. Please try again later.");
-          await apiClient.post("/user/security-log", {
-            type: SecurityEventType.LOGIN_FAILED,
-            email: values.email,
-            reason: result.error,
-          });
-        }
+      if (error) {
+        setError("Invalid credentials.");
+        await apiClient.post("/user/security-log", {
+          type: SecurityEventType.LOGIN_FAILED,
+          email,
+          reason: "Invalid credentials.",
+        });
         return;
       }
       toast.success("Login successful", {
@@ -108,7 +103,7 @@ function LoginPage() {
       await fetch(process.env.NEXT_PUBLIC_APP_URL + "/api/user/security-log", {
         body: JSON.stringify({
           type: SecurityEventType.LOGIN_SUCCESS,
-          email: values.email,
+          email,
         }),
         method: "POST",
       });
@@ -117,6 +112,27 @@ function LoginPage() {
     } catch (error) {
       console.error("Login error:", error);
     } finally {
+      setIsLoading(false);
+    }
+  }
+
+  async function signInWithWhoDeySell() {
+    setIsLoading(true);
+    setError(null);
+    // First-party SSO via WhoDeySell's Better Auth provider. On success
+    // the browser leaves for WhoDeySell and returns to callbackUrl
+    // (e.g. the full /buy URL with its signed payload) through
+    // /api/auth/callback/whodeysell. Requires the deployment setup in
+    // docs/sso-whodeysell.md (client registration + env vars); without
+    // it this surfaces the provider error here.
+    const { error } = await authClient.signIn.social({
+      provider: "whodeysell",
+      callbackURL: callbackUrl,
+    });
+    if (error) {
+      setError(
+        "WhoDeySell sign-in is not available right now. Please sign in with your escrow email and password instead."
+      );
       setIsLoading(false);
     }
   }
@@ -204,6 +220,27 @@ function LoginPage() {
                 </Button>
               </form>
             </Form>
+
+            <div className="relative">
+              <div className="absolute inset-0 flex items-center">
+                <span className="w-full border-t" />
+              </div>
+              <div className="relative flex justify-center text-xs uppercase">
+                <span className="bg-background px-2 text-muted-foreground">
+                  Or continue with
+                </span>
+              </div>
+            </div>
+
+            <Button
+              type="button"
+              variant="outline"
+              className="w-full"
+              disabled={isLoading}
+              onClick={signInWithWhoDeySell}
+            >
+              Continue with WhoDeySell
+            </Button>
           </CardContent>
           <CardFooter className="flex flex-col space-y-2">
             <div className="text-sm text-muted-foreground">
@@ -268,3 +305,4 @@ export function RegisterPageSkeleton() {
     </div>
   );
 }
+

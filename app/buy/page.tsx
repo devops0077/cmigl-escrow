@@ -1,6 +1,8 @@
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { auth } from "@/auth";
+import { BuySsoButtons } from "./buy-sso-buttons";
+import { headers } from "next/headers";
 import { prisma } from "@/lib/prisma";
 import { calculateEscrowFee } from "@/lib/fee-calculator";
 import { formatCurrency } from "@/lib/utils";
@@ -101,11 +103,34 @@ export default async function WhodeysellBuyPage({
   const buyUrl = `/buy?payload=${encodeURIComponent(payload ?? "")}&sig=${encodeURIComponent(sig ?? "")}`;
   const listingUrl = whodeysellListingUrl(order.listingId);
 
-  // The buyer must be signed in; send them to login and back here.
-  const session = await auth();
+  // The buyer must be signed in. A signed-out buyer gets the SSO
+  // entry here instead of an bare login redirect: "Continue with
+  // WhoDeySell" returns to this exact /buy URL (payload + sig
+  // preserved via callbackURL), as does the email sign-in link.
+  // (Middleware also redirects signed-out visitors to /auth/login with
+  // the same callbackUrl; the login page carries the same SSO button.)
+  const session = await auth.api.getSession({ headers: await headers() });
   if (!session?.user?.email) {
-    redirect(
-      `/auth/login?callbackUrl=${encodeURIComponent(buyUrl)}`,
+    return (
+      <PageShell>
+        <Card>
+          <CardHeader>
+            <CardTitle>Sign in to continue checkout</CardTitle>
+            <CardDescription>
+              Sign in with your WhoDeySell account or your escrow account
+              to fund this purchase from your escrow wallet.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <BuySsoButtons buyUrl={buyUrl} />
+            <p className="text-center text-sm">
+              <Link href={listingUrl} className="font-medium underline">
+                Back to the listing on WhoDeySell
+              </Link>
+            </p>
+          </CardContent>
+        </Card>
+      </PageShell>
     );
   }
 
@@ -211,7 +236,7 @@ export default async function WhodeysellBuyPage({
       redirect(backToBuy);
     }
     const rechecked = recheck.payload;
-    const recheckSession = await auth();
+    const recheckSession = await auth.api.getSession({ headers: await headers() });
     if (!recheckSession?.user?.email) {
       redirect(`/auth/login?callbackUrl=${encodeURIComponent(backToBuy)}`);
     }
@@ -326,3 +351,4 @@ export default async function WhodeysellBuyPage({
     </PageShell>
   );
 }
+

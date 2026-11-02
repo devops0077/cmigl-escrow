@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/auth";
+import { headers } from "next/headers";
 import { z } from "zod";
 import { createNotificationWithPush } from "@/lib/api-utils";
 
@@ -11,7 +12,7 @@ const sendMessageSchema = z.object({
 });
 
 async function checkAdminPermission() {
-  const session = await auth();
+  const session = await auth.api.getSession({ headers: await headers() });
 
   if (!session?.user?.email) {
     throw new Error("Unauthorized");
@@ -224,3 +225,4 @@ export async function POST(
     );
   }
 }
+

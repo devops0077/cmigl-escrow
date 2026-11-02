@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
-import { useSession } from "next-auth/react";
+import { authClient } from "@/lib/auth-client";
 
 interface MainNavProps {
   className?: string;
@@ -11,7 +11,7 @@ interface MainNavProps {
 
 export function MainNav({ className }: MainNavProps) {
   const pathname = usePathname();
-  const { data: session } = useSession();
+  const { data: session } = authClient.useSession();
 
   const routes = [
     {
@@ -61,3 +61,4 @@ export function MainNav({ className }: MainNavProps) {
     </nav>
   );
 }
+

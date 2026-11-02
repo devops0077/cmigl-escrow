@@ -7,7 +7,7 @@ import {
   useEffect,
   type ReactNode,
 } from "react";
-import { useSession } from "next-auth/react";
+import { authClient } from "@/lib/auth-client";
 import { useRouter, usePathname } from "next/navigation";
 import { toast } from "sonner";
 import type { UserRestriction } from "@/lib/generated/prisma";
@@ -29,7 +29,7 @@ const RestrictionContext = createContext<RestrictionContextType>({
 export const useRestriction = () => useContext(RestrictionContext);
 
 export function RestrictionProvider({ children }: { children: ReactNode }) {
-  const { data: session, status, update } = useSession();
+  const { data: session } = authClient.useSession();
   const [isRestricted, setIsRestricted] = useState(false);
   const [restriction, setRestriction] = useState<UserRestriction | null>(null);
   const [restrictions, setRestrictions] = useState<UserRestriction[] | null>(
@@ -41,7 +41,7 @@ export function RestrictionProvider({ children }: { children: ReactNode }) {
   const pathname = usePathname();
 
   const checkRestriction = async (forceCheck = false): Promise<boolean> => {
-    if (!session?.user?.id || status !== "authenticated") return false;
+    if (!session?.user?.id) return false;
 
     try {
       const response = await fetch(`/api/users/restrictions/check`);
@@ -56,25 +56,13 @@ export function RestrictionProvider({ children }: { children: ReactNode }) {
       setLastCheckTime(Date.now());
 
       if (data.restricted) {
-        await update({
-          ...session,
-          user: {
-            ...session.user,
-            restricted: true,
-          },
-        });
+        await authClient.getSession();
         setIsRestricted(true);
         setRestriction(data.restriction);
         setRestrictions(data.restrictions);
         return true;
       } else {
-        await update({
-          ...session,
-          user: {
-            ...session.user,
-            restricted: false,
-          },
-        });
+        await authClient.getSession();
         setTimeout(() => {
           setIsRestricted(false);
           setRestriction(null);
@@ -182,3 +170,4 @@ export function RestrictionProvider({ children }: { children: ReactNode }) {
     </RestrictionContext.Provider>
   );
 }
+

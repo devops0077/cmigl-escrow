@@ -1,5 +1,6 @@
 import { type NextRequest, NextResponse } from "next/server";
 import { auth } from "@/auth";
+import { headers } from "next/headers";
 import { v2 as cloudinary } from "cloudinary";
 
 // Configure Cloudinary
@@ -12,7 +13,7 @@ cloudinary.config({
 export async function POST(request: NextRequest) {
   try {
     // Check authentication
-    // const session = await auth();
+    // const session = await auth.api.getSession({ headers: await headers() });
     // if (!session?.user) {
     //   return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     // }
@@ -94,3 +95,4 @@ export async function POST(request: NextRequest) {
     );
   }
 }
+

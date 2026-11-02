@@ -21,7 +21,7 @@ import { PrismaClientValidationError } from "./generated/prisma/runtime/library"
  */
 export async function updateNotificationSettings(formData: FormData) {
   try {
-    const session = await auth();
+    const session = await auth.api.getSession({ headers: await headers() });
     if (!session?.user?.id) {
       return { success: false, error: "Not authenticated" };
     }
@@ -71,7 +71,7 @@ export async function updateNotificationSettings(formData: FormData) {
  */
 export async function updateAppearanceSettings(formData: FormData) {
   try {
-    const session = await auth();
+    const session = await auth.api.getSession({ headers: await headers() });
     if (!session?.user?.id) {
       return { success: false, error: "Not authenticated" };
     }
@@ -113,7 +113,7 @@ export async function updateAppearanceSettings(formData: FormData) {
  */
 export async function updateLocaleSettings(formData: FormData) {
   try {
-    const session = await auth();
+    const session = await auth.api.getSession({ headers: await headers() });
     if (!session?.user?.id) {
       return { success: false, error: "Not authenticated" };
     }
@@ -153,7 +153,7 @@ export async function updateLocaleSettings(formData: FormData) {
  */
 export async function requestAccountDeletion(formData: FormData) {
   try {
-    const session = await auth();
+    const session = await auth.api.getSession({ headers: await headers() });
     if (!session?.user?.id) {
       return { success: false, error: "Not authenticated" };
     }
@@ -190,7 +190,7 @@ export async function requestAccountDeletion(formData: FormData) {
  */
 export async function exportUserData() {
   try {
-    const session = await auth();
+    const session = await auth.api.getSession({ headers: await headers() });
     if (!session?.user?.id) {
       return { success: false, error: "Not authenticated" };
     }
@@ -231,7 +231,7 @@ export async function updateUserProfile({
   bio: string;
   address: string;
 }>) {
-  const session = await auth();
+  const session = await auth.api.getSession({ headers: await headers() });
 
   if (!session?.user?.email) {
     throw new Error("Unauthorized");
@@ -281,7 +281,7 @@ export async function updateUserPassword({
   currentPassword: string;
   newPassword: string;
 }) {
-  const session = await auth();
+  const session = await auth.api.getSession({ headers: await headers() });
 
   if (!session?.user?.email) {
     throw new Error("Unauthorized");
@@ -325,7 +325,7 @@ export async function updateUserPassword({
 }
 
 export async function getUserDashboardData() {
-  const session = await auth();
+  const session = await auth.api.getSession({ headers: await headers() });
 
   if (!session?.user?.email) {
     throw new Error("Unauthorized");
@@ -382,7 +382,7 @@ export async function getUserDashboardData() {
 }
 
 export async function getUserTransactions(limit = 5) {
-  const session = await auth();
+  const session = await auth.api.getSession({ headers: await headers() });
 
   if (!session?.user?.email) {
     throw new Error("Unauthorized");
@@ -439,7 +439,7 @@ export async function getUserTransactions(limit = 5) {
 }
 
 export async function getTransactionById(id: string) {
-  const session = await auth();
+  const session = await auth.api.getSession({ headers: await headers() });
 
   if (!session?.user?.email) {
     throw new Error("Unauthorized");
@@ -493,7 +493,7 @@ export async function getTransactionById(id: string) {
 }
 
 export async function searchUsers(query: string) {
-  const session = await auth();
+  const session = await auth.api.getSession({ headers: await headers() });
 
   if (!session?.user?.email) {
     throw new Error("Unauthorized");
@@ -546,7 +546,7 @@ export async function createTransaction({
   productCategory?: string;
 }) {
   try {
-    const session = await auth();
+    const session = await auth.api.getSession({ headers: await headers() });
 
     if (!session?.user?.email) {
       throw new Error("Unauthorized");
@@ -711,7 +711,7 @@ export async function updateTransactionStatus({
   transactionId: string;
   status: TransactionStatus;
 }) {
-  const session = await auth();
+  const session = await auth.api.getSession({ headers: await headers() });
 
   if (!session?.user?.email) {
     throw new Error("Unauthorized");
@@ -899,3 +899,4 @@ export async function updateTransactionStatus({
 
   return updatedTransaction;
 }
+

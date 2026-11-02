@@ -7,7 +7,7 @@ import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Menu } from "lucide-react";
-import { useSession } from "next-auth/react";
+import { authClient } from "@/lib/auth-client";
 
 interface MobileNavProps {
   className?: string;
@@ -16,7 +16,7 @@ interface MobileNavProps {
 export function MobileNav({ className }: MobileNavProps) {
   const pathname = usePathname();
   const [open, setOpen] = React.useState(false);
-  const { data: session } = useSession();
+  const { data: session } = authClient.useSession();
 
   const routes = [
     {
@@ -110,3 +110,4 @@ export function MobileNav({ className }: MobileNavProps) {
     </div>
   );
 }
+

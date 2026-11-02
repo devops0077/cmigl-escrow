@@ -42,7 +42,7 @@ import {
   getConversationChannel,
   PUSHER_EVENTS,
 } from "@/lib/pusher-client";
-import { useSession } from "next-auth/react";
+import { authClient } from "@/lib/auth-client";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -126,7 +126,7 @@ export function RealTimeMessageCenter({
   recipientName,
   isAdminView = false,
 }: RealTimeMessageCenterProps) {
-  const { data: session } = useSession();
+  const { data: session } = authClient.useSession();
   const [newMessage, setNewMessage] = useState("");
   const [attachments, setAttachments] = useState<string[]>([]);
   const [isTyping, setIsTyping] = useState(false);
@@ -802,3 +802,4 @@ export function RealTimeMessageCenter({
     </Card>
   );
 }
+

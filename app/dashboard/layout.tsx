@@ -1,6 +1,7 @@
 import type React from "react";
 import { DashboardSidebar } from "@/components/dashboard/dashboard-sidebar";
 import { auth } from "@/auth";
+import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { Suspense } from "react";
 import { DashboardSkeleton } from "@/components/skeletons/dashboard-skeleton";
@@ -13,7 +14,7 @@ export default async function DashboardLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const session = await auth();
+  const session = await auth.api.getSession({ headers: await headers() });
 
   if (!session) {
     redirect("/auth/login?callbackUrl=/dashboard");
@@ -39,3 +40,4 @@ export default async function DashboardLayout({
     </>
   );
 }
+

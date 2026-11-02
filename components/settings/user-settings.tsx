@@ -57,7 +57,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
-import { useSession } from "next-auth/react";
+import { authClient } from "@/lib/auth-client";
 import { FadeIn } from "@/components/animations/fade-in";
 import {
   updateUserProfile,
@@ -157,7 +157,7 @@ const localeFormSchema = z.object({
 });
 
 export function UserSettings() {
-  const { data: session, update } = useSession();
+  const { data: session } = authClient.useSession();
   const [isUpdatingProfile, setIsUpdatingProfile] = useState(false);
   const [isUpdatingPassword, setIsUpdatingPassword] = useState(false);
   const [activeTab, setActiveTab] = useState("profile");
@@ -276,7 +276,7 @@ export function UserSettings() {
 
       profileForm.setValue("name", session?.user.name as string);
       profileForm.setValue("email", session?.user?.email as string);
-      profileForm.setValue("phone", session?.user.phone);
+      profileForm.setValue("phone", session?.user.phone ?? "");
       session?.user.bio &&
         profileForm.setValue("bio", String(session?.user.bio));
       session?.user.address &&
@@ -302,16 +302,9 @@ export function UserSettings() {
       const result = await updateUserProfile(values);
 
       if (result.success) {
-        // Update the session
-        await update({
-          ...session,
-          user: {
-            ...session?.user,
-            name: values.name,
-            address: values.address,
-            bio: values.bio,
-          },
-        });
+        // Refresh the session from the server (Better Auth sessions
+        // are DB-backed; there is no NextAuth-style update()).
+        await authClient.getSession();
         router.refresh();
 
         toast.success("Profile updated", {
@@ -1696,3 +1689,4 @@ export function UserSettings() {
     </FadeIn>
   );
 }
+

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useSession } from "next-auth/react";
+import { authClient } from "@/lib/auth-client";
 import { toast } from "sonner";
 
 // Define types for settings
@@ -55,7 +55,7 @@ const defaultSettings: UserSettings = {
  * Hook for managing user settings
  */
 export function useSettings() {
-  const { data: session } = useSession();
+  const { data: session } = authClient.useSession();
   const [settings, setSettings] = useState<UserSettings>(defaultSettings);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -228,3 +228,4 @@ export function useSettings() {
     updateLocaleSettings,
   };
 }
+

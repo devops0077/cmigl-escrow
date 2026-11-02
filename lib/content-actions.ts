@@ -1,6 +1,7 @@
 "use server";
 
 import { auth } from "@/auth";
+import { headers } from "next/headers";
 import { prisma } from "@/lib/prisma";
 import { revalidatePath, revalidateTag } from "next/cache";
 import { UnauthorizedError } from "./error-class";
@@ -9,7 +10,7 @@ import { cache } from "react";
 
 // Check if user is admin
 async function checkAdminPermission() {
-  const session = await auth();
+  const session = await auth.api.getSession({ headers: await headers() });
 
   if (!session?.user?.email) {
     throw new UnauthorizedError("Unauthorized");
@@ -362,3 +363,4 @@ export const getLatestPrivacyPolicy = async () => {
 
   return privacy;
 };
+

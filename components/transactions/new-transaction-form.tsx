@@ -30,7 +30,7 @@ import { toast } from "sonner";
 import { FadeIn } from "@/components/animations/fade-in";
 import { PaystackScript } from "@/components/payments/paystack-script";
 import { PaystackButton } from "@/components/payments/paystack-button";
-import { useSession } from "next-auth/react";
+import { authClient } from "@/lib/auth-client";
 import { _escrowConfig } from "@/config";
 import { formatCurrency, generateTransactionReference } from "@/lib/utils";
 import { calculateTotalWithAllFees } from "@/lib/fee-calculator";
@@ -96,7 +96,7 @@ const steps = [
 
 export function NewTransactionForm() {
   const router = useRouter();
-  const { data: session } = useSession();
+  const { data: session } = authClient.useSession();
   const { data: walletData, isLoading: walletLoading } = useWalletBalance();
 
   const [currentStep, setCurrentStep] = useState(1);
@@ -723,3 +723,4 @@ export function NewTransactionForm() {
     </FadeIn>
   );
 }
+

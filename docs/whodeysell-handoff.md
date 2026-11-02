@@ -35,10 +35,15 @@ transaction lands on that transaction instead of creating a duplicate.
 
 ## Flow after verification
 
-1. The buyer must be signed in to escrow. A signed-out buyer is sent to
-   `/auth/login?callbackUrl=/buy?payload=...&sig=...` and returns here.
+1. The buyer must be signed in to escrow. A signed-out buyer sees the
+   sign-in card on `/buy` itself: "Continue with WhoDeySell" (SSO,
+   returning to the full signed `/buy` URL via callbackURL) or "Sign in
+   with email" (via `/auth/login?callbackUrl=/buy?payload=...&sig=...`,
+   which carries the same SSO button). `/buy` is a public route for
+   exactly this reason; the page still gates checkout on a session.
    Guest funding is not supported: the funding flow below is the
-   existing wallet-first flow.
+   existing wallet-first flow. SSO details (provider, linking, wallet
+   provisioning for JIT users) are in `docs/sso-whodeysell.md`.
 2. The seller is resolved through `MarketplaceSellerMapping` (below).
    If there is no mapping, the page refuses the checkout: no transaction
    is created and no money moves.
@@ -72,6 +77,11 @@ transaction lands on that transaction instead of creating a duplicate.
    WhoDeySell user id to their escrow user id. Until a seller has a
    row, their listings cannot check out (by design — never pay out to
    an unresolved account).
+4. Set the Better Auth + SSO environment variables and run the
+   legacy-password migration in `docs/better-auth-migration.md`, and
+   register the WhoDeySell OAuth client in `docs/sso-whodeysell.md`,
+   before relying on the SSO entry on `/buy` (email/password sign-in
+   works without step 4's SSO parts).
 
 ## Open questions (need Max's confirmation)
 
@@ -91,3 +101,4 @@ transaction lands on that transaction instead of creating a duplicate.
   marketplace (funded / delivered / released / disputed) and webhooks.
   Until then the marketplace order stays `PENDING` after redirect and
   escrow is the system of record for the money.
+

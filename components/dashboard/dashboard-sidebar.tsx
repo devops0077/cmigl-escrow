@@ -24,7 +24,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
-import { useSession, signOut } from "next-auth/react";
+import { authClient } from "@/lib/auth-client";
 import {
   Tooltip,
   TooltipContent,
@@ -55,7 +55,7 @@ import { UserRole } from "@/lib/generated/prisma";
 
 export function DashboardSidebar() {
   const pathname = usePathname();
-  const { data: session } = useSession();
+  const { data: session } = authClient.useSession();
   const { state } = useSidebar();
   const isCollapsed = state === "collapsed";
   const isAdmin = session?.user?.role === UserRole.ADMIN;
@@ -425,7 +425,7 @@ export function DashboardSidebar() {
               "w-full hover:bg-destructive/10 hover:text-destructive transition-all duration-200",
               isCollapsed && "p-2 flex justify-center"
             )}
-            onClick={async () => await signOut()}
+            onClick={async () => await authClient.signOut()}
           >
             <LogOut className="h-4 w-4" />
             {!isCollapsed && <span className="ml-2">Sign Out</span>}
@@ -435,3 +435,4 @@ export function DashboardSidebar() {
     </Sidebar>
   );
 }
+

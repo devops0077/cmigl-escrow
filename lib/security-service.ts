@@ -5,7 +5,7 @@ import { SecurityEventType } from "@/lib/generated/prisma";
 import { getClientIp } from "request-ip";
 import { UAParser } from "ua-parser-js";
 import type { NextRequest } from "next/server";
-import type { Session } from "next-auth";
+import type { AuthSession } from "@/auth";
 
 /**
  * Service class for handling security-related operations
@@ -203,7 +203,7 @@ export class SecurityService {
   }: {
     userId: string;
     sessionId: string;
-    currentSession: Session;
+    currentSession: AuthSession;
     request?: NextRequest;
   }) {
     try {
@@ -343,3 +343,4 @@ export class SecurityService {
     }
   }
 }
+

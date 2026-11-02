@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { useSession } from "next-auth/react";
+import { authClient } from "@/lib/auth-client";
 import { toast } from "sonner";
 import { SecurityEventPayload } from "@/types/security-types";
 
@@ -32,7 +32,7 @@ export type ActiveSession = {
  * Hook for managing security-related functionality
  */
 export function useSecurity() {
-  const { data: session } = useSession();
+  const { data: session } = authClient.useSession();
   const [securityLog, setSecurityLog] = useState<SecurityEvent[]>([]);
   const [activeSessions, setActiveSessions] = useState<ActiveSession[]>([]);
   const [loading, setLoading] = useState({
@@ -279,3 +279,4 @@ export function useSecurity() {
     logSecurityEvent,
   };
 }
+

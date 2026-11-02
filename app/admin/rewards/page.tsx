@@ -1,6 +1,5 @@
 "use client";
 
-import { useSession } from "next-auth/react";
 import { redirect } from "next/navigation";
 import { DashboardHeader } from "@/components/dashboard/dashboard-header";
 import { RewardProgramsList } from "@/components/admin/reward-programs-list";
@@ -20,3 +19,4 @@ export default function AdminRewardsPage() {
     </>
   );
 }
+

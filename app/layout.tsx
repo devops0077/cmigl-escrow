@@ -7,6 +7,7 @@ import { AuthProvider } from "@/lib/auth-provider";
 import { Toaster } from "sonner";
 import { ReactQueryProvider } from "@/lib/react-query-provider";
 import { HelpBubble } from "@/components/help/help-bubble";
+import { BackToTop } from "@/components/back-to-top";
 import { RestrictionProvider } from "@/providers/restriction-provider";
 
 const inter = Inter({ subsets: ["latin"] });
@@ -38,6 +39,7 @@ export default function RootLayout({
               >
                 {children}
                 <HelpBubble />
+                <BackToTop />
                 <Toaster
                   className="group toaster"
                   toastOptions={{

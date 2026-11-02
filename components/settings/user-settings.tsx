@@ -25,6 +25,7 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
+import { PasswordInput } from "@/components/ui/password-input";
 import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Switch } from "@/components/ui/switch";
@@ -817,7 +818,7 @@ export function UserSettings() {
                           <FormItem>
                             <FormLabel>Current Password</FormLabel>
                             <FormControl>
-                              <Input type="password" {...field} />
+                              <PasswordInput {...field} />
                             </FormControl>
                             <FormMessage />
                           </FormItem>
@@ -831,7 +832,7 @@ export function UserSettings() {
                           <FormItem>
                             <FormLabel>New Password</FormLabel>
                             <FormControl>
-                              <Input type="password" {...field} />
+                              <PasswordInput {...field} />
                             </FormControl>
                             <FormDescription>
                               Password must be at least 8 characters.
@@ -847,7 +848,7 @@ export function UserSettings() {
                           <FormItem>
                             <FormLabel>Confirm New Password</FormLabel>
                             <FormControl>
-                              <Input type="password" {...field} />
+                              <PasswordInput {...field} />
                             </FormControl>
                             <FormMessage />
                           </FormItem>

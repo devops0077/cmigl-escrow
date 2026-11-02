@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { auth } from "@/auth";
+import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import FeedbackForm from "@/components/feedback/feedback-form";
 import {
@@ -20,7 +21,7 @@ export const metadata: Metadata = {
 };
 
 export default async function FeedbackPage() {
-  const session = await auth();
+  const session = await auth.api.getSession({ headers: await headers() });
 
   if (!session?.user) {
     redirect("/auth/login?callbackUrl=/feedback");
@@ -46,3 +47,4 @@ export default async function FeedbackPage() {
     </>
   );
 }
+

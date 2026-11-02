@@ -2,10 +2,14 @@ import type { ReactNode } from "react";
 import Image from "next/image";
 import { FadeIn } from "@/components/animations/fade-in";
 import { ProcessSteps } from "@/components/auth/process-steps";
+import { ThemeToggle } from "@/components/theme-toggle";
 
 export default function AuthLayout({ children }: { children: ReactNode }) {
   return (
     <>
+      <div className="absolute right-4 top-4 z-50">
+        <ThemeToggle isCollapsed className="w-10 justify-center px-0" />
+      </div>
       <div className="flex min-h-screen">
         {/* Left column - Auth form */}
         <div className="flex flex-1 items-center justify-center">

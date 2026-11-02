@@ -1,49 +1,55 @@
 import type { NextRequest } from "next/server";
-import { auth } from "@/auth";
 import {
   DEFAULT_LOGIN_REDIRECT,
   apiAuthPrefix,
   authRoutes,
-  adminRoutes,
   isPublicRouteFn,
 } from "@/routes";
-import axios from "axios";
 
-// Better Auth middleware: the session is validated against the database
-// on every matched request (auth.api.getSession with the request
-// headers), replacing the old NextAuth JWT middleware wrapper. Role and
-// restricted flags come from the session user's additionalFields
-// (see auth.ts). Redirect logic is unchanged from the NextAuth version,
-// including the callbackUrl preservation that sends a signed-out /buy
-// visitor back to the full /buy URL after sign-in (or SSO).
+// Edge-safe middleware: Vercel middleware runs on the Edge runtime,
+// which cannot run the Prisma engine client, so the previous
+// auth.api.getSession() database lookup crashed every request with
+// MIDDLEWARE_INVOCATION_FAILED. Session state here is therefore
+// OPTIMISTIC: a present Better Auth session cookie means "signed in".
+// It does NOT prove the session is still valid, and it carries neither
+// the user's role nor their restricted flag, so those are enforced
+// server-side instead:
+//  - admin role gating lives in app/admin/layout.tsx
+//  - restricted gating lives in app/dashboard/layout.tsx (and
+//    app/admin/layout.tsx for restricted admins)
+//  - API routes enforce auth themselves (they pass through here)
+// A stale/expired cookie lets a request through to a page, and that
+// page's server layout re-validates the session and redirects to
+// sign-in when it is gone, so the worst case is one wasted redirect.
+// Redirect logic is otherwise unchanged, including the callbackUrl
+// preservation that sends a signed-out /buy visitor back to the full
+// /buy URL after sign-in (or SSO).
+const SESSION_COOKIES = [
+  "better-auth.session_token",
+  "__Secure-better-auth.session_token",
+];
+
 export default async function middleware(req: NextRequest) {
   const { nextUrl } = req;
-  const session = await auth.api.getSession({ headers: req.headers });
-  const isLoggedIn = !!session;
-
-  const role = session?.user.role;
-  const isRestricted = session?.user.restricted;
+  const isLoggedIn = SESSION_COOKIES.some(
+    (name) => req.cookies.get(name)?.value
+  );
 
   const isApiRoute = nextUrl.pathname.startsWith(apiAuthPrefix);
   const isAuthRoute = authRoutes.includes(nextUrl.pathname);
   const isPublicRoute = isPublicRouteFn(nextUrl.pathname);
-  const isAdminRoute = adminRoutes.includes(nextUrl.pathname);
-  const isRestrictionRoute = nextUrl.pathname === "/account-restricted";
-
-  const isAdmin = role === "ADMIN";
 
   const pathname = nextUrl.pathname;
 
-  // Check if admin exists on app initialization
+  // Check if admin exists on app initialization (best effort; failures
+  // are swallowed exactly as before). Native fetch, not axios: axios
+  // is not Edge-safe here.
   if (pathname === "/" || pathname === "/admin") {
     try {
-      await axios.get(process.env.NEXT_PUBLIC_APP_URL + "/api/admin/exists");
+      await fetch(process.env.NEXT_PUBLIC_APP_URL + "/api/admin/exists");
     } catch (error) {
       console.error("Error ensuring admin exists:", error);
     }
-  }
-  if (isAdminRoute && !isAdmin) {
-    return Response.redirect(new URL(DEFAULT_LOGIN_REDIRECT, nextUrl));
   }
 
   if (isApiRoute) {
@@ -67,17 +73,6 @@ export default async function middleware(req: NextRequest) {
     return Response.redirect(
       new URL(`/auth/login?callbackUrl=${encodedCallbackUrl}`, nextUrl)
     );
-  }
-
-  // Handle restricted users
-  if (
-    isLoggedIn &&
-    isRestricted &&
-    !isRestrictionRoute &&
-    !isApiRoute &&
-    !isPublicRoute
-  ) {
-    return Response.redirect(new URL("/account-restricted", nextUrl));
   }
 
   return null;

@@ -17,7 +17,19 @@ export default async function DashboardLayout({
   const session = await auth.api.getSession({ headers: await headers() });
 
   if (!session) {
-    redirect("/auth/login?callbackUrl=/dashboard");
+    redirect("/auth/login?callbackUrl=/admin");
+  }
+
+  // Admin role gating lives here, not in middleware: the Edge runtime
+  // cannot look the session up, so middleware only checks for a session
+  // cookie. Order mirrors the old middleware: non-admins went to
+  // /dashboard, and restricted users were sent to /account-restricted.
+  if (session.user.role !== "ADMIN") {
+    redirect("/dashboard");
+  }
+
+  if (session.user.restricted) {
+    redirect("/account-restricted");
   }
 
   return (

@@ -62,6 +62,7 @@ model User {
   sessions              Session[]
   sentTransactions      Transaction[]        @relation("SentTransactions")
   receivedTransactions  Transaction[]        @relation("ReceivedTransactions")
+  marketplaceSellerMappings MarketplaceSellerMapping[]
   wallet                Wallet?
   notifications         Notification[]
   verificationToken     VerificationToken?
@@ -247,9 +248,26 @@ model Transaction {
   feedbacks       Feedback?
   paymentId       String?           @unique // Link to Payment model
   payment         Payment?          @relation(fields: [paymentId], references: [id])
+  // WhoDeySell marketplace handoff: the marketplace EscrowOrder id, so a
+  // repeat click with the same order lands on this transaction instead of
+  // creating a duplicate.
+  marketplaceOrderId String?         @unique
   dispute         Dispute? // Added relation to dispute
   hasDispute      Boolean           @default(false) // Flag to indicate if transaction has a dispute
   revenue         Revenue[]
+}
+
+// WhoDeySell marketplace handoff: maps a marketplace seller id (a
+// WhoDeySell user id, meaningless to escrow on its own) to the escrow user
+// who receives the payout. Rows are created by an admin (or a future
+// seller self-link flow) — see docs/whodeysell-handoff.md. A handoff with
+// no mapping here is refused; no transaction is created and no money moves.
+model MarketplaceSellerMapping {
+  id                  String   @id @default(cuid())
+  marketplaceSellerId String   @unique
+  escrowUserId        String
+  escrowUser          User     @relation(fields: [escrowUserId], references: [id])
+  createdAt           DateTime @default(now())
 }
 
 model Feedback {

@@ -21,7 +21,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
-import { useSession } from "next-auth/react";
+import { authClient } from "@/lib/auth-client";
 import Link from "next/link";
 
 type SupportChannel = {
@@ -38,7 +38,7 @@ export function HelpBubble() {
   const [hasUnread, setHasUnread] = useState(false);
   const [isVisible, setIsVisible] = useState(true);
   const [lastScrollY, setLastScrollY] = useState(0);
-  const { data: session } = useSession();
+  const { data: session } = authClient.useSession();
 
   useEffect(() => {
     // Randomly set unread status for demo purposes
@@ -231,3 +231,4 @@ export function HelpBubble() {
     </div>
   );
 }
+

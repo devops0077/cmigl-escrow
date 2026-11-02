@@ -14,15 +14,14 @@ import {
 } from "@/components/ui/card";
 import { AlertTriangle, Clock, Send } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
-import { useSession } from "next-auth/react";
-import { signOut } from "next-auth/react";
+import { authClient } from "@/lib/auth-client";
 import Link from "next/link";
 
 export default function AccountRestrictedPage() {
   const { isRestricted, restrictions, submitAppeal } = useRestriction();
   const [appealText, setAppealText] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const { data: session } = useSession();
+  const { data: session } = authClient.useSession();
 
   useEffect(() => {
     // If user is not restricted, they shouldn't be on this page
@@ -166,7 +165,7 @@ export default function AccountRestrictedPage() {
             <Button
               variant="ghost"
               className="flex-1"
-              onClick={async () => await signOut()}
+              onClick={async () => await authClient.signOut()}
             >
               Sign Out
             </Button>
@@ -176,3 +175,4 @@ export default function AccountRestrictedPage() {
     </div>
   );
 }
+

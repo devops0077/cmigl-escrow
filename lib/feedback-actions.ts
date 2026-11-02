@@ -1,6 +1,7 @@
 "use server";
 
 import { auth } from "@/auth";
+import { headers } from "next/headers";
 import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
 import { UnauthorizedError } from "./error-class";
@@ -30,7 +31,7 @@ async function uploadAttachment(file: File): Promise<string> {
 
 // Submit feedback
 export async function submitFeedback(formData: FormData) {
-  const session = await auth();
+  const session = await auth.api.getSession({ headers: await headers() });
 
   if (!session?.user?.email) {
     throw new UnauthorizedError("You must be logged in to submit feedback");
@@ -103,7 +104,7 @@ export async function submitFeedback(formData: FormData) {
 
 // Get all feedback (admin only)
 export async function getAllFeedback() {
-  const session = await auth();
+  const session = await auth.api.getSession({ headers: await headers() });
 
   if (!session?.user?.email) {
     throw new UnauthorizedError("Unauthorized");
@@ -138,7 +139,7 @@ export async function getAllFeedback() {
 
 // Get feedback by ID (admin only)
 export async function getFeedbackById(id: string) {
-  const session = await auth();
+  const session = await auth.api.getSession({ headers: await headers() });
 
   if (!session?.user?.email) {
     throw new UnauthorizedError("Unauthorized");
@@ -179,7 +180,7 @@ export async function updateFeedbackStatus(
   status: "PENDING" | "REVIEWED" | "IMPLEMENTED" | "REJECTED",
   adminNotes?: string
 ) {
-  const session = await auth();
+  const session = await auth.api.getSession({ headers: await headers() });
 
   if (!session?.user?.email) {
     throw new UnauthorizedError("Unauthorized");
@@ -215,3 +216,4 @@ export async function updateFeedbackStatus(
 
   return feedback;
 }
+

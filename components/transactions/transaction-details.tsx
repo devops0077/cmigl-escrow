@@ -16,7 +16,7 @@ import { Separator } from "@/components/ui/separator";
 import { DashboardHeader } from "@/components/dashboard/dashboard-header";
 import { formatCurrency, formatDate } from "@/lib/utils";
 import { FadeIn } from "@/components/animations/fade-in";
-import { useSession } from "next-auth/react";
+import { authClient } from "@/lib/auth-client";
 import { useTransaction } from "@/hooks/use-transaction";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import apiClient from "@/lib/api-client";
@@ -45,7 +45,7 @@ import Image from "next/image";
 
 export function TransactionDetails({ id }: { id: string }) {
   const router = useRouter();
-  const { data: session } = useSession();
+  const { data: session } = authClient.useSession();
   const [isUpdating, setIsUpdating] = useState(false);
   const queryClient = useQueryClient();
   const [feedbackOpen, setFeedbackOpen] = useState(false);
@@ -685,3 +685,4 @@ export function TransactionDetails({ id }: { id: string }) {
     </>
   );
 }
+

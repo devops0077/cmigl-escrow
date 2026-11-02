@@ -1,8 +1,7 @@
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import type { User } from "next-auth";
 
 interface UserAvatarProps {
-  user: User | undefined;
+  user: { name?: string | null; email?: string | null } | undefined;
   className?: string;
 }
 
@@ -28,3 +27,4 @@ export function UserAvatar({ user, className }: UserAvatarProps) {
     </Avatar>
   );
 }
+

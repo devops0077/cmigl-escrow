@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/auth";
+import { headers } from "next/headers";
 import { z } from "zod";
 
 const updateRoleSchema = z.object({
@@ -8,7 +9,7 @@ const updateRoleSchema = z.object({
 });
 
 async function checkAdminPermission() {
-  const session = await auth();
+  const session = await auth.api.getSession({ headers: await headers() });
 
   if (!session?.user?.email) {
     throw new Error("Unauthorized");
@@ -56,3 +57,4 @@ export async function PATCH(
     );
   }
 }
+

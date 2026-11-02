@@ -12,12 +12,12 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { signOut, useSession } from "next-auth/react"
+import { authClient } from "@/lib/auth-client";
 import { CreditCard, LogOut, Settings, User } from "lucide-react"
 
 export function UserNav() {
   const router = useRouter()
-  const { data: session } = useSession()
+  const { data: session } = authClient.useSession()
 
   if (!session?.user) return null
 
@@ -60,7 +60,7 @@ export function UserNav() {
           </DropdownMenuItem>
         </DropdownMenuGroup>
         <DropdownMenuSeparator />
-        <DropdownMenuItem onClick={() => signOut({ callbackUrl: "/" })}>
+        <DropdownMenuItem onClick={async () => { await authClient.signOut(); router.push("/"); }}>
           <LogOut className="mr-2 h-4 w-4" />
           <span>Log out</span>
         </DropdownMenuItem>
@@ -68,3 +68,4 @@ export function UserNav() {
     </DropdownMenu>
   )
 }
+

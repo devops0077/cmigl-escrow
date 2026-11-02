@@ -3,11 +3,12 @@ import { AppError } from "@/lib/error-class";
 import { logger } from "@/lib/logger";
 import { paystackService } from "@/lib/paystack-service";
 import { auth } from "@/auth";
+import { headers } from "next/headers";
 import type { WalletTransactionStatus } from "@prisma/client";
 
 export async function getWalletBalance() {
   try {
-    const session = await auth();
+    const session = await auth.api.getSession({ headers: await headers() });
     if (!session?.user) {
       throw new AppError("Unauthorized", 401);
     }
@@ -28,7 +29,7 @@ export async function getWalletBalance() {
 }
 
 export async function getUserWallet() {
-  const session = await auth();
+  const session = await auth.api.getSession({ headers: await headers() });
 
   if (!session?.user?.email) {
     throw new Error("Unauthorized");
@@ -52,7 +53,7 @@ export async function getUserWallet() {
 
 export async function getWalletTransactions(limit = 10, page = 1) {
   try {
-    const session = await auth();
+    const session = await auth.api.getSession({ headers: await headers() });
     if (!session?.user) {
       throw new AppError("Unauthorized", 401);
     }
@@ -98,7 +99,7 @@ export async function getWalletTransactions(limit = 10, page = 1) {
 
 export async function initiateWalletFunding(amount: number) {
   try {
-    const session = await auth();
+    const session = await auth.api.getSession({ headers: await headers() });
     if (!session?.user) {
       throw new AppError("Unauthorized", 401);
     }
@@ -133,7 +134,7 @@ export async function initiateWalletFunding(amount: number) {
 
 async function verifyWalletFunding(reference: string) {
   try {
-    const session = await auth();
+    const session = await auth.api.getSession({ headers: await headers() });
     if (!session?.user) {
       throw new AppError("Unauthorized", 401);
     }
@@ -209,7 +210,7 @@ export async function initiateWithdrawal(
   accountNumber: string
 ) {
   try {
-    const session = await auth();
+    const session = await auth.api.getSession({ headers: await headers() });
     if (!session?.user) {
       throw new AppError("Unauthorized", 401);
     }
@@ -410,7 +411,7 @@ export async function initiateWithdrawal(
  */
 export async function verifyWithdrawalStatus(reference: string) {
   try {
-    const session = await auth();
+    const session = await auth.api.getSession({ headers: await headers() });
     if (!session?.user) {
       throw new AppError("Unauthorized", 401);
     }
@@ -512,3 +513,4 @@ export async function verifyWithdrawalStatus(reference: string) {
     throw error;
   }
 }
+

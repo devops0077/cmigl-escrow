@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { auth } from "@/auth";
+import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import AdminFeedbackManager from "@/components/admin/admin-feedback-manager";
@@ -20,7 +21,7 @@ export const metadata: Metadata = {
 };
 
 export default async function AdminFeedbackPage() {
-  const session = await auth();
+  const session = await auth.api.getSession({ headers: await headers() });
 
   if (!session?.user) {
     redirect("/auth/login?callbackUrl=/admin/feedback");
@@ -76,3 +77,4 @@ export default async function AdminFeedbackPage() {
     </>
   );
 }
+

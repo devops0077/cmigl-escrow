@@ -33,7 +33,7 @@ interface UserDetails {
   role: string;
   isActive: boolean;
   restricted: boolean;
-  emailVerified: string | null;
+  emailVerified: boolean;
   registrationFee: {
     id: string;
     amount: number;
@@ -375,3 +375,4 @@ export function UserAccountSection({ user }: UserAccountSectionProps) {
     </div>
   );
 }
+

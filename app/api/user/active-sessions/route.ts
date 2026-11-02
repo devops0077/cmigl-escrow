@@ -1,11 +1,12 @@
 import { type NextRequest, NextResponse } from "next/server";
 import { auth } from "@/auth";
+import { headers } from "next/headers";
 import { logger } from "@/lib/logger";
 import { SecurityService } from "@/lib/security-service";
 
 export async function GET(request: NextRequest) {
   try {
-    const session = await auth();
+    const session = await auth.api.getSession({ headers: await headers() });
 
     if (!session?.user?.id) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -28,7 +29,7 @@ export async function GET(request: NextRequest) {
 
 export async function DELETE(request: NextRequest) {
   try {
-    const session = await auth();
+    const session = await auth.api.getSession({ headers: await headers() });
 
     if (!session?.user?.id) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -42,7 +43,7 @@ export async function DELETE(request: NextRequest) {
       // Terminate all sessions except current
       const result = await SecurityService.terminateAllSessions({
         userId: session.user.id,
-        currentSessionId: session.id || "current_session",
+        currentSessionId: session.session.id || "current_session",
         request,
       });
 
@@ -71,3 +72,4 @@ export async function DELETE(request: NextRequest) {
     );
   }
 }
+

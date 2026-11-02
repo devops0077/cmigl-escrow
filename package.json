@@ -7,7 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "postinstall": "bun prisma generate --no-engine",
+    "postinstall": "bun prisma generate",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {

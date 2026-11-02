@@ -3,7 +3,7 @@
 import type React from "react";
 
 import { useState, useEffect } from "react";
-import { useSession } from "next-auth/react";
+import { authClient } from "@/lib/auth-client";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -39,7 +39,7 @@ export function FundWalletModal({ onSuccess, trigger }: FundWalletModalProps) {
   const [includeFees, setIncludeFees] = useState(true);
   const [totalAmount, setTotalAmount] = useState<string>("");
   const [feeBreakdown, setFeeBreakdown] = useState<any>(null);
-  const { data: session } = useSession();
+  const { data: session } = authClient.useSession();
   const searchParams = useSearchParams();
   const amountParam = searchParams.get("amount");
   const modalOpen = searchParams.get("modal");
@@ -191,3 +191,4 @@ export function FundWalletModal({ onSuccess, trigger }: FundWalletModalProps) {
     </Dialog>
   );
 }
+

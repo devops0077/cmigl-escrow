@@ -2,13 +2,14 @@ import { type NextRequest, NextResponse } from "next/server";
 import { paystackService } from "@/lib/paystack-service";
 import { logger } from "@/lib/logger";
 import { auth } from "@/auth";
+import { headers } from "next/headers";
 import { prisma } from "@/lib/prisma";
 import { calculateTotalWithAllFees } from "@/lib/fee-calculator";
 
 export async function POST(req: NextRequest) {
   try {
     // Get the authenticated user
-    const session = await auth();
+    const session = await auth.api.getSession({ headers: await headers() });
     if (!session?.user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
@@ -114,3 +115,4 @@ export async function POST(req: NextRequest) {
     );
   }
 }
+

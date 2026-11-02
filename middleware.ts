@@ -1,22 +1,28 @@
-import { auth as middleware } from "@/auth";
+import type { NextRequest } from "next/server";
+import { auth } from "@/auth";
 import {
   DEFAULT_LOGIN_REDIRECT,
   apiAuthPrefix,
   authRoutes,
-  publicRoutes,
   adminRoutes,
   isPublicRouteFn,
 } from "@/routes";
 import axios from "axios";
 
-// @ts-ignore
-export default middleware(async (req, ctx) => {
+// Better Auth middleware: the session is validated against the database
+// on every matched request (auth.api.getSession with the request
+// headers), replacing the old NextAuth JWT middleware wrapper. Role and
+// restricted flags come from the session user's additionalFields
+// (see auth.ts). Redirect logic is unchanged from the NextAuth version,
+// including the callbackUrl preservation that sends a signed-out /buy
+// visitor back to the full /buy URL after sign-in (or SSO).
+export default async function middleware(req: NextRequest) {
   const { nextUrl } = req;
-  const isLoggedIn = !!req.auth;
+  const session = await auth.api.getSession({ headers: req.headers });
+  const isLoggedIn = !!session;
 
-  // @ts-ignore
-  const role = req.auth?.user?.role;
-  const isRestricted = req.auth?.user?.restricted;
+  const role = session?.user.role;
+  const isRestricted = session?.user.restricted;
 
   const isApiRoute = nextUrl.pathname.startsWith(apiAuthPrefix);
   const isAuthRoute = authRoutes.includes(nextUrl.pathname);
@@ -75,7 +81,7 @@ export default middleware(async (req, ctx) => {
   }
 
   return null;
-});
+}
 
 export const config = {
   matcher: ["/((?!.+\\.[\\w]+$|_next).*)", "/", "/(api|trpc)(.*)"],

@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import {
   LayoutDashboard,
   Wallet,
@@ -32,6 +32,7 @@ import { ThemeToggle } from "../theme-toggle";
 
 export function DashboardMobileNav() {
   const pathname = usePathname();
+  const router = useRouter();
   const [isOpen, setIsOpen] = useState(false);
   const { data: session, isPending } = authClient.useSession();
 
@@ -66,6 +67,9 @@ export function DashboardMobileNav() {
   const handleLogout = async () => {
     await authClient.signOut();
     setIsOpen(false);
+    // Sign-out always lands on the home page (standing rule).
+    router.push("/");
+    router.refresh();
   };
 
   return (
@@ -331,4 +335,5 @@ export function DashboardMobileNav() {
     </>
   );
 }
+
 

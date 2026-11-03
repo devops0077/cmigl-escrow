@@ -90,6 +90,14 @@ const whodeysellOAuth =
             clientId: process.env.WHODEYSELL_OAUTH_CLIENT_ID,
             clientSecret: process.env.WHODEYSELL_OAUTH_CLIENT_SECRET,
             discoveryUrl: `${whodeysellBaseUrl}/api/auth/.well-known/openid-configuration`,
+            // Fallback endpoints from WhoDeySell's discovery document
+            // (verified live). Same rationale as the whodeysell side:
+            // keeps the provider usable when discovery fails fast,
+            // without skipping the discovery fetch itself. ID-token
+            // verification stays on whenever discovery succeeds.
+            authorizationUrl: `${whodeysellBaseUrl}/api/auth/oauth2/authorize`,
+            tokenUrl: `${whodeysellBaseUrl}/api/auth/oauth2/token`,
+            userInfoUrl: `${whodeysellBaseUrl}/api/auth/oauth2/userinfo`,
             scopes: ["openid", "email", "profile"],
             pkce: true,
             // Explicit so the registered redirect URI is exactly the
@@ -220,3 +228,4 @@ export const auth = betterAuth({
 });
 
 export type AuthSession = typeof auth.$Infer.Session;
+

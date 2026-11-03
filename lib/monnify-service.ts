@@ -333,6 +333,21 @@ export const redisClient = new Redis({
   port: _escrowConfig.redisPort,
   password: _escrowConfig.redisPassword,
   db: _escrowConfig.redisDb,
+  // TLS-only Redis (e.g. the box Redis) needs an encrypted connection.
+  // With a private CA supplied via REDIS_TLS_CA_B64, verify against it;
+  // otherwise default verification applies (publicly trusted certs).
+  ...(_escrowConfig.redisTls
+    ? {
+        tls: _escrowConfig.redisTlsCaB64
+          ? {
+              ca: Buffer.from(
+                _escrowConfig.redisTlsCaB64,
+                "base64"
+              ).toString("utf-8"),
+            }
+          : {},
+      }
+    : {}),
 });
 
 export const monnifyService = new MonnifyService(
@@ -343,3 +358,4 @@ export const monnifyService = new MonnifyService(
   },
   redisClient
 );
+

@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { CookieSettingsButton } from "@/components/cookie-settings-button";
 
 const columns = [
   {
@@ -23,6 +24,7 @@ const columns = [
     links: [
       { href: "/terms", label: "Terms of service" },
       { href: "/privacy", label: "Privacy policy" },
+      { href: "/cookies", label: "Cookie policy" },
     ],
   },
 ];
@@ -49,6 +51,11 @@ export function Footer() {
                   </Link>
                 </li>
               ))}
+              {column.title === "Legal" && (
+                <li>
+                  <CookieSettingsButton />
+                </li>
+              )}
             </ul>
           </div>
         ))}
@@ -62,3 +69,4 @@ export function Footer() {
     </footer>
   );
 }
+

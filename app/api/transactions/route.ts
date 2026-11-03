@@ -29,9 +29,16 @@ export async function GET(request: NextRequest) {
     // Calculate skip value for pagination
     const skip = (page - 1) * limit
 
-    // Build the where clause for filtering
+    // Build the where clause for filtering. Ownership is ALWAYS scoped
+    // to the signed-in user as buyer or seller. A previous version of
+    // this filter overwrote the ownership OR-clause with the search
+    // OR-clause whenever a search term was present, which returned
+    // other users' transactions — the search terms are now an
+    // additional AND group instead, so results stay own-transactions
+    // only. Search covers product text, the transaction id, and the
+    // counterparty's name/username.
     const where: any = {
-      OR: [{ buyerId: user.id }, { sellerId: user.id }],
+      AND: [{ OR: [{ buyerId: user.id }, { sellerId: user.id }] }],
     }
 
     // Add status filter if provided
@@ -41,10 +48,17 @@ export async function GET(request: NextRequest) {
 
     // Add search filter if provided
     if (search) {
-      where.OR = [
-        { productDetails: { contains: search, mode: "insensitive" } },
-        { productCategory: { contains: search, mode: "insensitive" } },
-      ]
+      where.AND.push({
+        OR: [
+          { productDetails: { contains: search, mode: "insensitive" } },
+          { productCategory: { contains: search, mode: "insensitive" } },
+          { id: { contains: search } },
+          { buyer: { name: { contains: search, mode: "insensitive" } } },
+          { buyer: { username: { contains: search, mode: "insensitive" } } },
+          { seller: { name: { contains: search, mode: "insensitive" } } },
+          { seller: { username: { contains: search, mode: "insensitive" } } },
+        ],
+      })
     }
 
     // Get total count for pagination
@@ -123,4 +137,3 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: "Internal server error" }, { status: 500 })
   }
 }
-

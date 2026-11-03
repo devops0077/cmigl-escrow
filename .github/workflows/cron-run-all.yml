@@ -1,0 +1,14 @@
+name: Escrow scheduled tasks
+on:
+  schedule:
+    - cron: "0 2 * * *"
+  workflow_dispatch:
+jobs:
+  run-all:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger scheduled tasks
+        run: |
+          curl --fail --show-error --max-time 300 -X POST \
+            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
+            https://escrow.cmigl.org/api/cron/run-all

@@ -65,9 +65,12 @@ export function DashboardMobileNav() {
   ];
 
   const handleLogout = async () => {
-    await authClient.signOut();
+    // disableRedirect: without it, Better Auth redirects to the
+    // provider's end-session page (a bare "Confirm logout" page, then a
+    // "Logged out." page that goes nowhere) whenever the session came
+    // from SSO. Standing rule: sign-out always lands on the home page.
+    await authClient.signOut({ disableRedirect: true });
     setIsOpen(false);
-    // Sign-out always lands on the home page (standing rule).
     router.push("/");
     router.refresh();
   };

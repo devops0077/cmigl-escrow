@@ -48,7 +48,6 @@ ALTER TABLE "Account" ADD COLUMN "refreshToken" TEXT;
 ALTER TABLE "Account" ADD COLUMN "idToken" TEXT;
 ALTER TABLE "Account" ADD COLUMN "accessTokenExpiresAt" TIMESTAMP(3);
 ALTER TABLE "Account" ADD COLUMN "refreshTokenExpiresAt" TIMESTAMP(3);
-ALTER TABLE "Account" ADD COLUMN "scope" TEXT;
 ALTER TABLE "Account" ADD COLUMN "password" TEXT;
 CREATE INDEX "Account_userId_idx" ON "Account"("userId");
 

@@ -7,6 +7,7 @@ import { UserNav } from "@/components/user-nav";
 import { MainNav } from "@/components/main-nav";
 import { MobileNav } from "@/components/mobile-nav";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { SearchButton } from "@/components/search-button";
 import { authClient } from "@/lib/auth-client";
 
 export function SiteHeader() {
@@ -27,6 +28,7 @@ export function SiteHeader() {
         <MainNav className="mx-6 hidden md:flex" />
         <MobileNav className="md:hidden ml-auto" />
         <div className="ml-auto hidden md:flex items-center space-x-4">
+          <SearchButton />
           <ThemeToggle isCollapsed className="w-10 justify-center px-0" />
           {session ? (
             <UserNav />
@@ -47,4 +49,5 @@ export function SiteHeader() {
     </header>
   );
 }
+
 

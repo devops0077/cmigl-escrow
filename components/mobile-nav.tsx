@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Menu } from "lucide-react";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { SearchButton } from "@/components/search-button";
 import { authClient } from "@/lib/auth-client";
 
 interface MobileNavProps {
@@ -54,6 +55,7 @@ export function MobileNav({ className }: MobileNavProps) {
 
   return (
     <div className={cn("flex items-center", className)}>
+      <SearchButton className="border-0 shadow-none" />
       <ThemeToggle isCollapsed className="w-10 justify-center px-0" />
       <Sheet open={open} onOpenChange={setOpen}>
         <SheetTrigger asChild>
@@ -112,4 +114,5 @@ export function MobileNav({ className }: MobileNavProps) {
     </div>
   );
 }
+
 

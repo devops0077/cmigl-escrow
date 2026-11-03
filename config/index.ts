@@ -25,6 +25,13 @@ export const _escrowConfig = {
   redisDb: process.env.REDIS_DB ? parseInt(process.env.REDIS_DB) : 0,
   redisHost: process.env.REDIS_HOST || "localhost",
   redisPort: process.env.REDIS_PORT ? parseInt(process.env.REDIS_PORT) : 6379,
+  // Set REDIS_TLS=true when Redis is TLS-only (e.g. the box Redis, which
+  // takes no plaintext connections). REDIS_TLS_CA_B64 optionally carries a
+  // base64-encoded PEM of the CA that signed the Redis server certificate
+  // (needed for a private/self-signed CA); omit it for publicly trusted
+  // certificates, where the default verification applies.
+  redisTls: process.env.REDIS_TLS === "true",
+  redisTlsCaB64: process.env.REDIS_TLS_CA_B64 || "",
 
   zohomailClientId: process.env.ZOHOMAIL_CLIENT_ID || "",
   zohomailClientSecret: process.env.ZOHOMAIL_CLIENT_SECRET || "",
@@ -36,3 +43,4 @@ export const _escrowConfig = {
     info: process.env.NEXT_PUBLIC_EMAIL_INFO || "info@cmigl.org",
   },
 };
+

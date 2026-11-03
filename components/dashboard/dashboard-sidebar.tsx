@@ -1,6 +1,6 @@
 "use client";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import {
   LayoutDashboard,
   Wallet,
@@ -55,6 +55,7 @@ import { UserRole } from "@/lib/generated/prisma";
 
 export function DashboardSidebar() {
   const pathname = usePathname();
+  const router = useRouter();
   const { data: session } = authClient.useSession();
   const { state } = useSidebar();
   const isCollapsed = state === "collapsed";
@@ -425,7 +426,14 @@ export function DashboardSidebar() {
               "w-full hover:bg-destructive/10 hover:text-destructive transition-all duration-200",
               isCollapsed && "p-2 flex justify-center"
             )}
-            onClick={async () => await authClient.signOut()}
+            // Sign-out always lands on the home page (standing rule):
+            // leaving /dashboard at once also avoids the dashboard tree
+            // re-rendering with a null session, which crashed the page.
+            onClick={async () => {
+              await authClient.signOut();
+              router.push("/");
+              router.refresh();
+            }}
           >
             <LogOut className="h-4 w-4" />
             {!isCollapsed && <span className="ml-2">Sign Out</span>}
@@ -435,4 +443,5 @@ export function DashboardSidebar() {
     </Sidebar>
   );
 }
+
 

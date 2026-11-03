@@ -189,12 +189,13 @@ export function DashboardHeader({
               <DropdownMenuSeparator />
               <DropdownMenuItem
                 className="text-destructive focus:text-destructive"
-                // Sign-out always lands on the home page (standing rule):
-                // leaving /dashboard at once also avoids the dashboard
-                // tree re-rendering with a null session, which crashed
-                // the page.
+                // disableRedirect: without it, Better Auth redirects
+                // to the provider's end-session page (a bare "Confirm
+                // logout" page, then a "Logged out." page that goes
+                // nowhere) whenever the session came from SSO.
+                // Standing rule: sign-out always lands on the home page.
                 onClick={async () => {
-                  await authClient.signOut();
+                  await authClient.signOut({ disableRedirect: true });
                   router.push("/");
                   router.refresh();
                 }}

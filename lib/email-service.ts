@@ -2,7 +2,6 @@ import { render } from "@react-email/render";
 import VerificationEmail from "@/emails/verification-email";
 import WelcomeEmail from "@/emails/welcome-email";
 import TransactionNotificationEmail from "@/emails/transaction-notification-email";
-import axios from "axios";
 import { _escrowConfig } from "@/config";
 import { zohomail, zohomailInMemory } from "@/services/zohomail.service";
 
@@ -52,11 +51,34 @@ export class EmailService {
           mail_format: "html",
         });
       } else {
-        await axios.post(`${process.env.NEXT_PUBLIC_APP_URL}/api/send-email`, {
-          to,
-          subject,
-          html,
+        // Resend (no new dependency: plain fetch to the Resend API).
+        // EMAIL_FROM must be an address on a domain verified in Resend
+        // (escrow.cmigl.org); it falls back to noreply@escrow.cmigl.org.
+        const apiKey = process.env.RESEND_API_KEY;
+        if (!apiKey) {
+          throw new Error("RESEND_API_KEY environment variable not set");
+        }
+        const res = await fetch("https://api.resend.com/emails", {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${apiKey}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            from:
+              process.env.EMAIL_FROM ||
+              "CMIGL Escrow <noreply@escrow.cmigl.org>",
+            to: [to],
+            subject,
+            html,
+          }),
         });
+        if (!res.ok) {
+          const detail = await res.text().catch(() => "");
+          throw new Error(
+            `Resend send failed (${res.status}): ${detail}`.trim()
+          );
+        }
       }
     } catch (error) {
       console.error("Failed to send email:", error);

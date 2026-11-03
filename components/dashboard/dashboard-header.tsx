@@ -189,7 +189,15 @@ export function DashboardHeader({
               <DropdownMenuSeparator />
               <DropdownMenuItem
                 className="text-destructive focus:text-destructive"
-                onClick={async () => await authClient.signOut()}
+                // Sign-out always lands on the home page (standing rule):
+                // leaving /dashboard at once also avoids the dashboard
+                // tree re-rendering with a null session, which crashed
+                // the page.
+                onClick={async () => {
+                  await authClient.signOut();
+                  router.push("/");
+                  router.refresh();
+                }}
               >
                 <LogOut className="mr-2 h-4 w-4" />
                 <span>Log out</span>
@@ -201,4 +209,5 @@ export function DashboardHeader({
     </motion.div>
   );
 }
+
 

@@ -1,5 +1,5 @@
 import type React from "react";
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
 import { ThemeProvider } from "@/components/theme-provider";
@@ -9,15 +9,51 @@ import { ReactQueryProvider } from "@/lib/react-query-provider";
 import { HelpBubble } from "@/components/help/help-bubble";
 import { BackToTop } from "@/components/back-to-top";
 import { RestrictionProvider } from "@/providers/restriction-provider";
+import { CookieConsent } from "@/components/cookie-consent";
+import { CommandPalette } from "@/components/command-palette";
+import { ServiceWorkerRegister } from "@/components/sw-register";
 
 const inter = Inter({ subsets: ["latin"] });
 
 export function generateMetadata(): Metadata {
   return {
-    title: "CMIGL Escrow Services",
-    description: "Secure transactions between buyers and sellers",
+    metadataBase: new URL("https://escrow.cmigl.org"),
+    title: "CMIGL Escrow Services — Secure Transactions Between Buyers and Sellers",
+    description:
+      "CMIGL Escrow holds payment safely between buyer and seller and releases it only when the deal is confirmed. Secure escrow services in Nigeria.",
+    alternates: {
+      canonical: "/",
+    },
+    openGraph: {
+      type: "website",
+      url: "https://escrow.cmigl.org",
+      siteName: "CMIGL Escrow Services",
+      title: "CMIGL Escrow Services — Secure Transactions Between Buyers and Sellers",
+      description:
+        "CMIGL Escrow holds payment safely between buyer and seller and releases it only when the deal is confirmed.",
+      locale: "en_NG",
+    },
+    twitter: {
+      card: "summary",
+      title: "CMIGL Escrow Services — Secure Transactions Between Buyers and Sellers",
+      description:
+        "CMIGL Escrow holds payment safely between buyer and seller and releases it only when the deal is confirmed.",
+    },
+    icons: {
+      icon: "/web-app-manifest-192x192.png",
+      apple: "/web-app-manifest-192x192.png",
+    },
+    appleWebApp: {
+      capable: true,
+      title: "Escrow",
+      statusBarStyle: "black-translucent",
+    },
   };
 }
+
+export const viewport: Viewport = {
+  themeColor: "#09090b",
+};
 
 export default function RootLayout({
   children,
@@ -26,7 +62,6 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <meta name="apple-mobile-web-app-title" content="Escrow" />
       <body className={`${inter.className} w-full`}>
         <ReactQueryProvider>
           <AuthProvider>
@@ -40,6 +75,9 @@ export default function RootLayout({
                 {children}
                 <HelpBubble />
                 <BackToTop />
+                <CookieConsent />
+                <CommandPalette />
+                <ServiceWorkerRegister />
                 <Toaster
                   className="group toaster"
                   toastOptions={{

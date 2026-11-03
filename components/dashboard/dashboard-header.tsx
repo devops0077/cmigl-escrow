@@ -25,6 +25,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { authClient } from "@/lib/auth-client";
+import { SearchButton } from "@/components/search-button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useRouter } from "next/navigation";
 import { NotificationDrawer } from "@/components/notifications/notification-drawer";
@@ -111,6 +112,7 @@ export function DashboardHeader({
         <div className="flex  items-center gap-2 relative">
           {children}
 
+          <SearchButton />
           <NotificationDrawer />
 
           <DropdownMenu>
@@ -210,5 +212,6 @@ export function DashboardHeader({
     </motion.div>
   );
 }
+
 
 

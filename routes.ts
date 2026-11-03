@@ -9,6 +9,7 @@ export const publicRoutes = [
   "/help",
   "/terms",
   "/privacy",
+  "/cookies",
   "/offline",
   "/knowledge-base",
   "/knowledge-base/(.*)",
@@ -73,4 +74,5 @@ export const isPublicRouteFn = (path: string): boolean => {
     new RegExp(`^${route.replace(/\(.*\)/, ".*")}$`).test(path)
   );
 };
+
 
